@@ -1,6 +1,7 @@
 # Phase 1: 基础框架与用户认证 - Context
 
 **Gathered:** 2026-04-06
+**Updated:** 2026-04-06
 **Status:** Ready for planning
 
 <domain>
@@ -21,9 +22,14 @@
 
 ### 认证流程
 - **D-05:** 登录方式为手机号+短信验证码，无密码登录。验证码6位数字，有效期5分钟。
-- **D-06:** JWT token认证。Token 包含 `user_id`、`org_id`、`role`。有效期7天。Refresh token 30天。
+- **D-06:** JWT token认证。Token 包含 `user_id`、`org_id`、`role`。有效期7天。Refresh token 30天，采用轮转策略（每次刷新时颁发新 refresh token 并作废旧 token）。
 - **D-07:** 验证码存储于 Redis。Key: `sms:code:{phone}`，TTL 5分钟。限流：同一手机号60秒内最多发1次。
 - **D-08:** 首次登录自动注册（手机号不存在则创建用户+企业）。引导流程：登录 → 录入企业信息 → 进入首页。
+
+### 多设备登录策略
+- **D-27:** 允许多设备并发登录。老板可能手机+H5后台同时使用，不限制设备数。
+- **D-28:** Refresh token 轮转：每次使用 refresh token 获取新 access token 时，同时返回新 refresh token 并将旧 token 加入 Redis 黑名单。防重放攻击。
+- **D-29:** 退出登录仅吊销当前设备的 token（不踢其他设备）。提供"退出所有设备"选项但不默认。
 
 ### 多租户隔离
 - **D-09:** 逻辑多租户。所有业务表包含 `org_id` 字段。GORM 全局 Scope 自动注入 `WHERE org_id = ?` 过滤。
@@ -32,13 +38,23 @@
 
 ### RBAC 权限
 - **D-12:** 三级角色：OWNER（老板，全部权限）、ADMIN（管理员，大部分权限）、MEMBER（普通成员，只读为主）。
-- **D-13:** 权限检查在中间件层统一处理。通过注解 `@RequireRole("OWNER")` 标注需要的角色。
+- **D-13:** 权限检查通过 Gin 路由组中间件统一配置。如 `adminRoutes.Use(RequireRole("OWNER", "ADMIN"))`。Go 原生风格，声明式且不易遗漏。
 - **D-14:** OWNER 角色不可删除。每个企业有且仅有一个 OWNER。
+- **D-30:** Phase 1 定义通用权限规则，具体模块权限在各 Phase 中逐步补充。通用规则：
+  - OWNER：全部权限（增删改查、管理子账号、企业设置、数据导出）
+  - ADMIN：增删改查业务数据，不可管理子账号，不可修改企业信息
+  - MEMBER：只读查看，不可导出敏感数据（身份证号、薪资等）
 
 ### 数据安全
 - **D-15:** 敏感字段（手机号、身份证号）使用 AES-256-GCM 加密存储。同时存储 SHA-256 哈希值用于精确查询。
-- **D-16:** 密码哈希使用 bcrypt（cost=10）。JWT secret 从环境变量读取。
 - **D-17:** API 响应中敏感字段（手机号、身份证号）返回脱敏数据（如 `138****5678`）。
+- **D-31:** JWT secret 从环境变量读取。
+
+### OSS 文件上传
+- **D-32:** 客户端签名直传。服务端生成签名 URL，客户端直连 OSS 上传。节省服务器带宽，上传速度快。
+- **D-33:** 文件大小限制：图片 5MB，文档（PDF/Excel）20MB。
+- **D-34:** 允许文件类型白名单：图片（jpg/png/jpeg）、文档（pdf/xlsx）。服务端签名时校验。
+- **D-35:** OSS 存储按业务类型 + org_id 组织。结构：`{业务类型}/{org_id}/{日期}/{文件名}`。如 `contracts/org_123/2026-04/contract.pdf`。
 
 ### API 设计
 - **D-18:** RESTful API 风格。统一响应格式：`{"code": 0, "message": "success", "data": {...}}`。
@@ -46,7 +62,7 @@
 - **D-20:** 分页参数统一：`page`（从1开始）、`page_size`（默认20，最大100）。
 - **D-21:** API 版本前缀：`/api/v1/`。所有接口挂在 v1 下。
 
-### 宰计日志
+### 审计日志
 - **D-22:** 通过 GORM 钩子（Hook）自动记录所有写操作。记录字段：`org_id`, `user_id`, `module`, `action`, `target_type`, `target_id`, `detail`(JSONB), `ip_address`, `created_at`。
 - **D-23:** 日志只增不改（INSERT ONLY）。不提供删除/修改日志的接口。
 
@@ -61,6 +77,8 @@
 - 错误处理包装方式
 - 日志格式和输出目标（stdout/file）
 - Docker 配置细节
+- Refresh token 黑名单的 Redis key 设计
+- OSS 签名 URL 有效期
 
 </decisions>
 
@@ -93,11 +111,18 @@
   - `internal/common/middleware/` — 鉴权、限流、日志、CORS 中间件
   - `internal/common/response/` — 统一响应封装
   - `internal/common/crypto/` — 加密工具
-  - `pkg/jwt/` — JWT 工具
-  - `pkg/oss/` — OSS 客户端
+  - `pkg/jwt/` — JWT 工具（含 refresh token 轮转）
+  - `pkg/oss/` — OSS 客户端（签名 URL 生成）
   - `pkg/sms/` — 短信客户端
 
 </code_context>
+
+<specifics>
+## Specific Ideas
+
+No specific requirements — open to standard approaches
+
+</specifics>
 
 <deferred>
 ## Deferred Ideas
@@ -109,3 +134,4 @@ None — discussion stayed within phase scope
 ---
 *Phase: 01-foundation-auth*
 *Context gathered: 2026-04-06*
+*Updated: 2026-04-06*
