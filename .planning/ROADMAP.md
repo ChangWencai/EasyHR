@@ -12,7 +12,7 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: 基础框架与用户认证** - 项目脚手架、多租户隔离、认证、企业信息、RBAC权限、审计日志
+- [x] **Phase 1: 基础框架与用户认证** - 项目脚手架、多租户隔离、认证、企业信息、RBAC权限、审计日志
 - [ ] **Phase 2: 员工管理** - 员工入职/离职/档案/合同全生命周期管理
 - [ ] **Phase 3: 社保管理** - 30+城市社保政策库、参保/停缴/变更、缴费提醒
 - [ ] **Phase 4: 个税计算** - 累计预扣法个税引擎、专项附加扣除、申报提醒
@@ -35,11 +35,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. 两个不同企业的用户无法看到对方的数据（多租户隔离验证通过）
 **Plans**: 4 plans
 
-Plans:
-- [ ] 01-01-PLAN.md -- 项目脚手架+基础设施(统一响应/加密/多租户Scope/中间件)
-- [ ] 01-02-PLAN.md -- JWT认证工具+短信客户端+OSS客户端(pkg包)
-- [ ] 01-03-PLAN.md -- 用户认证流程+RBAC权限+审计日志(核心业务逻辑)
-- [ ] 01-04-PLAN.md -- Token刷新/退出+集成测试(认证/多租户隔离/审计)
+**Phase 1**: ✅ COMPLETE — 4/4 plans executed, 40 Go files, 7 test packages PASS
+**Plans**:
+- [x] 01-01-PLAN.md — 项目脚手架+基础设施(统一响应/加密/多租户Scope/中间件)
+- [x] 01-02-PLAN.md — JWT认证工具+短信客户端+OSS客户端(pkg包)
+- [x] 01-03-PLAN.md — 用户认证流程+RBAC权限+审计日志(核心业务逻辑)
+- [x] 01-04-PLAN.md — Token刷新/退出+集成测试(认证/多租户隔离/审计)
 
 ### Phase 2: 员工管理
 **Goal**: 老板可在3步内完成员工入职，集中管理员工档案，办理离职并自动触发后续流程

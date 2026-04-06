@@ -1,0 +1,38 @@
+server:
+  port: 8080
+  mode: debug  # debug/release
+
+database:
+  host: localhost
+  port: 5432
+  user: easyhr
+  password: easyhr_dev
+  dbname: easyhr
+  sslmode: disable
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: ""  # 从环境变量 JWT_SECRET 读取
+  access_ttl: 168h   # 7天
+  refresh_ttl: 720h  # 30天
+
+oss:
+  endpoint: ""
+  access_key_id: ""
+  access_key_secret: ""
+  bucket_name: ""
+
+sms:
+  provider: aliyun
+  access_key_id: ""
+  access_key_secret: ""
+  sign_name: ""
+  template_code: ""
+
+crypto:
+  aes_key: ""  # 32字节 hex，从环境变量 AES_KEY 读取
