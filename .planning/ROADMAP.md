@@ -33,7 +33,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 企业管理员可添加子账号并分配OWNER/ADMIN/MEMBER权限，不同权限看到的功能和数据范围不同
   4. 所有写操作自动记录审计日志（谁、什么时间、做了什么），可追溯
   5. 两个不同企业的用户无法看到对方的数据（多租户隔离验证通过）
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md -- 项目脚手架+基础设施(统一响应/加密/多租户Scope/中间件)
+- [ ] 01-02-PLAN.md -- JWT认证工具+短信客户端+OSS客户端(pkg包)
+- [ ] 01-03-PLAN.md -- 用户认证流程+RBAC权限+审计日志(核心业务逻辑)
+- [ ] 01-04-PLAN.md -- Token刷新/退出+集成测试(认证/多租户隔离/审计)
 
 ### Phase 2: 员工管理
 **Goal**: 老板可在3步内完成员工入职，集中管理员工档案，办理离职并自动触发后续流程
