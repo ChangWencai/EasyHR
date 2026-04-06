@@ -169,21 +169,87 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 ~ AUTH-04 | — | Pending |
-| EMPL-01 ~ EMPL-08 | — | Pending |
-| SOCL-01 ~ SOCL-07 | — | Pending |
-| PAYR-01 ~ PAYR-09 | — | Pending |
-| TAX-01 ~ TAX-06 | — | Pending |
-| FINC-01 ~ FINC-22 | — | Pending |
-| PLAT-01 ~ PLAT-07 | — | Pending |
-| HOME-01 ~ HOME-06 | — | Pending |
-| WXMP-01 ~ WXMP-06 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| PLAT-01 | Phase 1 | Pending |
+| PLAT-02 | Phase 1 | Pending |
+| PLAT-03 | Phase 1 | Pending |
+| PLAT-04 | Phase 1 | Pending |
+| PLAT-05 | Phase 1 | Pending |
+| PLAT-06 | Phase 1 | Pending |
+| PLAT-07 | Phase 1 | Pending |
+| EMPL-01 | Phase 2 | Pending |
+| EMPL-02 | Phase 2 | Pending |
+| EMPL-03 | Phase 2 | Pending |
+| EMPL-04 | Phase 2 | Pending |
+| EMPL-05 | Phase 2 | Pending |
+| EMPL-06 | Phase 2 | Pending |
+| EMPL-07 | Phase 2 | Pending |
+| EMPL-08 | Phase 2 | Pending |
+| SOCL-01 | Phase 3 | Pending |
+| SOCL-02 | Phase 3 | Pending |
+| SOCL-03 | Phase 3 | Pending |
+| SOCL-04 | Phase 3 | Pending |
+| SOCL-05 | Phase 3 | Pending |
+| SOCL-06 | Phase 3 | Pending |
+| SOCL-07 | Phase 3 | Pending |
+| TAX-01 | Phase 4 | Pending |
+| TAX-02 | Phase 4 | Pending |
+| TAX-03 | Phase 4 | Pending |
+| TAX-04 | Phase 4 | Pending |
+| TAX-05 | Phase 4 | Pending |
+| TAX-06 | Phase 4 | Pending |
+| PAYR-01 | Phase 5 | Pending |
+| PAYR-02 | Phase 5 | Pending |
+| PAYR-03 | Phase 5 | Pending |
+| PAYR-04 | Phase 5 | Pending |
+| PAYR-05 | Phase 5 | Pending |
+| PAYR-06 | Phase 5 | Pending |
+| PAYR-07 | Phase 5 | Pending |
+| PAYR-08 | Phase 5 | Pending |
+| PAYR-09 | Phase 5 | Pending |
+| FINC-01 | Phase 6 | Pending |
+| FINC-02 | Phase 6 | Pending |
+| FINC-03 | Phase 6 | Pending |
+| FINC-04 | Phase 6 | Pending |
+| FINC-05 | Phase 6 | Pending |
+| FINC-06 | Phase 6 | Pending |
+| FINC-07 | Phase 6 | Pending |
+| FINC-08 | Phase 6 | Pending |
+| FINC-09 | Phase 6 | Pending |
+| FINC-10 | Phase 6 | Pending |
+| FINC-11 | Phase 6 | Pending |
+| FINC-12 | Phase 6 | Pending |
+| FINC-13 | Phase 6 | Pending |
+| FINC-14 | Phase 6 | Pending |
+| FINC-15 | Phase 6 | Pending |
+| FINC-16 | Phase 6 | Pending |
+| FINC-17 | Phase 6 | Pending |
+| FINC-18 | Phase 6 | Pending |
+| FINC-19 | Phase 6 | Pending |
+| FINC-20 | Phase 6 | Pending |
+| FINC-21 | Phase 6 | Pending |
+| FINC-22 | Phase 6 | Pending |
+| HOME-01 | Phase 7 | Pending |
+| HOME-02 | Phase 7 | Pending |
+| HOME-03 | Phase 7 | Pending |
+| HOME-04 | Phase 7 | Pending |
+| HOME-05 | Phase 7 | Pending |
+| HOME-06 | Phase 7 | Pending |
+| WXMP-01 | Phase 8 | Pending |
+| WXMP-02 | Phase 8 | Pending |
+| WXMP-03 | Phase 8 | Pending |
+| WXMP-04 | Phase 8 | Pending |
+| WXMP-05 | Phase 8 | Pending |
+| WXMP-06 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 57 total
-- Mapped to phases: 0
-- Unmapped: 57
+- Mapped to phases: 57
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-06*
-*Last updated: 2026-04-06 after initial definition*
+*Last updated: 2026-04-06 after roadmap creation*
