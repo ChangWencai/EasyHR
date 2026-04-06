@@ -55,9 +55,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 02-01-PLAN.md — 员工模型+档案管理+搜索+Excel导出 (EMPL-02, EMPL-03, EMPL-04)
-- [ ] 02-02-PLAN.md — 入职邀请流程 (EMPL-01)
-- [ ] 02-03-PLAN.md — 离职管理 (EMPL-05, EMPL-06, EMPL-07)
-- [ ] 02-04-PLAN.md — 合同管理+PDF生成 (EMPL-08)
+- [x] 02-02-PLAN.md — 入职邀请流程 (EMPL-01)
+- [x] 02-03-PLAN.md — 离职管理 (EMPL-05, EMPL-06, EMPL-07)
+- [x] 02-04-PLAN.md — 合同管理+PDF生成 (EMPL-08)
 
 ### Phase 3: 社保管理
 **Goal**: 老板可根据员工城市和岗位自动匹配社保基数，一键办理参保/停缴，缴费到期自动提醒
