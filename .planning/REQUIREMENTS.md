@@ -17,9 +17,9 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Employee Management (EMPL)
 
 - [ ] **EMPL-01**: 老板一键创建入职邀请链接/二维码，员工在线填写基本信息
-- [ ] **EMPL-02**: 支持手动录入员工信息（姓名、手机号、身份证号、岗位、入职日期）
-- [ ] **EMPL-03**: 员工档案集中管理，支持按姓名/岗位/手机号快速检索
-- [ ] **EMPL-04**: 支持导出员工档案Excel
+- [x] **EMPL-02**: 支持手动录入员工信息（姓名、手机号、身份证号、岗位、入职日期）
+- [x] **EMPL-03**: 员工档案集中管理，支持按姓名/岗位/手机号快速检索
+- [x] **EMPL-04**: 支持导出员工档案Excel
 - [ ] **EMPL-05**: 员工提交离职申请后，老板在线审核，自动生成交接清单（含资产、工作内容）
 - [ ] **EMPL-06**: 离职完成后自动更新员工状态为"离职"，归档离职资料
 - [ ] **EMPL-07**: 离职操作同步触发社保停缴提醒
@@ -181,9 +181,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAT-06 | Phase 1 | Pending |
 | PLAT-07 | Phase 1 | Pending |
 | EMPL-01 | Phase 2 | Pending |
-| EMPL-02 | Phase 2 | Pending |
-| EMPL-03 | Phase 2 | Pending |
-| EMPL-04 | Phase 2 | Pending |
+| EMPL-02 | Phase 2 | Complete |
+| EMPL-03 | Phase 2 | Complete |
+| EMPL-04 | Phase 2 | Complete |
 | EMPL-05 | Phase 2 | Pending |
 | EMPL-06 | Phase 2 | Pending |
 | EMPL-07 | Phase 2 | Pending |

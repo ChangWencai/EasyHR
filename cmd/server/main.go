@@ -13,6 +13,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/logger"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
+	"github.com/wencai/easyhr/internal/employee"
 	"github.com/wencai/easyhr/internal/user"
 	"github.com/wencai/easyhr/pkg/sms"
 	"go.uber.org/zap"
@@ -46,6 +47,10 @@ func initApp() {
 		&model.Organization{},
 		&model.User{},
 		&audit.AuditLog{},
+		&employee.Employee{},
+		&employee.Invitation{},
+		&employee.Offboarding{},
+		&employee.Contract{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -84,13 +89,37 @@ func main() {
 	userSvc := user.NewService(userRepo, rdb, smsClient, cfg.JWT, cfg.Crypto)
 	userHandler := user.NewHandler(userSvc)
 
+	// 员工模块依赖注入
+	empRepo := employee.NewRepository(db)
+	empSvc := employee.NewService(empRepo, cfg.Crypto)
+	empHandler := employee.NewHandler(empSvc)
+
+	// 邀请模块依赖注入
+	invRepo := employee.NewInvitationRepository(db)
+	invSvc := employee.NewInvitationService(invRepo, empRepo, cfg.Crypto)
+	invHandler := employee.NewInvitationHandler(invSvc)
+
+	// 离职管理模块依赖注入
+	obRepo := employee.NewOffboardingRepository(db)
+	obSvc := employee.NewOffboardingService(obRepo, empRepo)
+	obHandler := employee.NewOffboardingHandler(obSvc)
+
+	// 合同管理模块依赖注入
+	contractRepo := employee.NewContractRepository(db)
+	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
+	contractHandler := employee.NewContractHandler(contractSvc)
+
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
 	v1 := r.Group("/api/v1")
 	{
 		userHandler.RegisterRoutes(v1, authMiddleware)
-		city.NewHandler().RegisterRoutes(v1)
-		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
+			empHandler.RegisterRoutes(v1, authMiddleware)
+			invHandler.RegisterRoutes(v1, authMiddleware)
+			obHandler.RegisterRoutes(v1, authMiddleware)
+			contractHandler.RegisterRoutes(v1, authMiddleware)
+			city.NewHandler().RegisterRoutes(v1)
+			audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 
 		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})

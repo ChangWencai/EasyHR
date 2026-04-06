@@ -5,6 +5,7 @@ import (
 
 	"github.com/wencai/easyhr/internal/audit"
 	"github.com/wencai/easyhr/internal/common/model"
+	"github.com/wencai/easyhr/internal/employee"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -21,6 +22,7 @@ func SetupTestDB() (*gorm.DB, error) {
 		&model.Organization{},
 		&model.User{},
 		&audit.AuditLog{},
+		&employee.Employee{},
 	); err != nil {
 		return nil, err
 	}
@@ -57,6 +59,22 @@ func CreateTestUser(db *gorm.DB, orgID int64, name, phoneHash, role string) (*mo
 
 func CleanupTestDB(db *gorm.DB) error {
 	return db.Exec("DELETE FROM audit_logs; DELETE FROM users; DELETE FROM organizations;").Error
+}
+
+// CreateTestEmployee 创建测试用员工记录
+func CreateTestEmployee(db *gorm.DB, orgID int64, name, phoneEncrypted, phoneHash, position, status string) (*employee.Employee, error) {
+	emp := &employee.Employee{}
+	emp.OrgID = orgID
+	emp.Name = name
+	emp.PhoneEncrypted = phoneEncrypted
+	emp.PhoneHash = phoneHash
+	emp.Position = position
+	emp.Status = status
+	emp.HireDate = time.Now()
+	if err := db.Create(emp).Error; err != nil {
+		return nil, err
+	}
+	return emp, nil
 }
 
 func WaitForDB(db *gorm.DB) error {

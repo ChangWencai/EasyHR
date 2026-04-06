@@ -1,0 +1,56 @@
+package employee
+
+import "time"
+
+// CreateContractRequest 创建合同请求
+type CreateContractRequest struct {
+	ContractType string  `json:"contract_type" binding:"required,oneof=fixed_term indefinite intern"`
+	StartDate    string  `json:"start_date" binding:"required"` // YYYY-MM-DD
+	EndDate      string  `json:"end_date" binding:"omitempty"`  // 无固定期限不传
+	Salary       float64 `json:"salary" binding:"required,gt=0"`
+}
+
+// UpdateContractRequest 更新合同请求（部分更新）
+type UpdateContractRequest struct {
+	ContractType *string  `json:"contract_type" binding:"omitempty,oneof=fixed_term indefinite intern"`
+	StartDate    *string  `json:"start_date" binding:"omitempty"`
+	EndDate      *string  `json:"end_date" binding:"omitempty"`
+	Salary       *float64 `json:"salary" binding:"omitempty,gt=0"`
+}
+
+// UploadSignedRequest 上传签署扫描件请求
+type UploadSignedRequest struct {
+	SignedPDFURL string `json:"signed_pdf_url" binding:"required,url"`
+	SignDate     string `json:"sign_date" binding:"required"` // YYYY-MM-DD
+}
+
+// TerminateContractRequest 终止合同请求
+type TerminateContractRequest struct {
+	TerminateDate   string `json:"terminate_date" binding:"required"`
+	TerminateReason string `json:"terminate_reason" binding:"required,min=1,max=500"`
+}
+
+// ContractResponse 合同响应
+type ContractResponse struct {
+	ID              int64      `json:"id"`
+	EmployeeID      int64      `json:"employee_id"`
+	EmployeeName    string     `json:"employee_name"`
+	ContractType    string     `json:"contract_type"`
+	StartDate       time.Time  `json:"start_date"`
+	EndDate         *time.Time `json:"end_date"`
+	Salary          float64    `json:"salary"`
+	Status          string     `json:"status"`
+	PDFURL          string     `json:"pdf_url,omitempty"`
+	SignedPDFURL    string     `json:"signed_pdf_url,omitempty"`
+	SignDate        *time.Time `json:"sign_date,omitempty"`
+	TerminateDate   *time.Time `json:"terminate_date,omitempty"`
+	TerminateReason string     `json:"terminate_reason,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+}
+
+// ContractListQueryParams 合同列表查询参数
+type ContractListQueryParams struct {
+	Status   string `form:"status"`
+	Page     int    `form:"page,default=1"`
+	PageSize int    `form:"page_size,default=20"`
+}
