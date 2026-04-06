@@ -51,7 +51,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. 老板可手动录入员工信息，档案支持按姓名/岗位快速检索并导出Excel
   3. 离职办理后自动生成交接清单，员工状态更新为"离职"，同步触发社保停缴提醒
   4. 合同可生成PDF模板、手动签署上传，并关联至员工档案
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — 员工模型+档案管理+搜索+Excel导出 (EMPL-02, EMPL-03, EMPL-04)
+- [ ] 02-02-PLAN.md — 入职邀请流程 (EMPL-01)
+- [ ] 02-03-PLAN.md — 离职管理 (EMPL-05, EMPL-06, EMPL-07)
+- [ ] 02-04-PLAN.md — 合同管理+PDF生成 (EMPL-08)
 
 ### Phase 3: 社保管理
 **Goal**: 老板可根据员工城市和岗位自动匹配社保基数，一键办理参保/停缴，缴费到期自动提醒
@@ -129,8 +135,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 基础框架与用户认证 | 0/TBD | Not started | - |
-| 2. 员工管理 | 0/TBD | Not started | - |
+| 1. 基础框架与用户认证 | 4/4 | Complete | 2026-04-06 |
+| 2. 员工管理 | 0/4 | Planned | - |
 | 3. 社保管理 | 0/TBD | Not started | - |
 | 4. 个税计算 | 0/TBD | Not started | - |
 | 5. 工资核算 | 0/TBD | Not started | - |
