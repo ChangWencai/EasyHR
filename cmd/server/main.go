@@ -53,6 +53,8 @@ func initApp() {
 		&employee.Offboarding{},
 		&employee.Contract{},
 		&socialinsurance.SocialInsurancePolicy{},
+		&socialinsurance.SocialInsuranceRecord{},
+		&socialinsurance.ChangeHistory{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -113,7 +115,8 @@ func main() {
 
 	// 社保模块依赖注入
 	siRepo := socialinsurance.NewRepository(db)
-	siSvc := socialinsurance.NewService(siRepo)
+	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
+	siSvc := socialinsurance.NewService(siRepo, empAdapter)
 	siHandler := socialinsurance.NewHandler(siSvc)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
