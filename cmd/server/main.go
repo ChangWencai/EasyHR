@@ -14,6 +14,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/employee"
+	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/user"
 	"github.com/wencai/easyhr/pkg/sms"
 	"go.uber.org/zap"
@@ -51,6 +52,7 @@ func initApp() {
 		&employee.Invitation{},
 		&employee.Offboarding{},
 		&employee.Contract{},
+		&socialinsurance.SocialInsurancePolicy{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -109,17 +111,23 @@ func main() {
 	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
 	contractHandler := employee.NewContractHandler(contractSvc)
 
+	// 社保模块依赖注入
+	siRepo := socialinsurance.NewRepository(db)
+	siSvc := socialinsurance.NewService(siRepo)
+	siHandler := socialinsurance.NewHandler(siSvc)
+
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
 	v1 := r.Group("/api/v1")
 	{
 		userHandler.RegisterRoutes(v1, authMiddleware)
-			empHandler.RegisterRoutes(v1, authMiddleware)
-			invHandler.RegisterRoutes(v1, authMiddleware)
-			obHandler.RegisterRoutes(v1, authMiddleware)
-			contractHandler.RegisterRoutes(v1, authMiddleware)
-			city.NewHandler().RegisterRoutes(v1)
-			audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
+		empHandler.RegisterRoutes(v1, authMiddleware)
+		invHandler.RegisterRoutes(v1, authMiddleware)
+		obHandler.RegisterRoutes(v1, authMiddleware)
+		contractHandler.RegisterRoutes(v1, authMiddleware)
+		siHandler.RegisterRoutes(v1, authMiddleware)
+		city.NewHandler().RegisterRoutes(v1)
+		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 
 		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
