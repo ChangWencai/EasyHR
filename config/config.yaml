@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8089
   mode: debug  # debug/release
 
 database:
@@ -17,7 +17,7 @@ redis:
   db: 0
 
 jwt:
-  secret: ""  # 从环境变量 JWT_SECRET 读取
+  secret: "easyhr_dev"  # 从环境变量 JWT_SECRET 读取
   access_ttl: 168h   # 7天
   refresh_ttl: 720h  # 30天
 

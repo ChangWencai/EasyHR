@@ -30,5 +30,6 @@ func Init(mode string) {
 		_, _ = os.Stderr.WriteString("failed to init logger: " + err.Error() + "\n")
 		os.Exit(1)
 	}
+	zap.ReplaceGlobals(Logger)
 	SugarLogger = Logger.Sugar()
 }
