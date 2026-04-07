@@ -68,7 +68,12 @@ Plans:
   2. 老板勾选员工并确认后一键生成参保材料PDF
   3. 社保缴费到期前3天自动提醒老板，缴费明细可查询、可导出凭证
   4. 员工岗位或薪资变动时自动触发社保基数调整提醒
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — 社保政策库模型+CRUD+基数计算引擎 (SOCL-01)
+- [ ] 03-02-PLAN.md — 参保/停缴操作+变更历史+缴费明细+员工模块集成 (SOCL-02, SOCL-04, SOCL-07)
+- [ ] 03-03-PLAN.md — 缴费提醒定时任务+凭证导出+离职回调+预留接口 (SOCL-03, SOCL-05, SOCL-06)
 
 ### Phase 4: 个税计算
 **Goal**: 基于工资数据自动匹配专项附加扣除并精准计算个税，申报截止前自动提醒
@@ -136,8 +141,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 基础框架与用户认证 | 4/4 | Complete | 2026-04-06 |
-| 2. 员工管理 | 1/4 | In Progress|  |
-| 3. 社保管理 | 0/TBD | Not started | - |
+| 2. 员工管理 | 4/4 | Complete | 2026-04-07 |
+| 3. 社保管理 | 0/3 | Not started | - |
 | 4. 个税计算 | 0/TBD | Not started | - |
 | 5. 工资核算 | 0/TBD | Not started | - |
 | 6. 财务记账 | 0/TBD | Not started | - |
