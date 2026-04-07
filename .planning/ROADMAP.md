@@ -87,7 +87,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — 数据模型+专项附加扣除CRUD+累计预扣预缴计算引擎 (TAX-01, TAX-02)
+- [x] 04-01-PLAN.md — 数据模型+专项附加扣除CRUD+累计预扣预缴计算引擎 (TAX-01, TAX-02)
 - [ ] 04-02-PLAN.md — API Handler+定时提醒+申报管理+Excel/PDF导出+主程序集成 (TAX-03, TAX-04, TAX-05, TAX-06)
 
 ### Phase 5: 工资核算

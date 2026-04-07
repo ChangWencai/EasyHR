@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 4 planned (2 plans, verification passed)
-last_updated: "2026-04-07T16:16:04.914Z"
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-07T16:32:45.242Z"
 last_activity: 2026-04-07
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
   percent: 5
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-06)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 03 — social-insurance
+**Current focus:** Phase 04 — tax-calculation
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 04 (tax-calculation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-07
 
 Progress: [█░░░░░░░░░] 12.5%
@@ -54,6 +54,7 @@ Progress: [█░░░░░░░░░] 12.5%
 
 | Phase 02 P01 | 10min | 2 tasks | 9 files |
 | Phase 03 P01 | 23 min | 2 tasks | 10 files |
+| Phase 04 P01 | 12 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Progress: [█░░░░░░░░░] 12.5%
 - [Phase 02]: StatusProbation常量补充完整员工生命周期
 - [Phase 03]: 政策库为全局共享数据(OrgID=0)，不使用TenantScope — 社保政策是全国统一数据，所有企业共用同一套政策库，参保记录才按org_id隔离
 - [Phase 03]: 政策库为全局共享数据(OrgID=0)，不使用TenantScope — 社保政策是全国统一数据，所有企业共用同一套政策库，参保记录才按org_id隔离
+- [Phase 04]: TaxBracket uses OrgID=0 global data pattern for nationally standardized tax rates
+- [Phase 04]: Special deductions: 6 monthly types only (excludes serious illness per D-07 research)
+- [Phase 04]: TaxCalculator interface accepts grossIncome parameter for Phase 5 decoupling
 
 ### Phase 1 Deliverables
 
@@ -96,6 +100,6 @@ Progress: [█░░░░░░░░░] 12.5%
 
 ## Session Continuity
 
-Last session: 2026-04-07T16:16:04.911Z
-Stopped at: Phase 4 planned (2 plans, verification passed)
+Last session: 2026-04-07T16:32:45.238Z
+Stopped at: Completed 04-01-PLAN.md
 Next step: /gsd-plan-phase 2
