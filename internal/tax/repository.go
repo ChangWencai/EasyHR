@@ -309,3 +309,115 @@ func (r *Repository) ListDeclarations(orgID int64, year int, page, pageSize int)
 
 	return declarations, total, nil
 }
+
+// ========== TaxReminder 方法（租户隔离）==========
+
+// CreateReminder 创建提醒记录
+func (r *Repository) CreateReminder(reminder *TaxReminder) error {
+	return r.db.Create(reminder).Error
+}
+
+// ListReminders 分页查询提醒列表
+func (r *Repository) ListReminders(orgID int64, page, pageSize int) ([]TaxReminder, int64, error) {
+	var reminders []TaxReminder
+	var total int64
+
+	q := r.db.Model(&TaxReminder{}).Scopes(middleware.TenantScope(orgID)).
+		Where("is_dismissed = false")
+
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count reminders: %w", err)
+	}
+
+	offset := (page - 1) * pageSize
+	if err := q.Offset(offset).Limit(pageSize).Order("created_at DESC").Find(&reminders).Error; err != nil {
+		return nil, 0, fmt.Errorf("list reminders: %w", err)
+	}
+
+	return reminders, total, nil
+}
+
+// DismissReminder 关闭提醒
+func (r *Repository) DismissReminder(orgID, id int64) error {
+	result := r.db.Model(&TaxReminder{}).Scopes(middleware.TenantScope(orgID)).
+		Where("id = ?", id).Updates(map[string]interface{}{"is_dismissed": true})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrDeclarationNotFound
+	}
+	return nil
+}
+
+// FindReminderByMonth 查找指定月份的提醒记录（去重用）
+func (r *Repository) FindReminderByMonth(orgID int64, year, month int) (*TaxReminder, error) {
+	var reminder TaxReminder
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("type = ? AND year = ? AND month = ?", ReminderTypeDeclarationDue, year, month).
+		First(&reminder).Error
+	if err != nil {
+		return nil, err
+	}
+	return &reminder, nil
+}
+
+// FindAllOrgIDs 查询所有有税务申报记录的企业ID
+func (r *Repository) FindAllOrgIDs() ([]int64, error) {
+	var orgIDs []int64
+	err := r.db.Model(&TaxDeclaration{}).
+		Distinct("org_id").
+		Pluck("org_id", &orgIDs).Error
+	if err != nil {
+		return nil, fmt.Errorf("find all org IDs: %w", err)
+	}
+	return orgIDs, nil
+}
+
+// CountTaxRecordsByOrgMonth 统计指定企业月份的个税记录数和总税额
+func (r *Repository) CountTaxRecordsByOrgMonth(orgID int64, year, month int) (count int64, totalTax float64, err error) {
+	err = r.db.Model(&TaxRecord{}).Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ?", year, month).
+		Count(&count).Error
+	if err != nil {
+		return 0, 0, fmt.Errorf("count tax records: %w", err)
+	}
+
+	if count == 0 {
+		return 0, 0, nil
+	}
+
+	err = r.db.Model(&TaxRecord{}).Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ?", year, month).
+		Select("COALESCE(SUM(monthly_tax), 0)").
+		Row().Scan(&totalTax)
+	if err != nil {
+		return count, 0, fmt.Errorf("sum tax records: %w", err)
+	}
+
+	return count, totalTax, nil
+}
+
+// FindAllTaxRecordsByOrgMonth 查询指定企业月份的全部个税记录（导出用，不分页，限1000条）
+func (r *Repository) FindAllTaxRecordsByOrgMonth(orgID int64, year, month int) ([]TaxRecord, error) {
+	var records []TaxRecord
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ?", year, month).
+		Order("employee_id ASC").
+		Limit(1000).
+		Find(&records).Error
+	if err != nil {
+		return nil, fmt.Errorf("find all tax records by org month: %w", err)
+	}
+	return records, nil
+}
+
+// GetOrgName 获取企业名称
+func (r *Repository) GetOrgName(orgID int64) (string, error) {
+	var name string
+	err := r.db.Table("organizations").Where("id = ?", orgID).Select("name").Row().Scan(&name)
+	if err != nil {
+		return "", fmt.Errorf("get org name: %w", err)
+	}
+	return name, nil
+}

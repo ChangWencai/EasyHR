@@ -416,3 +416,125 @@ func (s *Service) toDeclarationResponse(d *TaxDeclaration) *DeclarationResponse 
 		CreatedAt:      d.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
+
+// ========== MEMBER 自查询 ==========
+
+// GetMyTaxRecords MEMBER 角色查询自己的个税记录
+func (s *Service) GetMyTaxRecords(orgID, userID int64) ([]TaxRecordResponse, error) {
+	// 通过 empProvider 查找员工（如果可用），否则直接用 user_id 查询
+	// V1.0 简化: 直接查询 user_id 关联的 employee_id
+	// 此处需要通过 repository 查询，但 TaxRecord 中没有 user_id
+	// 临时方案: 返回该企业所有记录（MEMBER 角色应该只能看自己的）
+	// TODO: Phase 5 完善员工-用户关联查询
+	return nil, fmt.Errorf("MEMBER 个税自查询需要员工-用户关联，将在 Phase 5 完善")
+}
+
+// ========== 提醒管理 ==========
+
+// CheckDeclarationReminders 每日扫描个税申报到期提醒
+// 个税申报截止日为每月15日，到期前3天（12-15日）生成提醒
+func (s *Service) CheckDeclarationReminders() {
+	now := time.Now()
+	cstZone := time.FixedZone("CST", 8*3600)
+	nowCST := now.In(cstZone)
+
+	// 只在12-15日生成提醒（到期前3天, per D-18）
+	if nowCST.Day() < 12 || nowCST.Day() > 15 {
+		return
+	}
+
+	year := nowCST.Year()
+	month := int(nowCST.Month())
+
+	// 计算截止日
+	dueDate := time.Date(year, time.Month(month), 15, 23, 59, 59, 0, cstZone)
+	dueDateOnly := time.Date(year, time.Month(month), 15, 0, 0, 0, 0, time.UTC)
+
+	// 查询所有有税务活动的企业
+	orgIDs, err := s.repo.FindAllOrgIDs()
+	if err != nil || len(orgIDs) == 0 {
+		return
+	}
+
+	for _, orgID := range orgIDs {
+		// 去重: 同企业同月只生成一条提醒
+		existing, _ := s.repo.FindReminderByMonth(orgID, year, month)
+		if existing != nil {
+			continue
+		}
+
+		// 统计该企业当月员工数和总税额
+		count, totalTax, err := s.repo.CountTaxRecordsByOrgMonth(orgID, year, month)
+		if err != nil || count == 0 {
+			continue
+		}
+
+		reminder := &TaxReminder{
+			Type:    ReminderTypeDeclarationDue,
+			Title:   fmt.Sprintf("个税申报提醒：%d月个税将于%s截止，共%d名员工，预估个税总额%.2f元", month, dueDate.Format("2006-01-02"), count, totalTax),
+			Year:    year,
+			Month:   month,
+			DueDate: &dueDateOnly,
+		}
+		reminder.OrgID = orgID
+
+		_ = s.repo.CreateReminder(reminder)
+	}
+}
+
+// ListReminders 查询提醒列表
+func (s *Service) ListReminders(orgID int64, page, pageSize int) ([]TaxReminder, int64, error) {
+	if page == 0 {
+		page = 1
+	}
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	return s.repo.ListReminders(orgID, page, pageSize)
+}
+
+// DismissReminder 关闭提醒
+func (s *Service) DismissReminder(orgID, id int64) error {
+	return s.repo.DismissReminder(orgID, id)
+}
+
+// ========== 导出方法 ==========
+
+// ExportDeclarationExcel 导出个税申报表 Excel
+func (s *Service) ExportDeclarationExcel(orgID int64, year, month int) ([]byte, error) {
+	records, err := s.repo.FindAllTaxRecordsByOrgMonth(orgID, year, month)
+	if err != nil {
+		return nil, fmt.Errorf("查询个税记录失败: %w", err)
+	}
+
+	return generateDeclarationExcel(records, year, month)
+}
+
+// ExportTaxCertificatePDF 导出个税凭证 PDF
+func (s *Service) ExportTaxCertificatePDF(orgID, recordID int64) ([]byte, error) {
+	record, err := s.repo.FindTaxRecordByID(orgID, recordID)
+	if err != nil {
+		return nil, ErrTaxRecordNotFound
+	}
+
+	// 获取企业名称
+	orgName, err := s.repo.GetOrgName(orgID)
+	if err != nil {
+		orgName = ""
+	}
+
+	data := &TaxCertificateData{
+		EmployeeName:     record.EmployeeName,
+		Year:             record.Year,
+		Month:            record.Month,
+		GrossIncome:      record.GrossIncome,
+		TotalDeduction:   record.TotalDeduction,
+		TaxRate:          record.TaxRate,
+		MonthlyTax:       record.MonthlyTax,
+		CumulativeIncome: record.CumulativeIncome,
+		CumulativeTax:    record.CumulativeTax,
+		OrgName:          orgName,
+	}
+
+	return generateTaxCertificatePDF(data)
+}

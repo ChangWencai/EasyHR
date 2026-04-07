@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
+
+	"context"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -15,6 +18,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/employee"
 	"github.com/wencai/easyhr/internal/socialinsurance"
+	"github.com/wencai/easyhr/internal/tax"
 	"github.com/wencai/easyhr/internal/user"
 	"github.com/wencai/easyhr/pkg/sms"
 	"go.uber.org/zap"
@@ -55,6 +59,11 @@ func initApp() {
 		&socialinsurance.SocialInsurancePolicy{},
 		&socialinsurance.SocialInsuranceRecord{},
 		&socialinsurance.ChangeHistory{},
+		&tax.TaxBracket{},
+		&tax.SpecialDeduction{},
+		&tax.TaxRecord{},
+		&tax.TaxDeclaration{},
+		&tax.TaxReminder{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -65,7 +74,7 @@ func initApp() {
 		DB:       cfg.Redis.DB,
 	})
 
-	if err := rdb.Ping(nil).Err(); err != nil {
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		logger.Logger.Warn("redis not available, continuing without cache", zap.Error(err))
 	}
 }
@@ -110,15 +119,22 @@ func main() {
 	siSvc := socialinsurance.NewService(siRepo, empAdapter, siReminderRepo)
 	siHandler := socialinsurance.NewHandler(siSvc)
 
+	// 合同管理模块依赖注入（前置，供个税模块使用）
+	contractRepo := employee.NewContractRepository(db)
+	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
+	contractHandler := employee.NewContractHandler(contractSvc)
+
+	// 个税模块依赖注入
+	taxRepo := tax.NewRepository(db)
+	taxEmpAdapter := tax.NewEmployeeAdapter(contractRepo, empRepo)
+	taxSIAdapter := tax.NewSocialInsuranceAdapter(siSvc)
+	taxSvc := tax.NewService(taxRepo, taxEmpAdapter, taxSIAdapter)
+	taxHandler := tax.NewHandler(taxSvc)
+
 	// 离职管理模块依赖注入（集成社保停缴回调）
 	obRepo := employee.NewOffboardingRepository(db)
 	obSvc := employee.NewOffboardingService(obRepo, empRepo, siSvc)
 	obHandler := employee.NewOffboardingHandler(obSvc)
-
-	// 合同管理模块依赖注入
-	contractRepo := employee.NewContractRepository(db)
-	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
-	contractHandler := employee.NewContractHandler(contractSvc)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
@@ -130,6 +146,7 @@ func main() {
 		obHandler.RegisterRoutes(v1, authMiddleware)
 		contractHandler.RegisterRoutes(v1, authMiddleware)
 		siHandler.RegisterRoutes(v1, authMiddleware)
+		taxHandler.RegisterRoutes(v1, authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 
@@ -140,6 +157,34 @@ func main() {
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	logger.Logger.Info("server starting", zap.String("addr", addr))
+
+	// 社保缴费提醒定时任务
+	siScheduler, err := socialinsurance.StartScheduler(rdb, siSvc)
+	if err != nil {
+		logger.Logger.Warn("social insurance scheduler start failed", zap.Error(err))
+	}
+	defer func() {
+		if siScheduler != nil {
+			siScheduler.Shutdown()
+		}
+	}()
+
+	// 个税申报提醒定时任务
+	taxScheduler, err := tax.StartScheduler(rdb, taxSvc)
+	if err != nil {
+		logger.Logger.Warn("tax scheduler start failed", zap.Error(err))
+	}
+	defer func() {
+		if taxScheduler != nil {
+			taxScheduler.Shutdown()
+		}
+	}()
+
+	// 初始化个税税率表种子数据（如果不存在）
+	if err := taxSvc.SeedDefaultBrackets(time.Now().Year()); err != nil {
+		logger.Logger.Warn("tax bracket seed failed", zap.Error(err))
+	}
+
 	if err := r.Run(addr); err != nil {
 		logger.Logger.Fatal("server failed to start", zap.Error(err))
 	}

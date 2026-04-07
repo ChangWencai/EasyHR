@@ -133,3 +133,25 @@ const (
 	DeclarationStatusPending  = "pending"
 	DeclarationStatusDeclared = "declared"
 )
+
+// Reminder type constants
+const (
+	ReminderTypeDeclarationDue = "declaration_due"
+)
+
+// TaxReminder 个税申报提醒模型（租户隔离）
+type TaxReminder struct {
+	model.BaseModel
+	Type        string     `gorm:"column:type;type:varchar(30);not null;index" json:"type"`
+	Title       string     `gorm:"column:title;type:varchar(200);not null" json:"title"`
+	Year        int        `gorm:"column:year;not null" json:"year"`
+	Month       int        `gorm:"column:month;not null" json:"month"`
+	DueDate     *time.Time `gorm:"column:due_date;type:date" json:"due_date"`
+	IsRead      bool       `gorm:"column:is_read;default:false" json:"is_read"`
+	IsDismissed bool       `gorm:"column:is_dismissed;default:false" json:"is_dismissed"`
+}
+
+// TableName 指定表名
+func (TaxReminder) TableName() string {
+	return "tax_reminders"
+}
