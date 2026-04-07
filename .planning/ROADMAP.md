@@ -84,7 +84,11 @@ Plans:
   2. 按中国累计预扣预缴法精准计算个税，正确处理税率跳档
   3. 个税申报截止前3天自动提醒老板，并生成申报表供手动提交
   4. 个税申报明细可查询状态、可导出凭证
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — 数据模型+专项附加扣除CRUD+累计预扣预缴计算引擎 (TAX-01, TAX-02)
+- [ ] 04-02-PLAN.md — API Handler+定时提醒+申报管理+Excel/PDF导出+主程序集成 (TAX-03, TAX-04, TAX-05, TAX-06)
 
 ### Phase 5: 工资核算
 **Goal**: 老板可自定义薪资结构，一键核算月度工资（自动关联社保和个税扣款），生成电子工资单推送至员工
@@ -143,7 +147,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 1. 基础框架与用户认证 | 4/4 | Complete | 2026-04-06 |
 | 2. 员工管理 | 4/4 | Complete | 2026-04-07 |
 | 3. 社保管理 | 0/3 | Not started | - |
-| 4. 个税计算 | 0/TBD | Not started | - |
+| 4. 个税计算 | 0/2 | Not started | - |
 | 5. 工资核算 | 0/TBD | Not started | - |
 | 6. 财务记账 | 0/TBD | Not started | - |
 | 7. 首页工作台 | 0/TBD | Not started | - |
