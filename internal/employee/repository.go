@@ -146,6 +146,26 @@ func (r *Repository) FindAllForExport(orgID int64, params SearchParams) ([]Emplo
 	return employees, nil
 }
 
+// FindByIDs 根据多个 ID 批量查找员工（带租户隔离）
+func (r *Repository) FindByIDs(orgID int64, ids []int64) ([]Employee, error) {
+	var employees []Employee
+	err := r.db.Scopes(middleware.TenantScope(orgID)).Where("id IN ?", ids).Find(&employees).Error
+	if err != nil {
+		return nil, fmt.Errorf("find employees by IDs: %w", err)
+	}
+	return employees, nil
+}
+
+// FindByUserID 根据 user_id 查找员工（带租户隔离）
+func (r *Repository) FindByUserID(orgID int64, userID int64) (*Employee, error) {
+	var emp Employee
+	err := r.db.Scopes(middleware.TenantScope(orgID)).Where("user_id = ?", userID).First(&emp).Error
+	if err != nil {
+		return nil, err
+	}
+	return &emp, nil
+}
+
 // applySearchFilters 应用搜索过滤条件
 func (r *Repository) applySearchFilters(q *gorm.DB, params SearchParams) *gorm.DB {
 	if params.Name != "" {

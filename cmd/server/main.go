@@ -103,21 +103,22 @@ func main() {
 	invSvc := employee.NewInvitationService(invRepo, empRepo, cfg.Crypto)
 	invHandler := employee.NewInvitationHandler(invSvc)
 
-	// 离职管理模块依赖注入
+	// 社保模块依赖注入（前置，供离职模块使用）
+	siRepo := socialinsurance.NewRepository(db)
+	siReminderRepo := socialinsurance.NewReminderRepository(db)
+	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
+	siSvc := socialinsurance.NewService(siRepo, empAdapter, siReminderRepo)
+	siHandler := socialinsurance.NewHandler(siSvc)
+
+	// 离职管理模块依赖注入（集成社保停缴回调）
 	obRepo := employee.NewOffboardingRepository(db)
-	obSvc := employee.NewOffboardingService(obRepo, empRepo)
+	obSvc := employee.NewOffboardingService(obRepo, empRepo, siSvc)
 	obHandler := employee.NewOffboardingHandler(obSvc)
 
 	// 合同管理模块依赖注入
 	contractRepo := employee.NewContractRepository(db)
 	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
 	contractHandler := employee.NewContractHandler(contractSvc)
-
-	// 社保模块依赖注入
-	siRepo := socialinsurance.NewRepository(db)
-	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
-	siSvc := socialinsurance.NewService(siRepo, empAdapter)
-	siHandler := socialinsurance.NewHandler(siSvc)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 

@@ -55,7 +55,7 @@ func createActiveEmployee(db *gorm.DB, orgID int64, name, phone string) (*Employ
 func newTestOffboardingService(db *gorm.DB) *OffboardingService {
 	obRepo := NewOffboardingRepository(db)
 	empRepo := NewRepository(db)
-	return NewOffboardingService(obRepo, empRepo)
+	return NewOffboardingService(obRepo, empRepo, nil)
 }
 
 // TestBossResign_Success 老板直接办理离职，Employee.status 更新为 resigned，Offboarding 记录创建

@@ -9,12 +9,12 @@ import (
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
-// Handler 社保政策 HTTP 端点
+// Handler 社保 HTTP 端点
 type Handler struct {
 	svc *Service
 }
 
-// NewHandler 创建社保政策 Handler
+// NewHandler 创建社保 Handler
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
 }
@@ -31,6 +31,17 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	authGroup.PUT("/social-insurance/policies/:id", middleware.RequireRole("owner"), h.UpdatePolicy)
 	authGroup.DELETE("/social-insurance/policies/:id", middleware.RequireRole("owner"), h.DeletePolicy)
 	authGroup.POST("/social-insurance/calculate", h.CalculateInsurance)
+
+	// 参保操作（OWNER/ADMIN）
+	authGroup.POST("/social-insurance/enroll/preview", middleware.RequireRole("owner", "admin"), h.EnrollPreview)
+	authGroup.POST("/social-insurance/enroll", middleware.RequireRole("owner", "admin"), h.BatchEnroll)
+	authGroup.POST("/social-insurance/stop", middleware.RequireRole("owner", "admin"), h.BatchStopEnrollment)
+
+	// 查询（所有角色，MEMBER 通过 GetMyRecords 只看自己）
+	authGroup.GET("/social-insurance/records", h.ListRecords)
+	authGroup.GET("/social-insurance/my-records", h.GetMyRecords)
+	authGroup.GET("/social-insurance/records/:id/history", h.GetChangeHistory)
+	authGroup.GET("/social-insurance/deduction", h.GetDeduction)
 }
 
 // CreatePolicy 创建社保政策
@@ -154,4 +165,150 @@ func (h *Handler) CalculateInsurance(c *gin.Context) {
 	}
 
 	response.Success(c, result)
+}
+
+// ========== 参保/停缴/查询端点 ==========
+
+// EnrollPreview 参保预览
+func (h *Handler) EnrollPreview(c *gin.Context) {
+	var req EnrollPreviewRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+
+	result, err := h.svc.EnrollPreview(orgID, &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 30200, "参保预览失败: "+err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// BatchEnroll 批量参保
+func (h *Handler) BatchEnroll(c *gin.Context) {
+	var req BatchEnrollRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	userID := c.GetInt64("user_id")
+
+	result, err := h.svc.BatchEnroll(orgID, userID, &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 30201, "批量参保失败: "+err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// BatchStopEnrollment 批量停缴
+func (h *Handler) BatchStopEnrollment(c *gin.Context) {
+	var req BatchStopRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	userID := c.GetInt64("user_id")
+
+	result, err := h.svc.BatchStopEnrollment(orgID, userID, &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 30202, "批量停缴失败: "+err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// ListRecords 参保记录列表
+func (h *Handler) ListRecords(c *gin.Context) {
+	var params RecordListQueryParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+
+	records, total, page, pageSize, err := h.svc.ListRecords(orgID, params)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 30203, "查询参保记录失败")
+		return
+	}
+
+	response.PageSuccess(c, records, total, page, pageSize)
+}
+
+// GetMyRecords 查询自己的社保记录（MEMBER 角色）
+func (h *Handler) GetMyRecords(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+	userID := c.GetInt64("user_id")
+
+	records, err := h.svc.GetMyRecords(orgID, userID)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, 30204, err.Error())
+		return
+	}
+
+	response.Success(c, records)
+}
+
+// GetChangeHistory 变更历史查询
+func (h *Handler) GetChangeHistory(c *gin.Context) {
+	var query struct {
+		EmployeeID int64 `form:"employee_id"`
+		Page       int   `form:"page"`
+		PageSize   int   `form:"page_size"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	if query.Page == 0 {
+		query.Page = 1
+	}
+	if query.PageSize == 0 {
+		query.PageSize = 20
+	}
+
+	orgID := c.GetInt64("org_id")
+
+	histories, total, err := h.svc.GetChangeHistory(orgID, query.EmployeeID, query.Page, query.PageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 30205, "查询变更历史失败")
+		return
+	}
+
+	response.PageSuccess(c, histories, total, query.Page, query.PageSize)
+}
+
+// GetDeduction 社保扣款查询（Phase 5 调用）
+func (h *Handler) GetDeduction(c *gin.Context) {
+	var query struct {
+		EmployeeID int64  `form:"employee_id" binding:"required"`
+		Month      string `form:"month" binding:"required"`
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+
+	deduction, err := h.svc.GetSocialInsuranceDeduction(orgID, query.EmployeeID, query.Month)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, 30206, err.Error())
+		return
+	}
+
+	response.Success(c, deduction)
 }

@@ -10,17 +10,25 @@ import (
 	"gorm.io/datatypes"
 )
 
+// SocialInsuranceEventHandler 社保事件处理器接口
+// 在 employee 包中定义，由 socialinsurance.Service 实现（避免循环依赖）
+type SocialInsuranceEventHandler interface {
+	OnEmployeeResigned(orgID, employeeID int64)
+}
+
 // OffboardingService 离职管理业务逻辑层
 type OffboardingService struct {
-	obRepo  *OffboardingRepository
-	empRepo *Repository
+	obRepo    *OffboardingRepository
+	empRepo   *Repository
+	siHandler SocialInsuranceEventHandler
 }
 
 // NewOffboardingService 创建离职 Service
-func NewOffboardingService(obRepo *OffboardingRepository, empRepo *Repository) *OffboardingService {
+func NewOffboardingService(obRepo *OffboardingRepository, empRepo *Repository, siHandler SocialInsuranceEventHandler) *OffboardingService {
 	return &OffboardingService{
-		obRepo:  obRepo,
-		empRepo: empRepo,
+		obRepo:    obRepo,
+		empRepo:   empRepo,
+		siHandler: siHandler,
 	}
 }
 
@@ -278,11 +286,12 @@ func (s *OffboardingService) ListOffboardings(orgID int64, params OffboardingLis
 	return responses, total, nil
 }
 
-// onEmployeeResigned 员工离职事件触发接口（per D-17）
-// Phase 3 将接入社保停缴提醒
+// onEmployeeResigned 员工离职事件触发（per D-17）
+// 调用社保模块创建停缴提醒
 func (s *OffboardingService) onEmployeeResigned(orgID, employeeID int64) {
-	// Phase 3: 社保停缴提醒
-	// s.socialInsuranceSvc.CreateStopReminder(orgID, employeeID)
+	if s.siHandler != nil {
+		s.siHandler.OnEmployeeResigned(orgID, employeeID)
+	}
 	if logger.Logger != nil {
 		logger.Logger.Info("employee resigned event",
 			zap.Int64("org_id", orgID),

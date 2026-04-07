@@ -14,11 +14,12 @@ import (
 type Service struct {
 	repo        *Repository
 	empQuerier  EmployeeQuerier
+	reminderRepo *ReminderRepository
 }
 
 // NewService 创建社保 Service
-func NewService(repo *Repository, empQuerier EmployeeQuerier) *Service {
-	return &Service{repo: repo, empQuerier: empQuerier}
+func NewService(repo *Repository, empQuerier EmployeeQuerier, reminderRepo *ReminderRepository) *Service {
+	return &Service{repo: repo, empQuerier: empQuerier, reminderRepo: reminderRepo}
 }
 
 // ========== 政策管理 ==========
@@ -534,4 +535,223 @@ func getCityName(cityID int) string {
 		}
 	}
 	return "未知城市"
+}
+
+// ========== 提醒相关方法 ==========
+
+// CheckPaymentDueReminders 每日扫描缴费到期提醒（D-09/D-10/D-11）
+// 每月缴费截止日默认15日，到期前3天生成提醒
+func (s *Service) CheckPaymentDueReminders() {
+	if s.reminderRepo == nil {
+		return
+	}
+
+	records, err := s.reminderRepo.FindActiveRecordsGroupedByOrg()
+	if err != nil {
+		return
+	}
+
+	// 按 org_id 分组
+	orgRecords := make(map[int64][]SocialInsuranceRecord)
+	for _, r := range records {
+		orgRecords[r.OrgID] = append(orgRecords[r.OrgID], r)
+	}
+
+	now := time.Now()
+	cstZone := time.FixedZone("CST", 8*3600)
+	nowCST := now.In(cstZone)
+
+	// 缴费截止日为每月15日
+	paymentDay := 15
+
+	// 计算当月截止日
+	dueDate := time.Date(nowCST.Year(), nowCST.Month(), paymentDay, 23, 59, 59, 0, cstZone)
+	// 如果已过当月截止日，使用下月截止日
+	if nowCST.Day() > paymentDay {
+		nextMonth := nowCST.AddDate(0, 1, 0)
+		dueDate = time.Date(nextMonth.Year(), nextMonth.Month(), paymentDay, 23, 59, 59, 0, cstZone)
+	}
+
+	daysUntilDue := int(dueDate.Sub(nowCST).Hours() / 24)
+
+	// 只在到期前3天内生成提醒（0 <= days <= 3）
+	if daysUntilDue < 0 || daysUntilDue > 3 {
+		return
+	}
+
+	for orgID, orgRecs := range orgRecords {
+		// 按企业汇总，同一企业同一月只生成一条汇总提醒
+		// 使用一个虚拟 record_id=0 表示汇总提醒
+		monthKey := nowCST.Format("2006-01")
+		existing, _ := s.reminderRepo.FindByTypeAndRecordID(orgID, ReminderTypePaymentDue, 0)
+		if existing != nil {
+			// 已有当月提醒，检查是否是同一个月
+			if existing.Title != "" {
+				continue // 已生成过，跳过去重
+			}
+		}
+
+		// 去重：检查是否已有该企业该月的汇总提醒
+		var count int64
+		s.reminderRepo.db.Model(&Reminder{}).
+			Where("org_id = ? AND type = ? AND title LIKE ?", orgID, ReminderTypePaymentDue, "%"+monthKey+"%").
+			Count(&count)
+		if count > 0 {
+			continue
+		}
+
+		dueDateOnly := time.Date(dueDate.Year(), dueDate.Month(), dueDate.Day(), 0, 0, 0, 0, time.UTC)
+		reminder := &Reminder{
+			Type:        ReminderTypePaymentDue,
+			Title:       fmt.Sprintf("社保缴费提醒：%d名员工社保将于%s到期，请及时缴费", len(orgRecs), dueDate.Format("2006-01-02")),
+			RecordID:    0, // 汇总提醒
+			DueDate:     &dueDateOnly,
+			IsRead:      false,
+			IsDismissed: false,
+		}
+		reminder.OrgID = orgID
+
+		_ = s.reminderRepo.Create(reminder)
+	}
+}
+
+// CreateStopReminder 创建停缴提醒（D-07 离职触发）
+func (s *Service) CreateStopReminder(orgID, employeeID int64) {
+	if s.reminderRepo == nil {
+		return
+	}
+
+	// 查询员工是否有 active 参保记录
+	record, err := s.repo.FindActiveRecordByEmployee(orgID, employeeID)
+	if err != nil {
+		// 无 active 记录，静默跳过
+		return
+	}
+
+	// 去重检查
+	existing, _ := s.reminderRepo.FindByTypeAndRecordID(orgID, ReminderTypeStop, record.ID)
+	if existing != nil {
+		return
+	}
+
+	reminder := &Reminder{
+		Type:        ReminderTypeStop,
+		Title:       fmt.Sprintf("社保停缴提醒：%s已离职，请及时办理社保停缴", record.EmployeeName),
+		EmployeeID:  employeeID,
+		RecordID:    record.ID,
+		IsRead:      false,
+		IsDismissed: false,
+	}
+	reminder.OrgID = orgID
+
+	_ = s.reminderRepo.Create(reminder)
+}
+
+// OnEmployeeResigned 实现 employee.SocialInsuranceEventHandler 接口
+func (s *Service) OnEmployeeResigned(orgID, employeeID int64) {
+	s.CreateStopReminder(orgID, employeeID)
+}
+
+// SuggestBaseAdjustment 薪资变动时建议基数调整（D-13/SOCL-06 预留接口）
+func (s *Service) SuggestBaseAdjustment(orgID, employeeID int64, newSalary float64) {
+	if s.reminderRepo == nil {
+		return
+	}
+
+	// 查询员工 active 参保记录
+	record, err := s.repo.FindActiveRecordByEmployee(orgID, employeeID)
+	if err != nil {
+		return
+	}
+
+	// 对比 newSalary 与 BaseAmount，偏差超过10%时建议调整
+	if record.BaseAmount == 0 {
+		return
+	}
+	diff := (newSalary - record.BaseAmount) / record.BaseAmount
+	if diff < 0 {
+		diff = -diff
+	}
+	if diff <= 0.1 {
+		return
+	}
+
+	// 去重检查
+	existing, _ := s.reminderRepo.FindByTypeAndRecordID(orgID, ReminderTypeBaseAdjust, record.ID)
+	if existing != nil {
+		return
+	}
+
+	reminder := &Reminder{
+		Type:       ReminderTypeBaseAdjust,
+		Title:      fmt.Sprintf("社保基数调整建议：%s薪资变动，建议调整社保基数", record.EmployeeName),
+		EmployeeID: employeeID,
+		RecordID:   record.ID,
+		IsRead:     false,
+	}
+	reminder.OrgID = orgID
+
+	_ = s.reminderRepo.Create(reminder)
+}
+
+// ListReminders 查询提醒列表
+func (s *Service) ListReminders(orgID int64, reminderType string, page, pageSize int) ([]Reminder, int64, error) {
+	if page == 0 {
+		page = 1
+	}
+	if pageSize == 0 {
+		pageSize = 20
+	}
+	return s.reminderRepo.ListUnread(orgID, reminderType, page, pageSize)
+}
+
+// DismissReminder 关闭提醒
+func (s *Service) DismissReminder(orgID, id int64) error {
+	return s.reminderRepo.Dismiss(orgID, id)
+}
+
+// ========== 导出方法 ==========
+
+// ExportPaymentDetailExcel 导出缴费明细 Excel（SOCL-05）
+func (s *Service) ExportPaymentDetailExcel(orgID int64, params RecordListQueryParams) ([]byte, error) {
+	if params.Page == 0 {
+		params.Page = 1
+	}
+	if params.PageSize == 0 {
+		params.PageSize = 1000 // 导出时使用较大页面
+	}
+
+	records, _, err := s.repo.ListRecords(orgID, params.Status, params.EmployeeName, params.Page, params.PageSize)
+	if err != nil {
+		return nil, fmt.Errorf("查询参保记录失败: %w", err)
+	}
+
+	return generatePaymentDetailExcel(records)
+}
+
+// GenerateEnrollmentPDF 生成参保材料 PDF（SOCL-02）
+func (s *Service) GenerateEnrollmentPDF(orgID, recordID int64) ([]byte, error) {
+	// 查询参保记录
+	record, err := s.repo.FindRecordByID(orgID, recordID)
+	if err != nil {
+		return nil, fmt.Errorf("参保记录不存在")
+	}
+
+	// 解析险种明细
+	var details []InsuranceAmountDetail
+	if record.Details != nil {
+		_ = json.Unmarshal(record.Details, &details)
+	}
+
+	data := &EnrollmentPDFData{
+		EmployeeName: record.EmployeeName,
+		CityName:     getCityName(record.CityID),
+		BaseAmount:   record.BaseAmount,
+		StartMonth:   record.StartMonth,
+		Items:        details,
+		TotalCompany: record.TotalCompany,
+		TotalPersonal: record.TotalPersonal,
+	}
+
+	return generateEnrollmentPDF(data)
 }

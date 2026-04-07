@@ -18,6 +18,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 		&SocialInsurancePolicy{},
 		&SocialInsuranceRecord{},
 		&ChangeHistory{},
+		&Reminder{},
 	)
 	require.NoError(t, err)
 	return db
@@ -112,7 +113,7 @@ func (m *mockEmployeeQuerier) FindEmployeeByUserID(orgID int64, userID int64) (*
 func TestCalculateInsuranceAmounts(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil)
+	svc := NewService(repo, nil, NewReminderRepository(db))
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
@@ -142,7 +143,7 @@ func TestCalculateInsuranceAmounts(t *testing.T) {
 func TestCalculateInsuranceAmounts_BelowLower(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil)
+	svc := NewService(repo, nil, NewReminderRepository(db))
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
@@ -168,7 +169,7 @@ func TestCalculateInsuranceAmounts_BelowLower(t *testing.T) {
 func TestCalculateInsuranceAmounts_AboveUpper(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil)
+	svc := NewService(repo, nil, NewReminderRepository(db))
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
@@ -194,7 +195,7 @@ func TestCalculateInsuranceAmounts_AboveUpper(t *testing.T) {
 func TestWorkInjuryAndMaternityPersonalRateZero(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil)
+	svc := NewService(repo, nil, NewReminderRepository(db))
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
@@ -228,7 +229,7 @@ func TestEnrollEmployees(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	// 创建政策
 	policy := createBeijing2025Policy()
@@ -274,7 +275,7 @@ func TestEnrollEmployees_DuplicateEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	// 创建政策
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
@@ -307,7 +308,7 @@ func TestEnrollEmployees_NoPolicy(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	// 不创建政策
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -327,7 +328,7 @@ func TestEnrollEmployees_PartialFailure(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	// 只为城市1创建政策
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
@@ -365,7 +366,7 @@ func TestStopEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -423,7 +424,7 @@ func TestStopEnrollment_NotActive(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -463,7 +464,7 @@ func TestBatchStopEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -515,7 +516,7 @@ func TestListRecords_FilterByStatus(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -565,7 +566,7 @@ func TestGetMyRecords_MemberRole(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 
@@ -596,7 +597,7 @@ func TestGetChangeHistory(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -637,7 +638,7 @@ func TestGetSocialInsuranceDeduction(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp)
+	svc := NewService(repo, mockEmp, NewReminderRepository(db))
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
