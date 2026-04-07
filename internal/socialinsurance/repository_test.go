@@ -141,3 +141,132 @@ func TestSoftDelete(t *testing.T) {
 	db.Unscoped().Model(&SocialInsurancePolicy{}).Count(&count)
 	assert.Equal(t, int64(1), count)
 }
+
+// --- Repository Tests: Record CRUD ---
+
+func TestRecordCRUD(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewRepository(db)
+
+	// 创建政策
+	require.NoError(t, repo.Create(createBeijing2025Policy()))
+	policy, _ := repo.FindByCityAndYear(1, 2025)
+
+	// Create Record
+	record := &SocialInsuranceRecord{
+		EmployeeID:    1,
+		EmployeeName:  "张三",
+		CityID:        1,
+		PolicyID:      policy.ID,
+		BaseAmount:    7162.0,
+		Status:        SIStatusActive,
+		StartMonth:    "2025-07",
+		TotalCompany:  3930.0,
+		TotalPersonal: 2250.0,
+	}
+	record.OrgID = 100
+
+	err := repo.CreateRecord(record)
+	require.NoError(t, err)
+	assert.Greater(t, record.ID, int64(0))
+
+	// FindRecordByID
+	found, err := repo.FindRecordByID(100, record.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "张三", found.EmployeeName)
+	assert.Equal(t, SIStatusActive, found.Status)
+
+	// FindActiveRecordByEmployee
+	activeRecord, err := repo.FindActiveRecordByEmployee(100, 1)
+	require.NoError(t, err)
+	assert.Equal(t, record.ID, activeRecord.ID)
+
+	// UpdateRecord
+	err = repo.UpdateRecord(100, record.ID, map[string]interface{}{
+		"status":    SIStatusStopped,
+		"end_month": "2025-09",
+	})
+	require.NoError(t, err)
+
+	updated, err := repo.FindRecordByID(100, record.ID)
+	require.NoError(t, err)
+	assert.Equal(t, SIStatusStopped, updated.Status)
+	assert.NotNil(t, updated.EndMonth)
+	assert.Equal(t, "2025-09", *updated.EndMonth)
+
+	// FindActiveRecordByEmployee should fail now
+	_, err = repo.FindActiveRecordByEmployee(100, 1)
+	assert.Error(t, err)
+}
+
+func TestListRecords_WithFilters(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewRepository(db)
+
+	// 创建多条记录
+	for i := 1; i <= 3; i++ {
+		record := &SocialInsuranceRecord{
+			EmployeeID:    int64(i),
+			EmployeeName:  string(rune('张' + i - 1)),
+			CityID:        1,
+			PolicyID:      1,
+			BaseAmount:    7162.0,
+			Status:        SIStatusActive,
+			StartMonth:    "2025-07",
+			TotalCompany:  3930.0,
+			TotalPersonal: 2250.0,
+		}
+		record.OrgID = 100
+		require.NoError(t, repo.CreateRecord(record))
+	}
+
+	// 停缴一个
+	repo.UpdateRecord(100, 1, map[string]interface{}{"status": SIStatusStopped})
+
+	// 查询全部
+	records, total, err := repo.ListRecords(100, "", "", 1, 10)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3), total)
+	assert.Len(t, records, 3)
+
+	// 按状态筛选 active
+	records, total, err = repo.ListRecords(100, SIStatusActive, "", 1, 10)
+	require.NoError(t, err)
+	assert.Equal(t, int64(2), total)
+	assert.Len(t, records, 2)
+
+	// 按状态筛选 stopped
+	records, total, err = repo.ListRecords(100, SIStatusStopped, "", 1, 10)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, records, 1)
+}
+
+// --- Repository Tests: Change History CRUD ---
+
+func TestChangeHistoryCRUD(t *testing.T) {
+	db := setupTestDB(t)
+	repo := NewRepository(db)
+
+	// 创建变更历史
+	history := &ChangeHistory{
+		RecordID:   1,
+		EmployeeID: 1,
+		ChangeType: SIChangeEnroll,
+		AfterValue: nil,
+		Remark:     "批量参保",
+	}
+	history.OrgID = 100
+
+	err := repo.CreateChangeHistory(history)
+	require.NoError(t, err)
+	assert.Greater(t, history.ID, int64(0))
+
+	// 查询
+	histories, total, err := repo.ListChangeHistories(100, 1, 1, 10)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), total)
+	assert.Len(t, histories, 1)
+	assert.Equal(t, SIChangeEnroll, histories[0].ChangeType)
+	assert.Equal(t, "批量参保", histories[0].Remark)
+}

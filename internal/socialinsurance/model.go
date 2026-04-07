@@ -37,6 +37,57 @@ func (SocialInsurancePolicy) TableName() string {
 	return "social_insurance_policies"
 }
 
+// 社保记录状态常量
+const (
+	SIStatusPending = "pending" // 待参保
+	SIStatusActive  = "active"  // 参保中
+	SIStatusStopped = "stopped" // 停缴
+)
+
+// 变更历史类型常量
+const (
+	SIChangeEnroll     = "enroll"       // 参保
+	SIChangeBaseAdjust = "base_adjust"  // 基数调整
+	SIChangeStop       = "stop"         // 停缴
+)
+
+// SocialInsuranceRecord 参保记录（一条记录存所有险种明细）
+type SocialInsuranceRecord struct {
+	model.BaseModel
+	EmployeeID   int64          `gorm:"column:employee_id;not null;index" json:"employee_id"`
+	EmployeeName string         `gorm:"column:employee_name;type:varchar(50);not null" json:"employee_name"`
+	CityID       int            `gorm:"column:city_id;not null" json:"city_id"`
+	PolicyID     int64          `gorm:"column:policy_id;not null" json:"policy_id"`
+	BaseAmount   float64        `gorm:"column:base_amount;not null" json:"base_amount"`
+	Status       string         `gorm:"column:status;type:varchar(20);not null;default:pending" json:"status"`
+	StartMonth   string         `gorm:"column:start_month;type:varchar(7);not null" json:"start_month"`
+	EndMonth     *string        `gorm:"column:end_month;type:varchar(7)" json:"end_month"`
+	Details      datatypes.JSON `gorm:"column:details;type:jsonb" json:"details"`
+	TotalCompany float64        `gorm:"column:total_company;not null" json:"total_company"`
+	TotalPersonal float64       `gorm:"column:total_personal;not null" json:"total_personal"`
+}
+
+// TableName 指定表名
+func (SocialInsuranceRecord) TableName() string {
+	return "social_insurance_records"
+}
+
+// ChangeHistory 变更历史
+type ChangeHistory struct {
+	model.BaseModel
+	RecordID    int64          `gorm:"column:record_id;not null;index" json:"record_id"`
+	EmployeeID  int64          `gorm:"column:employee_id;not null;index" json:"employee_id"`
+	ChangeType  string         `gorm:"column:change_type;type:varchar(20);not null" json:"change_type"`
+	BeforeValue datatypes.JSON `gorm:"column:before_value;type:jsonb" json:"before_value"`
+	AfterValue  datatypes.JSON `gorm:"column:after_value;type:jsonb" json:"after_value"`
+	Remark      string         `gorm:"column:remark;type:varchar(500)" json:"remark"`
+}
+
+// TableName 指定表名
+func (ChangeHistory) TableName() string {
+	return "social_insurance_change_histories"
+}
+
 // newJSONType 辅助函数：将 FiveInsurances 包装为 datatypes.JSONType
 func newJSONType(data FiveInsurances) datatypes.JSONType[FiveInsurances] {
 	return datatypes.NewJSONType(data)

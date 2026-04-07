@@ -71,7 +71,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — 社保政策库模型+CRUD+基数计算引擎 (SOCL-01)
+- [x] 03-01-PLAN.md — 社保政策库模型+CRUD+基数计算引擎 (SOCL-01)
 - [ ] 03-02-PLAN.md — 参保/停缴操作+变更历史+缴费明细+员工模块集成 (SOCL-02, SOCL-04, SOCL-07)
 - [ ] 03-03-PLAN.md — 缴费提醒定时任务+凭证导出+离职回调+预留接口 (SOCL-03, SOCL-05, SOCL-06)
 
