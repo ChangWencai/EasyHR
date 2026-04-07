@@ -51,10 +51,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **TAX-01**: 基于工资核算数据自动匹配个税专项附加扣除项（子女教育、房贷等）
 - [x] **TAX-02**: 按中国累计预扣预缴法精准计算个税（处理税率跳档）
-- [ ] **TAX-03**: 个税申报截止前3天自动提醒老板
-- [ ] **TAX-04**: 自动生成个税申报表（供老板手动提交至自然人电子税务局）
-- [ ] **TAX-05**: 记录每月个税申报明细，支持查询申报状态
-- [ ] **TAX-06**: 支持导出个税申报凭证
+- [x] **TAX-03**: 个税申报截止前3天自动提醒老板
+- [x] **TAX-04**: 自动生成个税申报表（供老板手动提交至自然人电子税务局）
+- [x] **TAX-05**: 记录每月个税申报明细，支持查询申报状态
+- [x] **TAX-06**: 支持导出个税申报凭证
 
 ### Finance & Accounting (FINC)
 
@@ -197,10 +197,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SOCL-07 | Phase 3 | Pending |
 | TAX-01 | Phase 4 | Complete |
 | TAX-02 | Phase 4 | Complete |
-| TAX-03 | Phase 4 | Pending |
-| TAX-04 | Phase 4 | Pending |
-| TAX-05 | Phase 4 | Pending |
-| TAX-06 | Phase 4 | Pending |
+| TAX-03 | Phase 4 | Complete |
+| TAX-04 | Phase 4 | Complete |
+| TAX-05 | Phase 4 | Complete |
+| TAX-06 | Phase 4 | Complete |
 | PAYR-01 | Phase 5 | Pending |
 | PAYR-02 | Phase 5 | Pending |
 | PAYR-03 | Phase 5 | Pending |

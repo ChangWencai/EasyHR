@@ -88,7 +88,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — 数据模型+专项附加扣除CRUD+累计预扣预缴计算引擎 (TAX-01, TAX-02)
-- [ ] 04-02-PLAN.md — API Handler+定时提醒+申报管理+Excel/PDF导出+主程序集成 (TAX-03, TAX-04, TAX-05, TAX-06)
+- [x] 04-02-PLAN.md — API Handler+定时提醒+申报管理+Excel/PDF导出+主程序集成 (TAX-03, TAX-04, TAX-05, TAX-06)
 
 ### Phase 5: 工资核算
 **Goal**: 老板可自定义薪资结构，一键核算月度工资（自动关联社保和个税扣款），生成电子工资单推送至员工
