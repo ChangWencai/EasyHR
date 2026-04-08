@@ -29,13 +29,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, PLAT-01, PLAT-02, PLAT-03, PLAT-04, PLAT-05, PLAT-06, PLAT-07
 **Success Criteria** (what must be TRUE):
   1. 老板通过手机号+验证码一键登录/注册，无需密码
-  2. 首次登录自动进入企业信息录入引导，完成后可正常使用系统
+  2. 首次登录自动进入企业信息录入引导页（企业名称、统一社会信用代码、城市、联系人、联系电话）
   3. 企业管理员可添加子账号并分配OWNER/ADMIN/MEMBER权限，不同权限看到的功能和数据范围不同
   4. 所有写操作自动记录审计日志（谁、什么时间、做了什么），可追溯
   5. 两个不同企业的用户无法看到对方的数据（多租户隔离验证通过）
 **Plans**: 4 plans
 
-**Phase 1**: ✅ COMPLETE — 4/4 plans executed, 40 Go files, 7 test packages PASS
+**Phase 1**: COMPLETE — 4/4 plans executed, 40 Go files, 7 test packages PASS
 **Plans**:
 - [x] 01-01-PLAN.md — 项目脚手架+基础设施(统一响应/加密/多租户Scope/中间件)
 - [x] 01-02-PLAN.md — JWT认证工具+短信客户端+OSS客户端(pkg包)
@@ -99,7 +99,12 @@ Plans:
   2. 支持"复制上月工资表"快速核算，支持导入考勤表Excel辅助核算
   3. 自动生成电子工资单并推送至员工手机，员工可在线确认签收
   4. 工资条可导出Excel，每月发放状态/金额/方式有记录，异常发放自动提醒
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
+- [ ] 05-02-PLAN.md — 工资核算引擎+考勤导入+确认锁定+发放记录+异常提醒 (PAYR-02, PAYR-03, PAYR-04, PAYR-08, PAYR-09)
+- [ ] 05-03-PLAN.md — 工资单推送签收+Excel导出 (PAYR-05, PAYR-06, PAYR-07)
 
 ### Phase 6: 财务记账
 **Goal**: 老板可完成小微企业完整财务记账流程：录入凭证、管理发票、费用报销审批、查看账簿报表、月度结账
@@ -148,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. 员工管理 | 4/4 | Complete | 2026-04-07 |
 | 3. 社保管理 | 0/3 | Not started | - |
 | 4. 个税计算 | 0/2 | Not started | - |
-| 5. 工资核算 | 0/TBD | Not started | - |
+| 5. 工资核算 | 0/3 | Planning complete | - |
 | 6. 财务记账 | 0/TBD | Not started | - |
 | 7. 首页工作台 | 0/TBD | Not started | - |
 | 8. 员工微信小程序 | 0/TBD | Not started | - |
