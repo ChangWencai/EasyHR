@@ -17,6 +17,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/employee"
+	"github.com/wencai/easyhr/internal/salary"
 	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/tax"
 	"github.com/wencai/easyhr/internal/user"
@@ -64,6 +65,11 @@ func initApp() {
 		&tax.TaxRecord{},
 		&tax.TaxDeclaration{},
 		&tax.TaxReminder{},
+		&salary.SalaryTemplateItem{},
+		&salary.SalaryItem{},
+		&salary.PayrollRecord{},
+		&salary.PayrollItem{},
+		&salary.PayrollSlip{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -136,6 +142,15 @@ func main() {
 	obSvc := employee.NewOffboardingService(obRepo, empRepo, siSvc)
 	obHandler := employee.NewOffboardingHandler(obSvc)
 
+	// 工资模块依赖注入
+	salaryRepo := salary.NewRepository(db)
+	salaryTemplateRepo := salary.NewSalaryTemplateRepository(db)
+	salaryTaxAdapter := salary.NewTaxAdapter(taxSvc)
+	salarySIAdapter := salary.NewSIAdapter(siSvc)
+	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
+	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter)
+	salaryHandler := salary.NewHandler(salarySvc)
+
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
 	v1 := r.Group("/api/v1")
@@ -147,6 +162,7 @@ func main() {
 		contractHandler.RegisterRoutes(v1, authMiddleware)
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
+		salaryHandler.RegisterRoutes(v1, authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 
@@ -183,6 +199,11 @@ func main() {
 	// 初始化个税税率表种子数据（如果不存在）
 	if err := taxSvc.SeedDefaultBrackets(time.Now().Year()); err != nil {
 		logger.Logger.Warn("tax bracket seed failed", zap.Error(err))
+	}
+
+	// 初始化薪资模板种子数据（如果不存在）
+	if err := salarySvc.SeedTemplateItems(); err != nil {
+		logger.Logger.Warn("salary template seed failed", zap.Error(err))
 	}
 
 	if err := r.Run(addr); err != nil {
