@@ -41,9 +41,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **PAYR-02**: 一键核算工资，自动关联社保个人扣款和个税扣款
 - [ ] **PAYR-03**: 支持"复制上月工资表"快速核算
 - [ ] **PAYR-04**: 支持导入考勤表Excel辅助核算
-- [ ] **PAYR-05**: 自动生成电子工资单，一键发送至员工手机
-- [ ] **PAYR-06**: 员工在线确认签收工资单
-- [ ] **PAYR-07**: 支持导出工资条Excel，方便财务对账
+- [x] **PAYR-05**: 自动生成电子工资单，一键发送至员工手机
+- [x] **PAYR-06**: 员工在线确认签收工资单
+- [x] **PAYR-07**: 支持导出工资条Excel，方便财务对账
 - [ ] **PAYR-08**: 记录每月工资发放状态、金额、发放方式
 - [ ] **PAYR-09**: 异常发放自动提醒
 
@@ -205,9 +205,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PAYR-02 | Phase 5 | Pending |
 | PAYR-03 | Phase 5 | Pending |
 | PAYR-04 | Phase 5 | Pending |
-| PAYR-05 | Phase 5 | Pending |
-| PAYR-06 | Phase 5 | Pending |
-| PAYR-07 | Phase 5 | Pending |
+| PAYR-05 | Phase 5 | Complete |
+| PAYR-06 | Phase 5 | Complete |
+| PAYR-07 | Phase 5 | Complete |
 | PAYR-08 | Phase 5 | Pending |
 | PAYR-09 | Phase 5 | Pending |
 | FINC-01 | Phase 6 | Pending |

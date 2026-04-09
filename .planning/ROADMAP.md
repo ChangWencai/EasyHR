@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: 员工管理** - 员工入职/离职/档案/合同全生命周期管理
 - [ ] **Phase 3: 社保管理** - 30+城市社保政策库、参保/停缴/变更、缴费提醒
 - [ ] **Phase 4: 个税计算** - 累计预扣法个税引擎、专项附加扣除、申报提醒
-- [ ] **Phase 5: 工资核算** - 薪资结构自定义、一键核算、工资单推送、发放记录
+- [x] **Phase 5: 工资核算** - 薪资结构自定义、一键核算、工资单推送、发放记录 (completed 2026-04-09)
 - [ ] **Phase 6: 财务记账** - 会计科目、凭证、发票、费用报销、账簿、报表、结账
 - [ ] **Phase 7: 首页工作台** - 待办事项、功能入口、数据概览、导航
 - [ ] **Phase 8: 员工微信小程序** - 工资条/合同/社保查看、费用报销提交
@@ -104,7 +104,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
 - [x] 05-02-PLAN.md — 工资核算引擎+考勤导入+确认锁定+发放记录+异常提醒 (PAYR-02, PAYR-03, PAYR-04, PAYR-08, PAYR-09)
-- [ ] 05-03-PLAN.md — 工资单推送签收+Excel导出 (PAYR-05, PAYR-06, PAYR-07)
+- [x] 05-03-PLAN.md — 工资单推送签收+Excel导出 (PAYR-05, PAYR-06, PAYR-07)
 
 ### Phase 6: 财务记账
 **Goal**: 老板可完成小微企业完整财务记账流程：录入凭证、管理发票、费用报销审批、查看账簿报表、月度结账
@@ -153,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. 员工管理 | 4/4 | Complete | 2026-04-07 |
 | 3. 社保管理 | 0/3 | Not started | - |
 | 4. 个税计算 | 0/2 | Not started | - |
-| 5. 工资核算 | 2/3 | In Progress|  |
+| 5. 工资核算 | 3/3 | Complete   | 2026-04-09 |
 | 6. 财务记账 | 0/TBD | Not started | - |
 | 7. 首页工作台 | 0/TBD | Not started | - |
 | 8. 员工微信小程序 | 0/TBD | Not started | - |
