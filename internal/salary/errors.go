@@ -4,13 +4,14 @@ import "errors"
 
 // 工资模块错误码 50xxx
 var (
-	ErrTemplateConfig   = errors.New("薪资模板配置错误")   // 50001
-	ErrPayrollFailed    = errors.New("工资核算失败")       // 50002
-	ErrInvalidStatus    = errors.New("工资表状态不允许操作") // 50003
-	ErrAttendanceImport = errors.New("考勤导入失败")       // 50004
+	ErrTemplateConfig   = errors.New("薪资模板配置错误")        // 50001
+	ErrPayrollFailed    = errors.New("工资核算失败")            // 50002
+	ErrInvalidStatus    = errors.New("工资表状态不允许操作")      // 50003
+	ErrAttendanceImport = errors.New("考勤导入失败")            // 50004
 	ErrSlipTokenInvalid = errors.New("工资单 token 无效或过期") // 50005
-	ErrSMSVerifyFailed  = errors.New("短信验证失败")       // 50006
-	ErrEmployeeMatch    = errors.New("员工匹配失败")       // 50007
+	ErrSMSVerifyFailed  = errors.New("短信验证失败")            // 50006
+	ErrEmployeeMatch    = errors.New("员工匹配失败")            // 50007
+	ErrPayrollNotFound  = errors.New("工资记录不存在")          // 50008
 )
 
 // 错误码映射
@@ -22,6 +23,7 @@ const (
 	CodeSlipTokenInvalid = 50005
 	CodeSMSVerifyFailed  = 50006
 	CodeEmployeeMatch    = 50007
+	CodePayrollNotFound  = 50008
 )
 
 // WrapError 包装错误并附加错误码
