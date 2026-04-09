@@ -56,3 +56,76 @@ type SalaryItemInput struct {
 	TemplateItemID int64   `json:"template_item_id" binding:"required"`
 	Amount         float64 `json:"amount" binding:"min=0"`
 }
+
+// ========== 工资核算 DTO ==========
+
+// CreatePayrollRequest 创建工资表请求
+type CreatePayrollRequest struct {
+	Year          int     `json:"year" binding:"required,min=2000,max=2100"`
+	Month         int     `json:"month" binding:"required,min=1,max=12"`
+	CopyFromMonth *string `json:"copy_from_month"` // "YYYY-MM"，可选
+}
+
+// PayrollRecordResponse 工资核算记录响应
+type PayrollRecordResponse struct {
+	ID              int64               `json:"id"`
+	EmployeeID      int64               `json:"employee_id"`
+	EmployeeName    string              `json:"employee_name"`
+	Year            int                 `json:"year"`
+	Month           int                 `json:"month"`
+	Status          string              `json:"status"`
+	GrossIncome     float64             `json:"gross_income"`
+	SIDeduction     float64             `json:"si_deduction"`
+	Tax             float64             `json:"tax"`
+	TotalDeductions float64             `json:"total_deductions"`
+	NetIncome       float64             `json:"net_income"`
+	PayMethod       string              `json:"pay_method,omitempty"`
+	PayDate         *string             `json:"pay_date,omitempty"`
+	PayNote         string              `json:"pay_note,omitempty"`
+	Items           []PayrollItemResponse `json:"items"`
+}
+
+// PayrollItemResponse 工资核算明细响应
+type PayrollItemResponse struct {
+	ItemName string  `json:"item_name"`
+	ItemType string  `json:"item_type"`
+	Amount   float64 `json:"amount"`
+}
+
+// BatchCalculateResponse 批量核算响应
+type BatchCalculateResponse struct {
+	TotalEmployees int     `json:"total_employees"`
+	TotalNetIncome float64 `json:"total_net_income"`
+}
+
+// ConfirmPayrollRequest 确认工资表请求
+type ConfirmPayrollRequest struct {
+	Year  int `json:"year" binding:"required"`
+	Month int `json:"month" binding:"required"`
+}
+
+// ConfirmResponse 确认响应
+type ConfirmResponse struct {
+	ConfirmedCount int             `json:"confirmed_count"`
+	AbnormalItems  []AbnormalCheck `json:"abnormal_items,omitempty"`
+}
+
+// RecordPaymentRequest 发放记录请求
+type RecordPaymentRequest struct {
+	PayMethod string `json:"pay_method" binding:"required,oneof=bank_transfer cash other"`
+	PayDate   string `json:"pay_date" binding:"required"`
+	PayNote   string `json:"pay_note"`
+}
+
+// AttendanceImportResult 考勤导入结果
+type AttendanceImportResult struct {
+	MatchedCount int                  `json:"matched_count"`
+	ErrorRows    []AttendanceErrorRow `json:"error_rows,omitempty"`
+}
+
+// AttendanceErrorRow 考勤导入错误行
+type AttendanceErrorRow struct {
+	RowNumber int    `json:"row_number"`
+	Name      string `json:"name"`
+	Error     string `json:"error"`
+}

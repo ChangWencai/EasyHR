@@ -16,7 +16,7 @@ type SalaryTemplateItem struct {
 	Type      string `gorm:"column:type;type:varchar(20);not null" json:"type"` // income/deduction
 	SortOrder int    `gorm:"column:sort_order;not null;default:0" json:"sort_order"`
 	IsRequired bool  `gorm:"column:is_required;not null;default:false" json:"is_required"`
-	IsEnabled  bool  `gorm:"column:is_enabled;not null;default:true" json:"is_enabled"`
+	IsEnabled  bool  `gorm:"column:is_enabled;not null" json:"is_enabled"`
 }
 
 func (SalaryTemplateItem) TableName() string { return "salary_template_items" }

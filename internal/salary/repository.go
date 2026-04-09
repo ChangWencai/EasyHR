@@ -66,20 +66,24 @@ func (r *SalaryTemplateRepository) GetOrgOverrides(orgID int64) ([]SalaryTemplat
 
 // UpsertOrgOverride 创建或更新企业级覆盖
 func (r *SalaryTemplateRepository) UpsertOrgOverride(orgID, userID, templateItemID int64, isEnabled bool) error {
+	// 先获取全局模板项
+	var globalItem SalaryTemplateItem
+	if err := r.db.Where("id = ? AND org_id = 0", templateItemID).First(&globalItem).Error; err != nil {
+		return fmt.Errorf("global template item not found: %w", err)
+	}
+	fmt.Printf("Global item: ID=%d, Name=%s\n", globalItem.ID, globalItem.Name)
+
+	// 查找是否已有企业级覆盖（通过 name 匹配）
 	var existing SalaryTemplateItem
 	err := r.db.Scopes(middleware.TenantScope(orgID)).
-		Where("template_item_id = ? OR name = (SELECT name FROM salary_template_items WHERE id = ?)", templateItemID, templateItemID).
+		Where("name = ?", globalItem.Name).
 		First(&existing).Error
+	fmt.Printf("Find existing err: %v\n", err)
 
 	if err == gorm.ErrRecordNotFound {
-		// 获取全局模板名称
-		var globalItem SalaryTemplateItem
-		if err := r.db.Where("id = ? AND org_id = 0", templateItemID).First(&globalItem).Error; err != nil {
-			return fmt.Errorf("global template item not found: %w", err)
-		}
-		override := SalaryTemplateItem{
-			// BaseModel 中 OrgID 会被 GORM 自动填充
-		}
+		fmt.Printf("Creating new override for orgID=%d, name=%s, enabled=%v\n", orgID, globalItem.Name, isEnabled)
+		// 创建新的企业级覆盖
+		override := SalaryTemplateItem{}
 		override.OrgID = orgID
 		override.CreatedBy = userID
 		override.UpdatedBy = userID
@@ -88,16 +92,30 @@ func (r *SalaryTemplateRepository) UpsertOrgOverride(orgID, userID, templateItem
 		override.SortOrder = globalItem.SortOrder
 		override.IsRequired = globalItem.IsRequired
 		override.IsEnabled = isEnabled
-		return r.db.Create(&override).Error
+		if err := r.db.Debug().Create(&override).Error; err != nil {
+			return fmt.Errorf("create override: %w", err)
+		}
+		fmt.Printf("Created override: ID=%d, IsEnabled=%v\n", override.ID, override.IsEnabled)
+		return nil
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("find override: %w", err)
 	}
 
-	return r.db.Model(&existing).Updates(map[string]interface{}{
-		"is_enabled": isEnabled,
-		"updated_by": userID,
-	}).Error
+	fmt.Printf("Updating existing override: ID=%d, current IsEnabled=%v, new IsEnabled=%v\n", existing.ID, existing.IsEnabled, isEnabled)
+	// 更新现有覆盖
+	result := r.db.Debug().Model(&SalaryTemplateItem{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("id = ?", existing.ID).
+		Update("is_enabled", isEnabled)
+	fmt.Printf("Update result: RowsAffected=%d, Error=%v\n", result.RowsAffected, result.Error)
+	if result.Error != nil {
+		return fmt.Errorf("update override: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("no rows affected when updating override (id=%d, enabled=%v)", existing.ID, isEnabled)
+	}
+	return nil
 }
 
 // ========== Repository 主仓储 ==========
@@ -235,4 +253,71 @@ func (r *Repository) UpdateSlip(orgID, id int64, updates map[string]interface{})
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+// FindPayrollRecordsByMonth 查询指定月份所有记录
+func (r *Repository) FindPayrollRecordsByMonth(orgID int64, year, month int) ([]PayrollRecord, error) {
+	var records []PayrollRecord
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ?", year, month).
+		Find(&records).Error
+	return records, err
+}
+
+// FindPayrollRecordByEmployeeMonth 查询员工某月的工资记录
+func (r *Repository) FindPayrollRecordByEmployeeMonth(orgID, employeeID int64, year, month int) (*PayrollRecord, error) {
+	var record PayrollRecord
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("employee_id = ? AND year = ? AND month = ?", employeeID, year, month).
+		First(&record).Error
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+// FindPreviousMonthRecords 查询上月记录（用于异常检查）
+func (r *Repository) FindPreviousMonthRecords(orgID int64, year, month int) ([]PayrollRecord, error) {
+	prevYear, prevMonth := year, month-1
+	if prevMonth == 0 {
+		prevYear--
+		prevMonth = 12
+	}
+	var records []PayrollRecord
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ? AND status IN ?", prevYear, prevMonth,
+			[]string{PayrollStatusConfirmed, PayrollStatusPaid}).
+		Find(&records).Error
+	return records, err
+}
+
+// ListPayrollRecords 分页查询工资核算记录
+func (r *Repository) ListPayrollRecords(orgID int64, year, month, page, pageSize int) ([]PayrollRecord, int64, error) {
+	var records []PayrollRecord
+	var total int64
+
+	q := r.db.Model(&PayrollRecord{}).Scopes(middleware.TenantScope(orgID)).
+		Where("year = ? AND month = ?", year, month)
+
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("count payroll records: %w", err)
+	}
+
+	offset := (page - 1) * pageSize
+	if err := q.Offset(offset).Limit(pageSize).Order("employee_name").Find(&records).Error; err != nil {
+		return nil, 0, fmt.Errorf("list payroll records: %w", err)
+	}
+
+	return records, total, nil
+}
+
+// BatchCreatePayrollItems 批量创建工资明细
+func (r *Repository) BatchCreatePayrollItems(orgID int64, items []PayrollItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	for i := range items {
+		items[i].OrgID = orgID
+	}
+	return r.db.Create(&items).Error
 }
