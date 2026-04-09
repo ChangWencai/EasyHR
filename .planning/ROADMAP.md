@@ -103,7 +103,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
-- [ ] 05-02-PLAN.md — 工资核算引擎+考勤导入+确认锁定+发放记录+异常提醒 (PAYR-02, PAYR-03, PAYR-04, PAYR-08, PAYR-09)
+- [x] 05-02-PLAN.md — 工资核算引擎+考勤导入+确认锁定+发放记录+异常提醒 (PAYR-02, PAYR-03, PAYR-04, PAYR-08, PAYR-09)
 - [ ] 05-03-PLAN.md — 工资单推送签收+Excel导出 (PAYR-05, PAYR-06, PAYR-07)
 
 ### Phase 6: 财务记账
@@ -153,7 +153,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. 员工管理 | 4/4 | Complete | 2026-04-07 |
 | 3. 社保管理 | 0/3 | Not started | - |
 | 4. 个税计算 | 0/2 | Not started | - |
-| 5. 工资核算 | 0/3 | Planning complete | - |
+| 5. 工资核算 | 2/3 | In Progress|  |
 | 6. 财务记账 | 0/TBD | Not started | - |
 | 7. 首页工作台 | 0/TBD | Not started | - |
 | 8. 员工微信小程序 | 0/TBD | Not started | - |
