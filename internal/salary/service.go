@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wencai/easyhr/internal/common/config"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,8 @@ type Service struct {
 	siProvider         SIDeductionProvider
 	empProvider        EmployeeProvider
 	baseAdjustProvider BaseAdjustmentProvider
+	smsClient          interface{}
+	cryptoCfg          config.CryptoConfig
 }
 
 // NewService 创建工资核算 Service
@@ -27,6 +30,8 @@ func NewService(
 	siProvider SIDeductionProvider,
 	empProvider EmployeeProvider,
 	baseAdjustProvider BaseAdjustmentProvider,
+	smsClient interface{},
+	cryptoCfg config.CryptoConfig,
 ) *Service {
 	return &Service{
 		repo:               repo,
@@ -35,6 +40,8 @@ func NewService(
 		siProvider:         siProvider,
 		empProvider:        empProvider,
 		baseAdjustProvider: baseAdjustProvider,
+		smsClient:          smsClient,
+		cryptoCfg:          cryptoCfg,
 	}
 }
 

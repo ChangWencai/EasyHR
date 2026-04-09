@@ -83,3 +83,31 @@ func (a *EmployeeAdapter) GetEmployeeByID(orgID, employeeID int64) (*EmployeeInf
 
 	return info, nil
 }
+
+// GetEmployee 获取单个员工信息（包含手机号）
+func (a *EmployeeAdapter) GetEmployee(orgID, employeeID int64) (*EmployeeInfo, error) {
+	emp, err := a.empRepo.FindByID(orgID, employeeID)
+	if err != nil {
+		return nil, fmt.Errorf("查询员工失败: %w", err)
+	}
+
+	info := &EmployeeInfo{
+		ID:       emp.ID,
+		Name:     emp.Name,
+		Phone:    emp.PhoneEncrypted, // 返回加密的手机号
+		HireDate: emp.HireDate,
+	}
+
+	// 获取合同薪资
+	contracts, _, err := a.contractRepo.ListByEmployee(orgID, emp.ID, 1, 10)
+	if err == nil {
+		for _, c := range contracts {
+			if c.Status == employee.ContractStatusActive {
+				info.BaseSalary = c.Salary
+				break
+			}
+		}
+	}
+
+	return info, nil
+}

@@ -42,6 +42,21 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 
 		// 考勤导入
 		salary.POST("/attendance/import", middleware.RequireRole("owner", "admin"), h.ImportAttendance)
+
+		// 工资单推送
+		salary.POST("/slip/send", middleware.RequireRole("owner", "admin"), h.SendSlip)
+
+		// 导出
+		salary.GET("/payroll/export", h.ExportPayroll)
+	}
+
+	// 公开端点（H5 工资单查看，无需认证）
+	public := rg.Group("/salary/slip")
+	{
+		public.GET("/:token", h.GetSlipByToken)
+		public.POST("/:token/verify", h.VerifySlipPhone)
+		public.POST("/:token/code", h.VerifySlipCode)
+		public.POST("/:token/sign", h.SignSlip)
 	}
 }
 
@@ -330,4 +345,191 @@ func (h *Handler) ImportAttendance(c *gin.Context) {
 	}
 
 	response.Success(c, result)
+}
+
+// ========== 工资单 Handler ==========
+
+// SendSlip 发送工资单
+func (h *Handler) SendSlip(c *gin.Context) {
+	var req SendSlipRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	userID := c.GetInt64("user_id")
+
+	results, err := h.svc.SendSlip(orgID, userID, req.RecordIDs)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, results)
+}
+
+// GetSlipByToken 获取工资单详情（公开端点，无需认证）
+func (h *Handler) GetSlipByToken(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		response.BadRequest(c, "token 参数错误")
+		return
+	}
+
+	detail, err := h.svc.GetSlipByToken(token)
+	if err != nil {
+		if err == ErrSlipTokenInvalid {
+			response.Error(c, http.StatusNotFound, CodePayrollNotFound, "工资单不存在")
+			return
+		}
+		if err == ErrSlipTokenExpired {
+			response.Error(c, http.StatusForbidden, CodePayrollNotFound, "工资单已过期")
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, detail)
+}
+
+// VerifySlipPhone 验证工资单手机号（发送短信验证码）
+func (h *Handler) VerifySlipPhone(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		response.BadRequest(c, "token 参数错误")
+		return
+	}
+
+	var req VerifySlipPhoneRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	if err := h.svc.VerifySlipPhone(token, req.Phone); err != nil {
+		if err == ErrSlipTokenInvalid {
+			response.Error(c, http.StatusNotFound, CodePayrollNotFound, "工资单不存在")
+			return
+		}
+		if err == ErrSlipTokenExpired {
+			response.Error(c, http.StatusForbidden, CodePayrollNotFound, "工资单已过期")
+			return
+		}
+		response.Error(c, http.StatusBadRequest, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// VerifySlipCode 验证短信验证码
+func (h *Handler) VerifySlipCode(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		response.BadRequest(c, "token 参数错误")
+		return
+	}
+
+	var req VerifySlipCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	valid, err := h.svc.VerifySlipCode(token, req.Phone, req.Code)
+	if err != nil {
+		if err == ErrSlipTokenInvalid {
+			response.Error(c, http.StatusNotFound, CodePayrollNotFound, "工资单不存在")
+			return
+		}
+		if err == ErrSlipTokenExpired {
+			response.Error(c, http.StatusForbidden, CodePayrollNotFound, "工资单已过期")
+			return
+		}
+		response.Error(c, http.StatusBadRequest, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"valid": valid})
+}
+
+// SignSlip 签收工资单
+func (h *Handler) SignSlip(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		response.BadRequest(c, "token 参数错误")
+		return
+	}
+
+	if err := h.svc.SignSlip(token); err != nil {
+		if err == ErrSlipTokenInvalid {
+			response.Error(c, http.StatusNotFound, CodePayrollNotFound, "工资单不存在")
+			return
+		}
+		if err == ErrSlipTokenExpired {
+			response.Error(c, http.StatusForbidden, CodePayrollNotFound, "工资单已过期")
+			return
+		}
+		if err == ErrSlipAlreadySigned {
+			response.Error(c, http.StatusBadRequest, CodeInvalidStatus, "工资单已签收")
+			return
+		}
+		response.Error(c, http.StatusBadRequest, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+// ExportPayroll 导出工资表 Excel
+func (h *Handler) ExportPayroll(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+
+	yearStr := c.Query("year")
+	monthStr := c.Query("month")
+
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year < 2000 || year > 2100 {
+		response.BadRequest(c, "year 参数错误")
+		return
+	}
+
+	month, err := strconv.Atoi(monthStr)
+	if err != nil || month < 1 || month > 12 {
+		response.BadRequest(c, "month 参数错误")
+		return
+	}
+
+	// 查询工资记录
+	records, err := h.svc.repo.FindPayrollRecordsByMonth(orgID, year, month)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, CodeTemplateConfig, "查询工资记录失败")
+		return
+	}
+
+	// 查询工资明细
+	var recordsWithItems []PayrollRecordWithItems
+	for _, record := range records {
+		items, err := h.svc.repo.FindPayrollItemsByRecord(orgID, record.ID)
+		if err != nil {
+			continue
+		}
+		recordsWithItems = append(recordsWithItems, PayrollRecordWithItems{
+			Record: record,
+			Items:  items,
+		})
+	}
+
+	// 生成 Excel
+	data, err := ExportPayrollExcel(recordsWithItems, year, month)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, CodeTemplateConfig, "生成 Excel 失败")
+		return
+	}
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=工资条_%d_%02d.xlsx", year, month))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
 }

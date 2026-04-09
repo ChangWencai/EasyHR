@@ -129,3 +129,49 @@ type AttendanceErrorRow struct {
 	Name      string `json:"name"`
 	Error     string `json:"error"`
 }
+
+// ========== 工资单 DTO ==========
+
+// SendSlipRequest 发送工资单请求
+type SendSlipRequest struct {
+	RecordIDs []int64 `json:"record_ids" binding:"required,min=1"`
+}
+
+// SlipDetailResponse 工资单详情响应
+type SlipDetailResponse struct {
+	EmployeeName    string             `json:"employee_name"`
+	Year            int                `json:"year"`
+	Month           int                `json:"month"`
+	Items           []SlipItemDetail   `json:"items"`
+	GrossIncome     float64            `json:"gross_income"`
+	SIDeduction     float64            `json:"si_deduction"`
+	Tax             float64            `json:"tax"`
+	TotalDeductions float64            `json:"total_deductions"`
+	NetIncome       float64            `json:"net_income"`
+	Status          string             `json:"status"`
+	SignedAt        *string            `json:"signed_at,omitempty"`
+}
+
+// SlipItemDetail 工资单明细项
+type SlipItemDetail struct {
+	ItemName string  `json:"item_name"`
+	ItemType string  `json:"item_type"`
+	Amount   float64 `json:"amount"`
+}
+
+// VerifySlipPhoneRequest 验证工资单手机号请求
+type VerifySlipPhoneRequest struct {
+	Phone string `json:"phone" binding:"required"`
+}
+
+// VerifySlipCodeRequest 验证短信验证码请求
+type VerifySlipCodeRequest struct {
+	Phone string `json:"phone" binding:"required"`
+	Code  string `json:"code" binding:"required,len=6"`
+}
+
+// ExportPayrollRequest 导出工资表请求
+type ExportPayrollRequest struct {
+	Year  int `json:"year" binding:"required,min=2000,max=2100"`
+	Month int `json:"month" binding:"required,min=1,max=12"`
+}

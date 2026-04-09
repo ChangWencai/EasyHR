@@ -20,6 +20,7 @@ type SIDeductionProvider interface {
 type EmployeeProvider interface {
 	GetActiveEmployees(orgID int64) ([]EmployeeInfo, error)
 	GetEmployeeByID(orgID, employeeID int64) (*EmployeeInfo, error)
+	GetEmployee(orgID, employeeID int64) (*EmployeeInfo, error)
 }
 
 // EmployeeInfo 员工简要信息（跨模块传输）

@@ -148,7 +148,7 @@ func main() {
 	salaryTaxAdapter := salary.NewTaxAdapter(taxSvc)
 	salarySIAdapter := salary.NewSIAdapter(siSvc)
 	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
-	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter)
+	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, nil, cfg.Crypto)
 	salaryHandler := salary.NewHandler(salarySvc)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)

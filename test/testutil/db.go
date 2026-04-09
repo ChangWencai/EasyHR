@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/wencai/easyhr/internal/audit"
+	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/employee"
 	"gorm.io/driver/sqlite"
@@ -86,4 +87,11 @@ func WaitForDB(db *gorm.DB) error {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
+}
+
+// TestCryptoConfig 返回测试用加密配置
+func TestCryptoConfig() config.CryptoConfig {
+	return config.CryptoConfig{
+		AESKey: "32-byte-long-key-for-testing-12345678",
+	}
 }

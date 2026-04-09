@@ -70,7 +70,7 @@ func TestSalaryTemplateCRUD(t *testing.T) {
 	defer testutil.CleanupTestDB(db)
 
 	templateRepo := NewSalaryTemplateRepository(db)
-	svc := NewService(nil, templateRepo, nil, nil, nil, nil)
+	svc := NewService(nil, templateRepo, nil, nil, nil, nil, nil, testutil.TestCryptoConfig())
 
 	org, err := testutil.CreateTestOrg(db, "测试企业", "91110000MA0000001", "北京")
 	assert.NoError(t, err)
@@ -145,7 +145,7 @@ func TestSalaryItemCRUD(t *testing.T) {
 
 	repo := NewRepository(db)
 	templateRepo := NewSalaryTemplateRepository(db)
-	svc := NewService(repo, templateRepo, nil, nil, nil, nil)
+	svc := NewService(repo, templateRepo, nil, nil, nil, nil, nil, testutil.TestCryptoConfig())
 
 	org, err := testutil.CreateTestOrg(db, "测试企业", "91110000MA0000001", "北京")
 	assert.NoError(t, err)
