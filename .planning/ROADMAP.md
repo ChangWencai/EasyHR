@@ -102,7 +102,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
+- [x] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
 - [ ] 05-02-PLAN.md — 工资核算引擎+考勤导入+确认锁定+发放记录+异常提醒 (PAYR-02, PAYR-03, PAYR-04, PAYR-08, PAYR-09)
 - [ ] 05-03-PLAN.md — 工资单推送签收+Excel导出 (PAYR-05, PAYR-06, PAYR-07)
 
