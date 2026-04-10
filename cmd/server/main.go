@@ -23,6 +23,7 @@ import (
 	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/tax"
 	"github.com/wencai/easyhr/internal/user"
+	"github.com/wencai/easyhr/internal/wxmp"
 	"github.com/wencai/easyhr/pkg/sms"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -199,6 +200,7 @@ func main() {
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 		dashboard.RegisterRouter(v1.Group("/dashboard"), authMiddleware, db)
+		wxmp.RegisterWXMPRouter(v1, db, cfg.JWT.Secret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL, rdb, cfg.Crypto.AESKey)
 
 		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
