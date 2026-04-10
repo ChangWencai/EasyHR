@@ -1,7 +1,8 @@
 ---
 phase: 08
 slug: employee-miniprogram
-status: draft
+status: approved
+reviewed_at: 2026-04-10
 shadcn_initialized: false
 preset: none
 created: 2026-04-10
@@ -428,13 +429,13 @@ Exceptions:
 ## Checker Sign-Off
 
 - [x] Dimension 1 Copywriting: PASS (revised)
-- [ ] Dimension 2 Visuals: PASS (FLAG — non-blocking)
+- [x] Dimension 2 Visuals: PASS (FLAG — non-blocking)
 - [x] Dimension 3 Color: PASS
 - [x] Dimension 4 Typography: PASS (revised: 4 sizes)
 - [x] Dimension 5 Spacing: PASS
 - [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-04-10
 
 ---
 
