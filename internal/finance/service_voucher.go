@@ -28,23 +28,17 @@ func NewVoucherService(voucherRepo *VoucherRepository, periodRepo *PeriodReposit
 // CreateVoucher creates a new voucher with journal entries.
 // It validates: (a) period is OPEN, (b) SUM(debit) == SUM(credit) using decimal.Decimal.
 func (s *VoucherService) CreateVoucher(orgID, userID int64, req *CreateVoucherRequest) (*Voucher, error) {
-	// (a) Validate period is OPEN (D-04)
-	period, err := s.periodRepo.GetByYearMonth(orgID, 0, 0)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	// (a) Validate period is OPEN (D-04) — use req.PeriodID directly
+	period, err := s.periodRepo.GetByID(orgID, req.PeriodID)
+	if err == gorm.ErrRecordNotFound {
+		return nil, &FinanceError{Code: 60223, Err: fmt.Errorf("期间不存在: period_id=%d", req.PeriodID)}
+	}
+	if err != nil {
 		return nil, fmt.Errorf("查询期间失败: %w", err)
 	}
-	if period != nil && period.Status == PeriodStatusClosed {
+	if period.Status == PeriodStatusClosed {
 		return nil, &FinanceError{Code: CodePeriodClosed, Err: ErrPeriodClosed.Err}
 	}
-
-	// If no period found for org, get or create the requested period
-	if period != nil {
-		period, err = s.periodRepo.GetOrCreate(orgID, 0, 0)
-		if err != nil {
-			return nil, fmt.Errorf("创建期间失败: %w", err)
-		}
-	}
-	_ = period // resolved above or created
 
 	// (b) Validate and compute debit/credit sums using decimal.Decimal (D-02, D-03)
 	debitSum := decimal.Zero
@@ -147,15 +141,17 @@ func (s *VoucherService) SubmitVoucher(orgID int64, voucherID int64) error {
 		return &FinanceError{Code: CodeInvalidStatus, Err: fmt.Errorf("只有草稿状态凭证可以提交")}
 	}
 
-	// Check period is not closed
-	period, err := s.periodRepo.GetByYearMonth(orgID, 0, 0)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	// Check period is not closed — use voucher.PeriodID
+	period, err := s.periodRepo.GetByID(orgID, voucher.PeriodID)
+	if err == gorm.ErrRecordNotFound {
+		return &FinanceError{Code: 60223, Err: fmt.Errorf("期间不存在: period_id=%d", voucher.PeriodID)}
+	}
+	if err != nil {
 		return fmt.Errorf("查询期间失败: %w", err)
 	}
-	if period != nil && period.Status == PeriodStatusClosed {
+	if period.Status == PeriodStatusClosed {
 		return &FinanceError{Code: CodePeriodClosed, Err: ErrPeriodClosed.Err}
 	}
-	_ = period
 
 	return s.voucherRepo.UpdateStatus(orgID, voucherID, VoucherStatusSubmitted)
 }
@@ -188,15 +184,17 @@ func (s *VoucherService) ReverseVoucher(orgID int64, voucherID int64) (*Voucher,
 		return nil, &FinanceError{Code: CodeInvalidStatus, Err: fmt.Errorf("只有已审核凭证可以红冲")}
 	}
 
-	// Check period is not closed
-	period, err := s.periodRepo.GetByYearMonth(orgID, 0, 0)
-	if err != nil && err != gorm.ErrRecordNotFound {
+	// Check period is not closed — use original.PeriodID
+	period, err := s.periodRepo.GetByID(orgID, original.PeriodID)
+	if err == gorm.ErrRecordNotFound {
+		return nil, &FinanceError{Code: 60223, Err: fmt.Errorf("期间不存在: period_id=%d", original.PeriodID)}
+	}
+	if err != nil {
 		return nil, fmt.Errorf("查询期间失败: %w", err)
 	}
-	if period != nil && period.Status == PeriodStatusClosed {
+	if period.Status == PeriodStatusClosed {
 		return nil, &FinanceError{Code: CodePeriodClosed, Err: ErrPeriodClosed.Err}
 	}
-	_ = period
 
 	// Reverse each entry: flip DC direction, amount unchanged
 	entries := make([]JournalEntry, len(original.Entries))
