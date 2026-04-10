@@ -120,10 +120,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 06-00-PLAN.md — 测试脚手架+decimal依赖安装
-- [ ] 06-01-PLAN.md — 科目体系+凭证CRUD+红冲+工资凭证adapter (FINC-01, FINC-02, FINC-03, FINC-04, FINC-05, FINC-19, FINC-20)
-- [ ] 06-02-PLAN.md — 发票管理+费用报销审批+自动凭证生成 (FINC-06, FINC-07, FINC-08, FINC-09, FINC-10)
-- [ ] 06-03-PLAN.md — 账簿生成+财务报表+结账+纳税申报 (FINC-11, FINC-12, FINC-13, FINC-14, FINC-15, FINC-16, FINC-17, FINC-18, FINC-21, FINC-22)
+- [x] 06-00-PLAN.md — 测试脚手架+decimal依赖安装
+- [x] 06-01-PLAN.md — 科目体系+凭证CRUD+红冲+工资凭证adapter (FINC-01, FINC-02, FINC-03, FINC-04, FINC-05, FINC-19, FINC-20)
+- [x] 06-02-PLAN.md — 发票管理+费用报销审批+自动凭证生成 (FINC-06, FINC-07, FINC-08, FINC-09, FINC-10)
+- [x] 06-03-PLAN.md — 账簿生成+财务报表+结账+纳税申报 (FINC-11, FINC-12, FINC-13, FINC-14, FINC-15, FINC-16, FINC-17, FINC-18, FINC-21, FINC-22)
 
 ### Phase 7: 首页工作台
 **Goal**: 老板打开APP第一时间知道要做什么，待办事项和核心功能1步可达
