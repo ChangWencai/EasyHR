@@ -67,8 +67,7 @@ Exceptions:
 
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
-| Display | 20px | 600 | 1.2 | 页面大标题、金额数字 |
-| Heading | 18px | 600 | 1.3 | 模块标题、Tab 名称 |
+| Heading | 18px | 600 | 1.3 | 模块标题、Tab 名称、页面大标题、金额数字 |
 | Body | 16px | 400 | 1.5 | 正文、列表项、说明文字 |
 | Caption | 14px | 400 | 1.5 | 辅助文字、空状态、日期 |
 | Mini | 12px | 400 | 1.4 | 标签、徽章、权限说明 |
@@ -144,7 +143,7 @@ Exceptions:
 | 合同状态-待签署 | 待签署 |
 | 合同状态-已签署 | 已签署 |
 | 合同状态-已过期 | 已过期 |
-| 查看合同按钮 | 查看合同 |
+| 查看合同按钮 | 查看合同PDF |
 | 签署方式提示（V1.0降级） | 请联系 HR线下签署后上传 |
 
 ### 社保（WXMP-04）
@@ -179,6 +178,7 @@ Exceptions:
 | 提交按钮 | 提交报销 |
 | 提交成功提示 | 报销提交成功，等待老板审批 |
 | 提交前确认 | 确定提交这笔 ¥{amount} 的报销申请？ |
+| 确认提交按钮 | 确认提交 |
 
 ### 报销状态（WXMP-06）
 
@@ -204,7 +204,7 @@ Exceptions:
 | 手机号占位 | 请输入手机号 |
 | 验证码占位 | 请输入验证码 |
 | 发送验证码按钮 | 获取验证码 |
-| 登录按钮 | 登录 |
+| 登录按钮 | 确认登录 |
 | 登录成功提示 | 登录成功，正在跳转... |
 | 未绑定手机号提示 | 请先绑定手机号 |
 
@@ -427,12 +427,12 @@ Exceptions:
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS (revised)
+- [ ] Dimension 2 Visuals: PASS (FLAG — non-blocking)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS (revised: 4 sizes)
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
 **Approval:** pending
 
