@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
 	"gorm.io/gorm"
@@ -391,4 +392,179 @@ func (r *VoucherRepository) CreateReversal(original *Voucher, entries []JournalE
 		return nil, err
 	}
 	return reversal, nil
+}
+
+// ========== InvoiceRepository ==========
+
+// InvoiceRepository handles data access for Invoice.
+type InvoiceRepository struct {
+	db *gorm.DB
+}
+
+// NewInvoiceRepository creates a new InvoiceRepository.
+func NewInvoiceRepository(db *gorm.DB) *InvoiceRepository {
+	return &InvoiceRepository{db: db}
+}
+
+// Create creates a new invoice.
+func (r *InvoiceRepository) Create(invoice *Invoice) error {
+	return r.db.Create(invoice).Error
+}
+
+// Update updates an existing invoice.
+func (r *InvoiceRepository) Update(invoice *Invoice) error {
+	return r.db.Save(invoice).Error
+}
+
+// GetByID returns an invoice by ID within an org.
+func (r *InvoiceRepository) GetByID(orgID, id int64) (*Invoice, error) {
+	var invoice Invoice
+	err := r.db.Scopes(middleware.TenantScope(orgID)).First(&invoice, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &invoice, nil
+}
+
+// LinkVoucher sets the VoucherID on an invoice.
+func (r *InvoiceRepository) LinkVoucher(orgID, invoiceID, voucherID int64) error {
+	return r.db.Scopes(middleware.TenantScope(orgID)).
+		Model(&Invoice{}).
+		Where("id = ?", invoiceID).
+		Update("voucher_id", voucherID).Error
+}
+
+// List returns paginated invoices with optional filters.
+func (r *InvoiceRepository) List(orgID int64, req *ListInvoiceRequest) ([]Invoice, int64, error) {
+	var invoices []Invoice
+	var total int64
+
+	q := r.db.Scopes(middleware.TenantScope(orgID)).Model(&Invoice{})
+	if req.Type != nil {
+		q = q.Where("invoice_type = ?", *req.Type)
+	}
+	if req.Status != nil {
+		q = q.Where("status = ?", *req.Status)
+	}
+	if req.Year > 0 {
+		q = q.Where("EXTRACT(YEAR FROM date) = ?", req.Year)
+	}
+	if req.Month > 0 {
+		q = q.Where("EXTRACT(MONTH FROM date) = ?", req.Month)
+	}
+
+	q.Count(&total)
+
+	offset := (req.Page - 1) * req.Limit
+	err := q.Order("date DESC, id DESC").
+		Offset(offset).
+		Limit(req.Limit).
+		Find(&invoices).Error
+
+	return invoices, total, err
+}
+
+// GetMonthlyTaxSummary returns aggregated tax amounts by invoice type for a given year/month.
+func (r *InvoiceRepository) GetMonthlyTaxSummary(orgID int64, year, month int) (outputTax, inputTax, outputAmount, inputAmount decimal.Decimal, err error) {
+	type result struct {
+		InvoiceType string
+		TaxAmount   string
+		Amount      string
+	}
+
+	var results []result
+	err = r.db.Scopes(middleware.TenantScope(orgID)).
+		Model(&Invoice{}).
+		Select("invoice_type, SUM(tax_amount) as tax_amount, SUM(amount) as amount").
+		Where("EXTRACT(YEAR FROM date) = ? AND EXTRACT(MONTH FROM date) = ?", year, month).
+		Group("invoice_type").
+		Find(&results).Error
+	if err != nil {
+		return
+	}
+
+	for _, row := range results {
+		taxAmt, _ := decimal.NewFromString(row.TaxAmount)
+		amt, _ := decimal.NewFromString(row.Amount)
+		if row.InvoiceType == string(InvoiceTypeOutput) {
+			outputTax = taxAmt
+			outputAmount = amt
+		} else if row.InvoiceType == string(InvoiceTypeInput) {
+			inputTax = taxAmt
+			inputAmount = amt
+		}
+	}
+	return
+}
+
+// ========== ExpenseRepository ==========
+
+// ExpenseRepository handles data access for ExpenseReimbursement.
+type ExpenseRepository struct {
+	db *gorm.DB
+}
+
+// NewExpenseRepository creates a new ExpenseRepository.
+func NewExpenseRepository(db *gorm.DB) *ExpenseRepository {
+	return &ExpenseRepository{db: db}
+}
+
+// Create creates a new expense reimbursement record.
+func (r *ExpenseRepository) Create(expense *ExpenseReimbursement) error {
+	return r.db.Create(expense).Error
+}
+
+// Update updates an existing expense reimbursement record.
+func (r *ExpenseRepository) Update(expense *ExpenseReimbursement) error {
+	return r.db.Save(expense).Error
+}
+
+// GetByID returns an expense by ID within an org.
+func (r *ExpenseRepository) GetByID(orgID, id int64) (*ExpenseReimbursement, error) {
+	var expense ExpenseReimbursement
+	err := r.db.Scopes(middleware.TenantScope(orgID)).First(&expense, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &expense, nil
+}
+
+// UpdateStatus updates the status and related fields of an expense.
+func (r *ExpenseRepository) UpdateStatus(orgID, id int64, status ExpenseStatus) error {
+	return r.db.Scopes(middleware.TenantScope(orgID)).
+		Model(&ExpenseReimbursement{}).
+		Where("id = ?", id).
+		Update("status", status).Error
+}
+
+// LinkVoucher sets the VoucherID on an expense.
+func (r *ExpenseRepository) LinkVoucher(orgID, expenseID, voucherID int64) error {
+	return r.db.Scopes(middleware.TenantScope(orgID)).
+		Model(&ExpenseReimbursement{}).
+		Where("id = ?", expenseID).
+		Update("voucher_id", voucherID).Error
+}
+
+// List returns paginated expenses with optional filters.
+func (r *ExpenseRepository) List(orgID int64, status *ExpenseStatus, employeeID *int64, page, limit int) ([]ExpenseReimbursement, int64, error) {
+	var expenses []ExpenseReimbursement
+	var total int64
+
+	q := r.db.Scopes(middleware.TenantScope(orgID)).Model(&ExpenseReimbursement{})
+	if status != nil {
+		q = q.Where("status = ?", *status)
+	}
+	if employeeID != nil {
+		q = q.Where("employee_id = ?", *employeeID)
+	}
+
+	q.Count(&total)
+
+	offset := (page - 1) * limit
+	err := q.Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&expenses).Error
+
+	return expenses, total, err
 }
