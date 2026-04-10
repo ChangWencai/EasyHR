@@ -1,10 +1,12 @@
 package finance
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
 	"github.com/shopspring/decimal"
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -258,4 +260,97 @@ func (s *BookService) splitOpeningAndPeriodEntries(
 		}
 	}
 	return
+}
+
+// ExportToExcel exports trial balance data to an .xlsx file and returns the bytes.
+func (s *BookService) ExportToExcel(ctx context.Context, orgID, periodID int64, exportType string) ([]byte, error) {
+	if exportType == "" {
+		exportType = "trial_balance"
+	}
+	f := excelize.NewFile()
+	defer f.Close()
+	if exportType == "trial_balance" {
+		return s.exportTrialBalance(ctx, orgID, periodID, f)
+	}
+	return nil, fmt.Errorf("unsupported export type: %s", exportType)
+}
+
+func (s *BookService) exportTrialBalance(ctx context.Context, orgID, periodID int64, f *excelize.File) ([]byte, error) {
+	period, err := s.periodRepo.GetByID(orgID, periodID)
+	if err != nil {
+		return nil, fmt.Errorf("获取期间失败: %w", err)
+	}
+	tb, err := s.GetTrialBalance(ctx, orgID, periodID)
+	if err != nil {
+		return nil, fmt.Errorf("获取科目余额表失败: %w", err)
+	}
+	wsName := fmt.Sprintf("%d年%d月", period.Year, period.Month)
+	_, _ = f.NewSheet(wsName)
+
+	// Title
+	f.SetCellValue(wsName, "A1", fmt.Sprintf("科目余额表 — %d年%d月", period.Year, period.Month))
+	f.MergeCell(wsName, "A1", "F1")
+	titleStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Size: 14},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	f.SetCellStyle(wsName, "A1", "A1", titleStyle)
+
+	// Headers
+	headers := []string{"科目编码", "科目名称", "类别", "借方发生", "贷方发生", "期末余额"}
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#D9E1F2"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 3)
+		f.SetCellValue(wsName, cell, h)
+		f.SetCellStyle(wsName, cell, cell, headerStyle)
+	}
+
+	row := 4
+	for _, item := range tb.Items {
+		f.SetCellValue(wsName, fmt.Sprintf("A%d", row), item.Code)
+		f.SetCellValue(wsName, fmt.Sprintf("B%d", row), item.Name)
+		f.SetCellValue(wsName, fmt.Sprintf("C%d", row), categoryLabel(item.Category))
+		f.SetCellValue(wsName, fmt.Sprintf("D%d", row), item.DebitSum.StringFixed(2))
+		f.SetCellValue(wsName, fmt.Sprintf("E%d", row), item.CreditSum.StringFixed(2))
+		f.SetCellValue(wsName, fmt.Sprintf("F%d", row), item.Balance.StringFixed(2))
+		row++
+	}
+
+	// Total row
+	totalStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+	})
+	f.SetCellValue(wsName, fmt.Sprintf("A%d", row), "合计")
+	f.SetCellValue(wsName, fmt.Sprintf("D%d", row), tb.TotalDebit.StringFixed(2))
+	f.SetCellValue(wsName, fmt.Sprintf("E%d", row), tb.TotalCredit.StringFixed(2))
+	f.SetCellStyle(wsName, fmt.Sprintf("A%d", row), fmt.Sprintf("F%d", row), totalStyle)
+
+	f.DeleteSheet("Sheet1")
+	f.SetActiveSheet(0)
+	buf := new(bytes.Buffer)
+	if err := f.Write(buf); err != nil {
+		return nil, fmt.Errorf("写入Excel失败: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func categoryLabel(c AccountCategory) string {
+	switch c {
+	case AccountCategoryAsset:
+		return "资产"
+	case AccountCategoryLiability:
+		return "负债"
+	case AccountCategoryEquity:
+		return "权益"
+	case AccountCategoryCost:
+		return "成本"
+	case AccountCategoryProfit:
+		return "损益"
+	default:
+		return "其他"
+	}
 }

@@ -527,6 +527,11 @@ func (s *ReportService) saveSnapshot(orgID, periodID int64, reportType ReportTyp
 	return s.snapshotRepo.Create(snapshot)
 }
 
+// InvalidateByPeriod invalidates all report snapshots for a period (used during revert).
+func (s *ReportService) InvalidateByPeriod(orgID, periodID int64) error {
+	return s.snapshotRepo.InvalidateByPeriod(orgID, periodID)
+}
+
 // getInputInvoices returns verified INPUT invoices for a given month.
 func (s *ReportService) getInputInvoices(orgID int64, year, month int) ([]InvoiceRef, error) {
 	// This requires adding a method to InvoiceRepository - stub here

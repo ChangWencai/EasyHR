@@ -225,6 +225,15 @@ func (r *PeriodRepository) Update(period *Period) error {
 	return r.db.Save(period).Error
 }
 
+// GetAllByOrg returns all periods for an org ordered by year/month descending.
+func (r *PeriodRepository) GetAllByOrg(orgID int64) ([]Period, error) {
+	var periods []Period
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Order("year DESC, month DESC").
+		Find(&periods).Error
+	return periods, err
+}
+
 // UpdateStatus updates the status of a period.
 func (r *PeriodRepository) UpdateStatus(orgID, periodID int64, status PeriodStatus) error {
 	return r.db.Scopes(middleware.TenantScope(orgID)).

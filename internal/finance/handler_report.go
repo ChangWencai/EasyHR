@@ -1,11 +1,14 @@
 package finance
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
 )
 
 // ReportHandler handles financial report and period management routes.
@@ -153,19 +156,68 @@ func (h *ReportHandler) CalculateCIT(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// ExportTaxDeclaration stub — returns placeholder JSON (Excel export V2.0).
+// ExportTaxDeclaration exports tax declaration data to Excel.
+// GET /reports/tax-declaration/export?year=2026&month=4
 func (h *ReportHandler) ExportTaxDeclaration(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 	year, _ := strconv.Atoi(c.Query("year"))
 	month, _ := strconv.Atoi(c.Query("month"))
+	if year == 0 || month == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "year and month are required"})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "Excel export V2.0",
-		"year":       year,
-		"month":      month,
-		"org_id":     orgID,
-		"note":       "Excel export using excelize - to be implemented in V2.0",
+	vat, err := h.reportSvc.CalculateVAT(c.Request.Context(), orgID, year, month)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	quarter := (month-1)/3 + 1
+	cit, err := h.reportSvc.CalculateCIT(c.Request.Context(), orgID, year, quarter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	f := excelize.NewFile()
+	defer f.Close()
+	wsName := "纳税申报"
+	_, _ = f.NewSheet(wsName)
+	f.SetCellValue(wsName, "A1", fmt.Sprintf("纳税申报表 — %d年%d月", year, month))
+	f.MergeCell(wsName, "A1", "D1")
+	titleStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Size: 14}, Alignment: &excelize.Alignment{Horizontal: "center"},
 	})
+	f.SetCellStyle(wsName, "A1", "A1", titleStyle)
+
+	headers := []string{"税种", "期间", "金额", "说明"}
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#D9E1F2"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	for i, hdr := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 3)
+		f.SetCellValue(wsName, cell, hdr)
+		f.SetCellStyle(wsName, cell, cell, headerStyle)
+	}
+
+	f.SetCellValue(wsName, "A4", "增值税")
+	f.SetCellValue(wsName, "B4", fmt.Sprintf("%d-%02d", year, month))
+	f.SetCellValue(wsName, "C4", vat.NetVAT.StringFixed(2))
+	f.SetCellValue(wsName, "D4", fmt.Sprintf("销项%v - 进项%v", vat.OutputTax.StringFixed(2), vat.InputTax.StringFixed(2)))
+
+	f.SetCellValue(wsName, "A5", "企业所得税")
+	f.SetCellValue(wsName, "B5", fmt.Sprintf("%d年第%d季度", year, quarter))
+	f.SetCellValue(wsName, "C5", cit.EstimatedCIT.StringFixed(2))
+	f.SetCellValue(wsName, "D5", "季度企业所得税预缴")
+
+	f.DeleteSheet("Sheet1")
+	buf := new(bytes.Buffer)
+	_ = f.Write(buf)
+	filename := fmt.Sprintf("纳税申报_%d年%d月.xlsx", year, month)
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buf.Bytes())
 }
 
 // ListPeriods returns all periods for the org.

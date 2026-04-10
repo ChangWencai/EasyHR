@@ -24,6 +24,7 @@ func (h *BookHandler) RegisterRoutes(rg *gin.RouterGroup) {
 		books.GET("/trial-balance", h.GetTrialBalance)
 		books.GET("/account-balance", h.GetAccountBalance)
 		books.GET("/ledger", h.GetLedger)
+		books.GET("/export", h.ExportBook)
 	}
 }
 
@@ -97,4 +98,25 @@ func (h *BookHandler) GetLedger(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// ExportBook exports book data to Excel.
+// GET /books/export?period_id=1&type=trial_balance
+func (h *BookHandler) ExportBook(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+	periodID, err := strconv.ParseInt(c.Query("period_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "period_id is required"})
+		return
+	}
+	exportType := c.DefaultQuery("type", "trial_balance")
+
+	data, err := h.bookSvc.ExportToExcel(c.Request.Context(), orgID, periodID, exportType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	filename := "账簿导出.xlsx"
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
 }
