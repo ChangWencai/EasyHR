@@ -7,14 +7,23 @@ import (
 // FinanceHandler wraps all finance sub-handlers and provides route registration.
 type FinanceHandler struct {
 	accountHandler  *AccountHandler
-	voucherHandler *VoucherHandler
+	voucherHandler  *VoucherHandler
+	invoiceHandler  *InvoiceHandler
+	expenseHandler  *ExpenseHandler
 }
 
 // NewFinanceHandler creates a new FinanceHandler.
-func NewFinanceHandler(accountHandler *AccountHandler, voucherHandler *VoucherHandler) *FinanceHandler {
+func NewFinanceHandler(
+	accountHandler *AccountHandler,
+	voucherHandler *VoucherHandler,
+	invoiceHandler *InvoiceHandler,
+	expenseHandler *ExpenseHandler,
+) *FinanceHandler {
 	return &FinanceHandler{
 		accountHandler:  accountHandler,
 		voucherHandler:  voucherHandler,
+		invoiceHandler:  invoiceHandler,
+		expenseHandler:  expenseHandler,
 	}
 }
 
@@ -25,5 +34,11 @@ func (h *FinanceHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 	if h.voucherHandler != nil {
 		h.voucherHandler.RegisterRoutes(rg)
+	}
+	if h.invoiceHandler != nil {
+		h.invoiceHandler.RegisterRoutes(rg)
+	}
+	if h.expenseHandler != nil {
+		h.expenseHandler.RegisterRoutes(rg)
 	}
 }

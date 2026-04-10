@@ -72,8 +72,9 @@ func initApp() {
 		&salary.PayrollItem{},
 		&salary.PayrollSlip{},
 
-		// 财务模块模型 — AutoMigrate includes Account, Period, Voucher, JournalEntry
+		// 财务模块模型 — AutoMigrate includes Account, Period, Voucher, JournalEntry, Invoice, ExpenseReimbursement
 		&finance.Account{}, &finance.Period{}, &finance.Voucher{}, &finance.JournalEntry{},
+		&finance.Invoice{}, &finance.ExpenseReimbursement{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -159,11 +160,17 @@ func main() {
 	accountRepo := finance.NewAccountRepository(db)
 	periodRepo := finance.NewPeriodRepository(db)
 	voucherRepo := finance.NewVoucherRepository(db)
+	invoiceRepo := finance.NewInvoiceRepository(db)
+	expenseRepo := finance.NewExpenseRepository(db)
 	accountSvc := finance.NewAccountServiceWithPeriod(accountRepo, periodRepo)
 	voucherSvc := finance.NewVoucherService(voucherRepo, periodRepo, accountRepo)
+	invoiceSvc := finance.NewInvoiceService(invoiceRepo, voucherRepo)
+	expenseSvc := finance.NewExpenseService(expenseRepo, accountRepo, voucherSvc)
 	accountHandler := finance.NewAccountHandler(accountSvc)
 	voucherHandler := finance.NewVoucherHandler(voucherSvc)
-	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler)
+	invoiceHandler := finance.NewInvoiceHandler(invoiceSvc, voucherSvc)
+	expenseHandler := finance.NewExpenseHandler(expenseSvc, voucherSvc)
+	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler, invoiceHandler, expenseHandler)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
