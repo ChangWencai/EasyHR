@@ -5,9 +5,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// RegisterRouter wires up the dashboard package and registers routes under /dashboard.
+// RegisterRouter wires up the dashboard package and registers the GET /dashboard route.
+// The caller passes an already-prefixed router group (e.g. v1.Group("/dashboard")).
 func RegisterRouter(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc, db *gorm.DB) {
 	repo := NewRepository(db)
 	svc := NewService(repo)
-	RegisterDashboardRouter(rg, svc, authMiddleware)
+	handler := NewHandler(svc)
+
+	rg.Use(authMiddleware)
+	rg.GET("", handler.GetDashboard)
 }

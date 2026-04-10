@@ -7,27 +7,27 @@ import (
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
-// Handler handles HTTP requests for dashboard endpoints.
+// Handler handles HTTP requests for the dashboard.
 type Handler struct {
 	svc ServiceInterface
 }
 
-// NewHandler creates a new dashboard Handler.
+// NewHandler creates a new DashboardHandler.
 func NewHandler(svc ServiceInterface) *Handler {
 	return &Handler{svc: svc}
 }
 
 // GetDashboard handles GET /api/v1/dashboard.
-// It extracts org_id from the JWT context and returns the dashboard result.
+// org_id is extracted from the JWT context (set by auth middleware).
 func (h *Handler) GetDashboard(c *gin.Context) {
 	orgIDVal, exists := c.Get("org_id")
 	if !exists {
-		response.Unauthorized(c, "missing org_id in context")
+		response.Error(c, http.StatusUnauthorized, 40100, "missing org_id in context")
 		return
 	}
 	orgID, ok := orgIDVal.(uint)
 	if !ok {
-		response.Unauthorized(c, "invalid org_id type")
+		response.Error(c, http.StatusUnauthorized, 40100, "invalid org_id type")
 		return
 	}
 
@@ -38,11 +38,4 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 	}
 
 	response.Success(c, result)
-}
-
-// RegisterDashboardRouter registers the dashboard router group.
-func RegisterDashboardRouter(rg *gin.RouterGroup, svc ServiceInterface, authMiddleware gin.HandlerFunc) {
-	handler := NewHandler(svc)
-	rg.Use(authMiddleware)
-	rg.GET("", handler.GetDashboard)
 }
