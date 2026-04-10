@@ -13,6 +13,7 @@ const (
 	CodeAccountNotFound      = 60207
 	CodeInvalidStatus        = 60208
 	CodeInvalidDC            = 60209
+	CodeSystemAccountDelete  = 60210
 )
 
 // FinanceError wraps an error with a numeric code for structured error handling.
@@ -60,4 +61,6 @@ var (
 		Code: CodeClosingValidation,
 		Err:  fmt.Errorf("结账校验失败"),
 	}
+
+	errSystemAccountCannotBeDeleted = fmt.Errorf("系统预置科目不能删除")
 )
