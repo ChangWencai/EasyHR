@@ -11,7 +11,7 @@ import (
 )
 
 // createTestAccountForService is a local helper to create a test account.
-func createTestAccountForService(db *gorm.DB, orgID int64, code, name, category string, normalBalance NormalBalance) (*Account, error) {
+func createTestAccountForService(db *gorm.DB, orgID int64, code, name string, category AccountCategory, normalBalance NormalBalance) (*Account, error) {
 	acct := &Account{
 		BaseModel:     model.BaseModel{OrgID: orgID},
 		Code:          code,
@@ -76,26 +76,26 @@ func TestBalanceSheet_EquationHolds(t *testing.T) {
 	}
 
 	// Asset account (normal debit balance)
-	assetAcct, err := createTestAccountForService(db, org.ID, "1001", "库存现金", "asset", NormalBalanceDebit)
+	assetAcct, err := createTestAccountForService(db, org.ID, "1001", "库存现金", AccountCategoryAsset, NormalBalanceDebit)
 	if err != nil {
 		t.Fatalf("failed to create asset account: %v", err)
 	}
 	// Liability account (normal credit balance)
-	liabilityAcct, err := createTestAccountForService(db, org.ID, "2201", "应付账款", "liability", NormalBalanceCredit)
+	liabilityAcct, err := createTestAccountForService(db, org.ID, "2201", "应付账款", AccountCategoryLiability, NormalBalanceCredit)
 	if err != nil {
 		t.Fatalf("failed to create liability account: %v", err)
 	}
 	// Owners equity account (normal credit balance)
-	equityAcct, err := createTestAccountForService(db, org.ID, "4001", "实收资本", "equity", NormalBalanceCredit)
+	equityAcct, err := createTestAccountForService(db, org.ID, "4001", "实收资本", AccountCategoryEquity, NormalBalanceCredit)
 	if err != nil {
 		t.Fatalf("failed to create equity account: %v", err)
 	}
 
 	// Initial balance: Asset=1000, Liability=400, Equity=600  =>  1000=1000
 	entries := []JournalEntry{
-		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: assetAcct.ID, DC: DCTypeDebit, Amount: decimal.NewFromInt(1000), Summary: "资产借方"},
-		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: liabilityAcct.ID, DC: DCTypeCredit, Amount: decimal.NewFromInt(400), Summary: "负债贷方"},
-		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: equityAcct.ID, DC: DCTypeCredit, Amount: decimal.NewFromInt(600), Summary: "权益贷方"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: assetAcct.ID, DC: DCDebit, Amount: decimal.NewFromInt(1000), Summary: "资产借方"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: liabilityAcct.ID, DC: DCCredit, Amount: decimal.NewFromInt(400), Summary: "负债贷方"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: equityAcct.ID, DC: DCCredit, Amount: decimal.NewFromInt(600), Summary: "权益贷方"},
 	}
 	voucher, err := createTestVoucherForService(db, org.ID, period.ID, VoucherStatusAudited, entries)
 	if err != nil {
