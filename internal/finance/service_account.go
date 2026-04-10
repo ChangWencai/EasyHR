@@ -162,3 +162,8 @@ func currentYearMonth() (int, int) {
 
 // currentTime is overridable for testing.
 var currentTime = func() time.Time { return time.Now() }
+
+// findAccountByCode is package-internal; used by payroll_adapter.go.
+func (s *AccountService) findAccountByCode(orgID int64, code string) (*Account, error) {
+	return s.repo.GetByCode(orgID, code)
+}
