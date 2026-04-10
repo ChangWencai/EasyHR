@@ -65,7 +65,9 @@ function dismissOnboarding() {
   margin: 0 0 16px 0;
   text-align: center;
 }
-.onboarding-steps { margin-bottom: 20px; }
+.onboarding-steps {
+  margin-bottom: 20px;
+}
 .step {
   display: flex;
   align-items: flex-start;
@@ -86,5 +88,7 @@ function dismissOnboarding() {
   justify-content: center;
   flex-shrink: 0;
 }
-.onboarding-btn { width: 100%; }
+.onboarding-btn {
+  width: 100%;
+}
 </style>

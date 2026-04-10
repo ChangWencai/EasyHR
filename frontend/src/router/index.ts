@@ -8,10 +8,26 @@ const routes: RouteRecordRaw[] = [
     redirect: '/home',
     children: [
       { path: '/home', name: 'home', component: () => import('@/views/home/HomeView.vue') },
-      { path: '/employee', name: 'employee', component: () => import('@/views/layout/PlaceholderView.vue') },
-      { path: '/tool', name: 'tool', component: () => import('@/views/layout/PlaceholderView.vue') },
-      { path: '/finance', name: 'finance', component: () => import('@/views/layout/PlaceholderView.vue') },
-      { path: '/mine', name: 'mine', component: () => import('@/views/layout/PlaceholderView.vue') },
+      {
+        path: '/employee',
+        name: 'employee',
+        component: () => import('@/views/layout/PlaceholderView.vue'),
+      },
+      {
+        path: '/tool',
+        name: 'tool',
+        component: () => import('@/views/layout/PlaceholderView.vue'),
+      },
+      {
+        path: '/finance',
+        name: 'finance',
+        component: () => import('@/views/layout/PlaceholderView.vue'),
+      },
+      {
+        path: '/mine',
+        name: 'mine',
+        component: () => import('@/views/layout/PlaceholderView.vue'),
+      },
     ],
   },
   { path: '/login', name: 'login', component: () => import('@/views/layout/PlaceholderView.vue') },

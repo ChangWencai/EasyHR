@@ -17,13 +17,7 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import {
-  HomeFilled,
-  UserFilled,
-  Tools,
-  Money,
-  Avatar,
-} from '@element-plus/icons-vue'
+import { HomeFilled, UserFilled, Tools, Money, Avatar } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
