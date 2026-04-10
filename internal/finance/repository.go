@@ -185,6 +185,16 @@ func (r *PeriodRepository) GetByYearMonth(orgID int64, year, month int) (*Period
 	return &period, nil
 }
 
+// GetByID returns a period by ID within an org.
+func (r *PeriodRepository) GetByID(orgID, periodID int64) (*Period, error) {
+	var period Period
+	err := r.db.Scopes(middleware.TenantScope(orgID)).First(&period, periodID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &period, nil
+}
+
 // GetOrCreate returns existing period or creates a new one for the given year/month.
 func (r *PeriodRepository) GetOrCreate(orgID int64, year, month int) (*Period, error) {
 	var period Period
@@ -567,4 +577,261 @@ func (r *ExpenseRepository) List(orgID int64, status *ExpenseStatus, employeeID 
 		Find(&expenses).Error
 
 	return expenses, total, err
+}
+
+// ========== JournalEntryRepository ==========
+
+// JournalEntryRepository handles data access for JournalEntry queries used by BookService.
+type JournalEntryRepository struct {
+	db *gorm.DB
+}
+
+// NewJournalEntryRepository creates a new JournalEntryRepository.
+func NewJournalEntryRepository(db *gorm.DB) *JournalEntryRepository {
+	return &JournalEntryRepository{db: db}
+}
+
+// BalanceSum holds the summed debit and credit amounts for an account.
+type BalanceSum struct {
+	DebitSum  decimal.Decimal
+	CreditSum decimal.Decimal
+}
+
+// SumByAccount returns a map of accountID -> BalanceSum for a given period.
+// This is the core query for the trial balance (D-10).
+func (r *JournalEntryRepository) SumByAccount(orgID, periodID int64) (map[int64]*BalanceSum, error) {
+	type row struct {
+		AccountID int64
+		DC        string
+		Total     string
+	}
+	var rows []row
+	err := r.db.Model(&JournalEntry{}).
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Where("journal_entries.org_id = ? AND vouchers.period_id = ?", orgID, periodID).
+		Select("journal_entries.account_id, journal_entries.dc, SUM(journal_entries.amount) as total").
+		Group("journal_entries.account_id, journal_entries.dc").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[int64]*BalanceSum)
+	for _, row := range rows {
+		if _, ok := result[row.AccountID]; !ok {
+			result[row.AccountID] = &BalanceSum{}
+		}
+		total, _ := decimal.NewFromString(row.Total)
+		if row.DC == string(DCDebit) {
+			result[row.AccountID].DebitSum = total
+		} else {
+			result[row.AccountID].CreditSum = total
+		}
+	}
+	return result, nil
+}
+
+// JournalEntryWithVoucher holds a journal entry joined with voucher info for ledger display.
+type JournalEntryWithVoucher struct {
+	JournalEntry
+	PeriodID   int64
+	VoucherNo  string
+	VoucherDate time.Time
+}
+
+// GetByAccountUpToPeriod returns all journal entries for an account up to and including the given period,
+// joined with voucher info for ledger display.
+func (r *JournalEntryRepository) GetByAccountUpToPeriod(orgID, accountID, periodID int64) ([]JournalEntryWithVoucher, error) {
+	var rows []JournalEntryWithVoucher
+	err := r.db.Model(&JournalEntry{}).
+		Select("journal_entries.*, vouchers.period_id, vouchers.voucher_no, vouchers.date as voucher_date").
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Where("journal_entries.org_id = ? AND journal_entries.account_id = ? AND vouchers.period_id <= ?", orgID, accountID, periodID).
+		Order("vouchers.date ASC, vouchers.id ASC, journal_entries.id ASC").
+		Find(&rows).Error
+	return rows, err
+}
+
+// GetPeriodDebitCreditSum returns the total debit and credit sums for all journal entries in a period.
+func (r *JournalEntryRepository) GetPeriodDebitCreditSum(orgID, periodID int64) (debit, credit decimal.Decimal, err error) {
+	type row struct {
+		DC    string
+		Total string
+	}
+	var rows []row
+	err = r.db.Model(&JournalEntry{}).
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Where("journal_entries.org_id = ? AND vouchers.period_id = ?", orgID, periodID).
+		Select("journal_entries.dc, SUM(journal_entries.amount) as total").
+		Group("journal_entries.dc").
+		Find(&rows).Error
+	if err != nil {
+		return
+	}
+	for _, row := range rows {
+		total, _ := decimal.NewFromString(row.Total)
+		if row.DC == string(DCDebit) {
+			debit = total
+		} else {
+			credit = total
+		}
+	}
+	return
+}
+
+// GetAccountPeriodEntries returns all journal entries for an account in a specific period.
+func (r *JournalEntryRepository) GetAccountPeriodEntries(orgID, accountID, periodID int64) ([]JournalEntry, error) {
+	var entries []JournalEntry
+	err := r.db.Model(&JournalEntry{}).
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Where("journal_entries.org_id = ? AND journal_entries.account_id = ? AND vouchers.period_id = ?", orgID, accountID, periodID).
+		Order("vouchers.date ASC, vouchers.id ASC").
+		Find(&entries).Error
+	return entries, err
+}
+
+// GetAccountsWithNegativeBalance returns asset/cost accounts with negative balances in a period.
+func (r *JournalEntryRepository) GetAccountsWithNegativeBalance(orgID, periodID int64) ([]struct {
+	AccountID int64
+	Balance   decimal.Decimal
+}, error) {
+	// Get all account balances for asset/cost categories and check for negatives
+	// We'll compute in-memory since we need to check each balance individually
+	type row struct {
+		AccountID int64
+		DC        string
+		Total     string
+	}
+	var rows []row
+	err := r.db.Model(&JournalEntry{}).
+		Select("journal_entries.account_id, journal_entries.dc, SUM(journal_entries.amount) as total").
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Joins("JOIN accounts ON accounts.id = journal_entries.account_id").
+		Where("journal_entries.org_id = ? AND vouchers.period_id = ? AND accounts.category IN ?",
+			orgID, periodID, []string{string(AccountCategoryAsset), string(AccountCategoryCost)}).
+		Group("journal_entries.account_id, journal_entries.dc").
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	balanceMap := make(map[int64]decimal.Decimal)
+	for _, row := range rows {
+		total, _ := decimal.NewFromString(row.Total)
+		if _, ok := balanceMap[row.AccountID]; !ok {
+			balanceMap[row.AccountID] = decimal.Zero
+		}
+		if row.DC == string(DCDebit) {
+			balanceMap[row.AccountID] = balanceMap[row.AccountID].Add(total)
+		} else {
+			balanceMap[row.AccountID] = balanceMap[row.AccountID].Sub(total)
+		}
+	}
+
+	var result []struct {
+		AccountID int64
+		Balance   decimal.Decimal
+	}
+	for aid, bal := range balanceMap {
+		if bal.IsNegative() {
+			result = append(result, struct {
+				AccountID int64
+				Balance   decimal.Decimal
+			}{aid, bal})
+		}
+	}
+	return result, nil
+}
+
+// UpdateVoucherStatusBatch updates the status of all vouchers in a period.
+func (r *JournalEntryRepository) UpdateVoucherStatusBatch(orgID, periodID int64, status VoucherStatus) error {
+	return r.db.Model(&Voucher{}).
+		Where("org_id = ? AND period_id = ?", orgID, periodID).
+		Update("status", status).Error
+}
+
+// GetAccountsByCategory returns all accounts for an org within the given categories.
+func (r *JournalEntryRepository) GetAccountsByCategory(orgID int64, categories []AccountCategory) ([]Account, error) {
+	var accounts []Account
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("category IN ?", categories).
+		Order("code ASC").
+		Find(&accounts).Error
+	return accounts, err
+}
+
+// SumByCategory returns the total debit and credit sums for all accounts in given categories for a period.
+func (r *JournalEntryRepository) SumByCategory(orgID, periodID int64, categories []AccountCategory) (debit, credit decimal.Decimal, err error) {
+	type row struct {
+		DC    string
+		Total string
+	}
+	var rows []row
+	err = r.db.Model(&JournalEntry{}).
+		Select("journal_entries.dc, SUM(journal_entries.amount) as total").
+		Joins("JOIN vouchers ON vouchers.id = journal_entries.voucher_id").
+		Joins("JOIN accounts ON accounts.id = journal_entries.account_id").
+		Where("journal_entries.org_id = ? AND vouchers.period_id = ? AND accounts.category IN ?",
+			orgID, periodID, categories).
+		Group("journal_entries.dc").
+		Find(&rows).Error
+	if err != nil {
+		return
+	}
+	for _, row := range rows {
+		total, _ := decimal.NewFromString(row.Total)
+		if row.DC == string(DCDebit) {
+			debit = total
+		} else {
+			credit = total
+		}
+	}
+	return
+}
+
+// ========== SnapshotRepository ==========
+
+// SnapshotRepository handles data access for ReportSnapshot.
+type SnapshotRepository struct {
+	db *gorm.DB
+}
+
+// NewSnapshotRepository creates a new SnapshotRepository.
+func NewSnapshotRepository(db *gorm.DB) *SnapshotRepository {
+	return &SnapshotRepository{db: db}
+}
+
+// Create creates a new report snapshot.
+func (r *SnapshotRepository) Create(snapshot *ReportSnapshot) error {
+	return r.db.Create(snapshot).Error
+}
+
+// GetByPeriodAndType returns a valid snapshot for the given period and report type.
+func (r *SnapshotRepository) GetByPeriodAndType(orgID int64, periodID int64, reportType ReportType) (*ReportSnapshot, error) {
+	var snapshot ReportSnapshot
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("period_id = ? AND report_type = ? AND is_valid = ?", periodID, reportType, true).
+		First(&snapshot).Error
+	if err != nil {
+		return nil, err
+	}
+	return &snapshot, nil
+}
+
+// InvalidateByPeriod marks all snapshots for a period as invalid (used during revert).
+func (r *SnapshotRepository) InvalidateByPeriod(orgID, periodID int64) error {
+	return r.db.Scopes(middleware.TenantScope(orgID)).
+		Model(&ReportSnapshot{}).
+		Where("period_id = ?", periodID).
+		Update("is_valid", false).Error
+}
+
+// GetByPeriod returns all snapshots for a period.
+func (r *SnapshotRepository) GetByPeriod(orgID, periodID int64) ([]ReportSnapshot, error) {
+	var snapshots []ReportSnapshot
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("period_id = ?", periodID).
+		Order("generated_at DESC").
+		Find(&snapshots).Error
+	return snapshots, err
 }

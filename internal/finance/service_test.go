@@ -59,9 +59,89 @@ func createTestVoucherForService(db *gorm.DB, orgID int64, periodID int64, statu
 }
 
 func TestTrialBalance_CalculatesCorrectly(t *testing.T) {
-	// TDD RED: BookService not yet implemented
-	// Placeholder test — implementation will be added in plan 06-03
-	t.Errorf("BookService not yet implemented")
+	// Test that TrialBalance: total debit SUM = total credit SUM across all entries
+	db := setupFinanceDB(t)
+	org, _ := testutil.CreateTestOrg(db, "Test Org TB", "91110000123456002X", "Beijing")
+	period, err := createTestPeriodForService(db, org.ID, 2026, 5)
+	if err != nil {
+		t.Fatalf("failed to create period: %v", err)
+	}
+
+	// Create two asset accounts
+	asset1, err := createTestAccountForService(db, org.ID, "1001", "库存现金", AccountCategoryAsset, NormalBalanceDebit)
+	if err != nil {
+		t.Fatalf("failed to create asset1: %v", err)
+	}
+	asset2, err := createTestAccountForService(db, org.ID, "1002", "银行存款", AccountCategoryAsset, NormalBalanceDebit)
+	if err != nil {
+		t.Fatalf("failed to create asset2: %v", err)
+	}
+	// Create one liability account
+	liability, err := createTestAccountForService(db, org.ID, "2202", "应付账款", AccountCategoryLiability, NormalBalanceCredit)
+	if err != nil {
+		t.Fatalf("failed to create liability: %v", err)
+	}
+
+	// Voucher 1: DEBIT 1001=500, DEBIT 1002=300, CREDIT 2202=800
+	entries1 := []JournalEntry{
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: asset1.ID, DC: DCDebit, Amount: decimal.NewFromInt(500), Summary: "提现"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: asset2.ID, DC: DCDebit, Amount: decimal.NewFromInt(300), Summary: "转账"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: liability.ID, DC: DCCredit, Amount: decimal.NewFromInt(800), Summary: "应付"},
+	}
+	v1, err := createTestVoucherForService(db, org.ID, period.ID, VoucherStatusAudited, entries1)
+	if err != nil {
+		t.Fatalf("failed to create voucher1: %v", err)
+	}
+	_ = v1
+
+	// Voucher 2: DEBIT 2202=200, CREDIT 1001=200 (repayment)
+	entries2 := []JournalEntry{
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: liability.ID, DC: DCDebit, Amount: decimal.NewFromInt(200), Summary: "还款"},
+		{BaseModel: model.BaseModel{OrgID: org.ID}, AccountID: asset1.ID, DC: DCCredit, Amount: decimal.NewFromInt(200), Summary: "还款"},
+	}
+	v2, err := createTestVoucherForService(db, org.ID, period.ID, VoucherStatusAudited, entries2)
+	if err != nil {
+		t.Fatalf("failed to create voucher2: %v", err)
+	}
+	_ = v2
+
+	// Build services manually (no gorm.DB scoping in tests)
+	accountRepo := NewAccountRepository(db)
+	periodRepo := NewPeriodRepository(db)
+	journalRepo := NewJournalEntryRepository(db)
+	bookSvc := NewBookService(db, accountRepo, journalRepo, periodRepo)
+
+	result, err := bookSvc.GetTrialBalance(t.Context(), org.ID, period.ID)
+	if err != nil {
+		t.Fatalf("GetTrialBalance failed: %v", err)
+	}
+
+	if !result.IsBalanced {
+		t.Errorf("trial balance is not balanced: totalDebit=%s, totalCredit=%s",
+			result.TotalDebit.String(), result.TotalCredit.String())
+	}
+
+	if !result.TotalDebit.Equal(result.TotalCredit) {
+		t.Errorf("SUM(debit)=%s != SUM(credit)=%s", result.TotalDebit.String(), result.TotalCredit.String())
+	}
+
+	// After voucher2, 1001 balance should be 300 (500-200), 1002=300, 2202=600
+	for _, item := range result.Items {
+		switch item.Code {
+		case "1001":
+			if !item.Balance.Equal(decimal.NewFromInt(300)) {
+				t.Errorf("1001 balance = %s, want 300", item.Balance.String())
+			}
+		case "1002":
+			if !item.Balance.Equal(decimal.NewFromInt(300)) {
+				t.Errorf("1002 balance = %s, want 300", item.Balance.String())
+			}
+		case "2202":
+			if !item.Balance.Equal(decimal.NewFromInt(600)) {
+				t.Errorf("2202 balance = %s, want 600", item.Balance.String())
+			}
+		}
+	}
 }
 
 func TestBalanceSheet_EquationHolds(t *testing.T) {

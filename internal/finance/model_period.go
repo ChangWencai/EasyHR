@@ -9,7 +9,6 @@ import (
 // Period represents an accounting period (会计期间).
 type Period struct {
 	model.BaseModel
-	OrgID            int64        `gorm:"column:org_id;not null;uniqueIndex:idx_period_org_ym,priority:1" json:"-"`
 	Year             int          `gorm:"not null;uniqueIndex:idx_period_org_ym,priority:2" json:"year"`
 	Month            int          `gorm:"not null;uniqueIndex:idx_period_org_ym,priority:3" json:"month"`
 	Status           PeriodStatus `gorm:"type:varchar(10);default:'OPEN'" json:"status"`
