@@ -68,7 +68,7 @@ Plans:
   2. 老板勾选员工并确认后一键生成参保材料PDF
   3. 社保缴费到期前3天自动提醒老板，缴费明细可查询、可导出凭证
   4. 员工岗位或薪资变动时自动触发社保基数调整提醒
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 03-01-PLAN.md — 社保政策库模型+CRUD+基数计算引擎 (SOCL-01)
@@ -99,7 +99,7 @@ Plans:
   2. 支持"复制上月工资表"快速核算，支持导入考勤表Excel辅助核算
   3. 自动生成电子工资单并推送至员工手机，员工可在线确认签收
   4. 工资条可导出Excel，每月发放状态/金额/方式有记录，异常发放自动提醒
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 05-01-PLAN.md — 数据模型+薪资结构配置+跨模块接口+main.go集成 (PAYR-01, PAYR-02)
@@ -116,11 +116,12 @@ Plans:
   3. 基于凭证数据实时生成总账、明细账、科目余额表，支持导出Excel
   4. 月末结账后自动生成资产负债表和利润表，支持多期对比；结账锁定当期凭证
   5. 基于发票和凭证数据自动计算增值税和企业所得税，生成纳税申报辅助数据
-**Plans**: 3 plans
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01-PLAN.md — 科目体系+凭证CRUD+红冲 (FINC-01, FINC-02, FINC-03, FINC-04, FINC-05, FINC-19, FINC-20)
+- [ ] 06-00-PLAN.md — 测试脚手架+decimal依赖安装
+- [ ] 06-01-PLAN.md — 科目体系+凭证CRUD+红冲+工资凭证adapter (FINC-01, FINC-02, FINC-03, FINC-04, FINC-05, FINC-19, FINC-20)
 - [ ] 06-02-PLAN.md — 发票管理+费用报销审批+自动凭证生成 (FINC-06, FINC-07, FINC-08, FINC-09, FINC-10)
 - [ ] 06-03-PLAN.md — 账簿生成+财务报表+结账+纳税申报 (FINC-11, FINC-12, FINC-13, FINC-14, FINC-15, FINC-16, FINC-17, FINC-18, FINC-21, FINC-22)
 
