@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "pages/payslips/payslips",
+    "pages/contracts/contracts",
+    "pages/social/social",
+    "pages/expense/expense",
+    "pages/mine/mine",
+    "pages/expense-list/expense-list",
+    "pages/login/login",
+    "pages/payslips-detail/payslips-detail"
+  ]
+}

@@ -1,0 +1,18 @@
+<!-- payslips.wxml -->
+<view class="container">
+  <view wx:if="{{loading}}" class="empty-state"><text>加载中...</text></view>
+  <view wx:elif="{{list.length === 0}}" class="empty-state">
+    <text class="empty-title">暂无工资记录</text>
+    <text class="empty-desc">您的工资单将在发放后展示，请耐心等待</text>
+  </view>
+  <scroll-view wx:else scroll-y style="height:100vh;">
+    <view wx:for="{{list}}" wx:key="id" class="card payslip-card" bindtap="onPayslipTap" data-id="{{item.id}}">
+      <view class="payslip-month">{{item.year}}年{{item.month}}月</view>
+      <view class="payslip-row">
+        <text class="payslip-amount">实发 ¥{{item.net_amount}}</text>
+        <text class="status-badge status-{{item.status}}">{{item.status_text}}</text>
+      </view>
+      <view wx:if="{{item.signed_at}}" class="payslip-signed">已签收 {{item.signed_at}}</view>
+    </view>
+  </scroll-view>
+</view>

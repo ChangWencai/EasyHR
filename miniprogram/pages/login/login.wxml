@@ -1,0 +1,19 @@
+<!-- login.wxml -->
+<view class="login-page">
+  <view class="logo-area">
+    <text class="logo-text">易人事</text>
+    <text class="logo-sub">员工端</text>
+  </view>
+  <view class="form-area">
+    <view class="form-item">
+      <input type="number" placeholder="请输入手机号" maxlength="11" bindinput="onPhoneInput" value="{{phone}}" />
+    </view>
+    <view class="form-item code-item">
+      <input type="number" placeholder="请输入验证码" maxlength="6" bindinput="onCodeInput" value="{{code}}" />
+      <button class="code-btn {{countdown > 0 ? 'disabled' : ''}}" bindtap="sendCode" disabled="{{countdown > 0}}">
+        {{countdown > 0 ? countdown + 's' : '获取验证码'}}
+      </button>
+    </view>
+    <button class="btn-primary login-btn" bindtap="login" loading="{{loading}}">确认登录</button>
+  </view>
+</view>

@@ -1,0 +1,23 @@
+<!-- expense.wxml -->
+<view class="container">
+  <view class="card form-card">
+    <view class="form-label">费用类型 *</view>
+    <picker bindchange="onTypeChange" value="{{types[typeIndex]}}" range="{{types}}">
+      <view class="picker-value">{{types[typeIndex] || '请选择'}}</view>
+    </picker>
+    <view class="form-label">报销金额 *</view>
+    <input type="digit" placeholder="请输入金额" bindinput="onAmountInput" value="{{amount}}" />
+    <view class="form-label">费用说明</view>
+    <textarea placeholder="请填写费用说明（选填）" bindinput="onDescInput" value="{{description}}" auto-height />
+    <view class="form-label">票据照片</view>
+    <view class="photo-grid">
+      <view wx:for="{{photos}}" wx:key="index" class="photo-item">
+        <image src="{{item}}" mode="aspectFill" />
+        <view class="photo-del" bindtap="delPhoto" data-index="{{index}}">×</view>
+      </view>
+      <view wx:if="{{photos.length < 9}}" class="photo-add" bindtap="chooseImage">+</view>
+    </view>
+    <view class="photo-tip">最多9张，每张≤5MB</view>
+    <button class="btn-primary" bindtap="submitExpense" loading="{{submitting}}">提交报销</button>
+  </view>
+</view>

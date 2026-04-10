@@ -1,0 +1,35 @@
+{
+  "pages": [
+    "pages/payslips/payslips",
+    "pages/contracts/contracts",
+    "pages/social/social",
+    "pages/expense/expense",
+    "pages/mine/mine",
+    "pages/expense-list/expense-list",
+    "pages/login/login",
+    "pages/payslips-detail/payslips-detail"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1677FF",
+    "navigationBarTitleText": "易人事",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/payslips/payslips", "text": "我的工资", "iconPath": "assets/icons/salary.png", "selectedIconPath": "assets/icons/salary-active.png" },
+      { "pagePath": "pages/contracts/contracts", "text": "我的合同", "iconPath": "assets/icons/contract.png", "selectedIconPath": "assets/icons/contract-active.png" },
+      { "pagePath": "pages/social/social", "text": "社保记录", "iconPath": "assets/icons/social.png", "selectedIconPath": "assets/icons/social-active.png" },
+      { "pagePath": "pages/expense/expense", "text": "费用报销", "iconPath": "assets/icons/expense.png", "selectedIconPath": "assets/icons/expense-active.png" },
+      { "pagePath": "pages/mine/mine", "text": "我的", "iconPath": "assets/icons/mine.png", "selectedIconPath": "assets/icons/mine-active.png" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2"
+}

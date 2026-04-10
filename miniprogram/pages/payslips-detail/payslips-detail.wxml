@@ -1,0 +1,37 @@
+<!-- payslips-detail.wxml -->
+<view class="container">
+  <view wx:if="{{!detail}}" class="empty-state"><text>加载中...</text></view>
+  <block wx:else>
+    <view class="card summary-card">
+      <view class="summary-label">应发合计</view>
+      <view class="summary-amount">¥{{detail.gross_amount}}</view>
+      <view class="summary-divider"></view>
+      <view class="summary-label">实发工资</view>
+      <view class="summary-amount net">{{detail.net_amount}}</view>
+    </view>
+    <view wx:if="{{!verified && !detail.has_detail}}" class="card verify-gate" bindtap="showVerify">
+      <text class="verify-icon">🔒</text>
+      <text class="verify-text">为保护您的隐私，请验证身份后查看工资明细</text>
+      <button class="btn-primary" style="margin-top:12px;">查看明细</button>
+    </view>
+    <view wx:if="{{verified && detail.items}}" class="card detail-card">
+      <view wx:for="{{detail.items}}" wx:key="label" class="detail-row">
+        <text>{{item.label}}</text><text>{{item.value}}</text>
+      </view>
+    </view>
+    <view wx:if="{{!detail.signed_at}}" class="card">
+      <button class="btn-primary" bindtap="signPayslip">确认签收</button>
+    </view>
+    <view wx:else class="card signed-info"><text>已签收 {{detail.signed_at}}</text></view>
+  </block>
+</view>
+<view wx:if="{{showModal}}" class="modal-overlay">
+  <view class="modal-box">
+    <text class="modal-title">身份验证</text>
+    <view class="form-item"><input type="number" placeholder="请输入验证码" bindinput="onCodeInput" /></view>
+    <view class="modal-btns">
+      <button bindtap="cancelVerify">取消</button>
+      <button class="btn-primary" bindtap="verifyPayslip">确认</button>
+    </view>
+  </view>
+</view>

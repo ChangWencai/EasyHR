@@ -1,0 +1,9 @@
+/* contracts.wxss */
+.contract-card { border-left: 3px solid #1677FF; }
+.contract-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.type-badge { font-size: 12px; padding: 2px 8px; border-radius: 4px; background: #E6F4FF; color: #1677FF; }
+.type-badge.type-labor { background: #E6F4FF; color: #1677FF; }
+.type-badge.type-internship { background: #f5f5f5; color: #999; }
+.contract-dates { font-size: 14px; color: #666; margin-bottom: 8px; }
+.btn-outline { background: #fff; border: 1px solid #1677FF; color: #1677FF; font-size: 14px; padding: 6px 16px; border-radius: 4px; }
+.sign-hint { font-size: 12px; color: #999; margin-top: 4px; }

@@ -1,0 +1,25 @@
+<!-- expense-list.wxml -->
+<view class="filter-tabs">
+  <text wx:for="{{tabs}}" wx:key="index" class="tab-item {{curTab === index ? 'active' : ''}}" bindtap="filterByStatus" data-status="{{item.value}}">{{item.label}}</text>
+</view>
+<view class="container">
+  <view wx:if="{{loading}}" class="empty-state"><text>加载中...</text></view>
+  <view wx:elif="{{filtered.length === 0}}" class="empty-state">
+    <text class="empty-title">暂无报销记录</text>
+    <text class="empty-desc">提交报销申请后，可在此查看审批进度</text>
+  </view>
+  <scroll-view wx:else scroll-y style="height:calc(100vh - 100px);">
+    <view wx:for="{{filtered}}" wx:key="id" class="card expense-card" bindtap="toggleExpand" data-id="{{item.id}}">
+      <view class="expense-header">
+        <text class="expense-type">{{item.expense_type}}</text>
+        <text class="status-badge status-{{item.status}}">{{item.status_text}}</text>
+      </view>
+      <view class="expense-amount">¥{{item.amount}}</view>
+      <view class="expense-date">{{item.created_at}}</view>
+      <view wx:if="{{item.expanded}}" class="expense-detail">
+        <view wx:if="{{item.reject_reason}}" class="reject-reason">驳回原因：{{item.reject_reason}}</view>
+        <view wx:if="{{item.paid_at}}" class="paid-info">支付日期：{{item.paid_at}} · {{item.pay_method || ''}}</view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

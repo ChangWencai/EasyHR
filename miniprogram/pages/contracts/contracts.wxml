@@ -1,0 +1,19 @@
+<!-- contracts.wxml -->
+<view class="container">
+  <view wx:if="{{loading}}" class="empty-state"><text>加载中...</text></view>
+  <view wx:elif="{{list.length === 0}}" class="empty-state">
+    <text class="empty-title">暂无合同记录</text>
+    <text class="empty-desc">您的劳动合同信息将在签署后展示</text>
+  </view>
+  <scroll-view wx:else scroll-y style="height:100vh;">
+    <view wx:for="{{list}}" wx:key="id" class="card contract-card">
+      <view class="contract-header">
+        <text class="type-badge type-{{item.type}}">{{item.type_text}}</text>
+        <text class="status-badge status-{{item.status}}">{{item.status_text}}</text>
+      </view>
+      <view class="contract-dates">起止：{{item.start_date}} ~ {{item.end_date}}</view>
+      <button wx:if="{{item.pdf_url}}" class="btn-outline" bindtap="viewPDF" data-url="{{item.pdf_url}}">查看合同PDF</button>
+      <view wx:if="{{item.status === 'pending'}}" class="sign-hint">请联系 HR 线下签署后上传</view>
+    </view>
+  </scroll-view>
+</view>

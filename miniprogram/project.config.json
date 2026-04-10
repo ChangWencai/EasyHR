@@ -1,0 +1,24 @@
+{
+  "description": "员工微信小程序",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true,
+    "coverView": true,
+    "nodeModules": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "bundle": false
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.3.5",
+  "appid": "wxtemp0000001",
+  "projectname": "easyhr-employee",
+  "condition": {}
+}

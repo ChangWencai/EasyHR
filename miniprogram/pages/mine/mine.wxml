@@ -1,0 +1,20 @@
+<!-- mine.wxml -->
+<view class="container">
+  <view class="card profile-card">
+    <view class="avatar-area">
+      <view class="avatar">{{info.name ? info.name.charAt(0) : '?'}}</view>
+      <view class="name-row">
+        <text class="profile-name">{{info.name || '员工'}}</text>
+        <text class="role-badge">员工</text>
+      </view>
+    </view>
+  </view>
+  <view class="card info-card">
+    <view class="info-row"><text class="info-label">手机号</text><text class="info-value">{{info.phone || '-'}}</text></view>
+    <view class="info-row"><text class="info-label">所属企业</text><text class="info-value">{{info.company || '-'}}</text></view>
+    <view class="info-row"><text class="info-label">角色</text><text class="info-value">员工</text></view>
+  </view>
+  <view class="card">
+    <button class="btn-danger" bindtap="logout">退出登录</button>
+  </view>
+</view>

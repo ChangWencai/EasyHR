@@ -1,0 +1,12 @@
+/* login.wxss */
+.login-page { padding: 60px 24px 0; }
+.logo-area { text-align: center; margin-bottom: 48px; }
+.logo-text { display: block; font-size: 32px; font-weight: 600; color: #1677FF; }
+.logo-sub { display: block; font-size: 14px; color: #999; margin-top: 8px; }
+.form-item { background: #fff; border-radius: 8px; margin-bottom: 16px; padding: 14px 16px; }
+.form-item input { width: 100%; font-size: 16px; }
+.code-item { display: flex; align-items: center; }
+.code-item input { flex: 1; }
+.code-btn { background: #1677FF; color: #fff; font-size: 14px; padding: 8px 12px; border-radius: 4px; white-space: nowrap; }
+.code-btn.disabled { background: #ccc; }
+.login-btn { margin-top: 8px; }

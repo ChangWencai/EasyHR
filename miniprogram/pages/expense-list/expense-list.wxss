@@ -1,0 +1,13 @@
+/* expense-list.wxss */
+.filter-tabs { display: flex; background: #fff; padding: 8px 0; border-bottom: 1px solid #f0f0f0; position: fixed; top: 0; left: 0; right: 0; z-index: 10; }
+.tab-item { flex: 1; text-align: center; font-size: 14px; color: #666; padding: 8px 0; }
+.tab-item.active { color: #1677FF; font-weight: 600; border-bottom: 2px solid #1677FF; }
+.container { padding-top: 48px; }
+.expense-card { border-left: 3px solid #1677FF; }
+.expense-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.expense-type { font-size: 16px; font-weight: 500; }
+.expense-amount { font-size: 20px; font-weight: 600; color: #1677FF; }
+.expense-date { font-size: 12px; color: #999; margin-top: 4px; }
+.expense-detail { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f0f0f0; font-size: 14px; }
+.reject-reason { color: #FF4D4F; }
+.paid-info { color: #52C41A; }
