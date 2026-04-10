@@ -134,7 +134,10 @@ Plans:
   2. 核心功能5宫格入口（员工/社保/工资/个税/财务），1步直达
   3. 数据概览区展示在职员工数、本月入职/离职数、社保总额、工资总额
   4. 底部5Tab导航（首页/员工/工具/财务/我的）贯穿所有页面
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 07-01-PLAN.md — Go Dashboard Service (model + repository + service + handler + main.go integration)
+- [ ] 07-02-PLAN.md — Vue 3 H5 Frontend (project init + home dashboard + bottom tab nav)
 **UI hint**: yes
 
 ### Phase 8: 员工微信小程序
@@ -145,7 +148,10 @@ Plans:
   1. 员工通过微信授权登录小程序，查看各月工资条（含明细），敏感信息需短信验证
   2. 员工可查看合同状态和社保记录
   3. 员工可提交费用报销（上传票据、填写金额/类型），查看报销状态
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 07-01-PLAN.md — Go Dashboard Service (model + repository + service + handler + main.go integration)
+- [ ] 07-02-PLAN.md — Vue 3 H5 Frontend (project init + home dashboard + bottom tab nav)
 **UI hint**: yes
 
 ## Progress
