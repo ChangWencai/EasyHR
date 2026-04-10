@@ -17,6 +17,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/employee"
+	"github.com/wencai/easyhr/internal/finance"
 	"github.com/wencai/easyhr/internal/salary"
 	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/tax"
@@ -70,6 +71,9 @@ func initApp() {
 		&salary.PayrollRecord{},
 		&salary.PayrollItem{},
 		&salary.PayrollSlip{},
+
+		// 财务模块模型 — AutoMigrate includes Account, Period, Voucher, JournalEntry
+		&finance.Account{}, &finance.Period{}, &finance.Voucher{}, &finance.JournalEntry{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -151,6 +155,16 @@ func main() {
 	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, nil, cfg.Crypto)
 	salaryHandler := salary.NewHandler(salarySvc)
 
+	// 财务模块依赖注入
+	accountRepo := finance.NewAccountRepository(db)
+	periodRepo := finance.NewPeriodRepository(db)
+	voucherRepo := finance.NewVoucherRepository(db)
+	accountSvc := finance.NewAccountServiceWithPeriod(accountRepo, periodRepo)
+	voucherSvc := finance.NewVoucherService(voucherRepo, periodRepo, accountRepo)
+	accountHandler := finance.NewAccountHandler(accountSvc)
+	voucherHandler := finance.NewVoucherHandler(voucherSvc)
+	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler)
+
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
 	v1 := r.Group("/api/v1")
@@ -163,6 +177,7 @@ func main() {
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
+		financeHandler.RegisterRoutes(v1.Group(""))
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 
