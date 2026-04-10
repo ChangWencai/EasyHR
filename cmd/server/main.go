@@ -16,6 +16,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/logger"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
+	"github.com/wencai/easyhr/internal/dashboard"
 	"github.com/wencai/easyhr/internal/employee"
 	"github.com/wencai/easyhr/internal/finance"
 	"github.com/wencai/easyhr/internal/salary"
@@ -197,6 +198,7 @@ func main() {
 		financeHandler.RegisterRoutes(v1.Group(""))
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
+		dashboard.RegisterRouter(v1.Group("/dashboard"), authMiddleware, db)
 
 		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
