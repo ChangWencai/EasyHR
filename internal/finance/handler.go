@@ -10,6 +10,8 @@ type FinanceHandler struct {
 	voucherHandler  *VoucherHandler
 	invoiceHandler  *InvoiceHandler
 	expenseHandler  *ExpenseHandler
+	bookHandler     *BookHandler
+	reportHandler   *ReportHandler
 }
 
 // NewFinanceHandler creates a new FinanceHandler.
@@ -18,12 +20,16 @@ func NewFinanceHandler(
 	voucherHandler *VoucherHandler,
 	invoiceHandler *InvoiceHandler,
 	expenseHandler *ExpenseHandler,
+	bookHandler *BookHandler,
+	reportHandler *ReportHandler,
 ) *FinanceHandler {
 	return &FinanceHandler{
 		accountHandler:  accountHandler,
 		voucherHandler:  voucherHandler,
 		invoiceHandler:  invoiceHandler,
 		expenseHandler:  expenseHandler,
+		bookHandler:    bookHandler,
+		reportHandler:  reportHandler,
 	}
 }
 
@@ -40,5 +46,11 @@ func (h *FinanceHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 	if h.expenseHandler != nil {
 		h.expenseHandler.RegisterRoutes(rg)
+	}
+	if h.bookHandler != nil {
+		h.bookHandler.RegisterRoutes(rg)
+	}
+	if h.reportHandler != nil {
+		h.reportHandler.RegisterRoutes(rg)
 	}
 }

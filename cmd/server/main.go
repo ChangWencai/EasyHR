@@ -72,9 +72,9 @@ func initApp() {
 		&salary.PayrollItem{},
 		&salary.PayrollSlip{},
 
-		// 财务模块模型 — AutoMigrate includes Account, Period, Voucher, JournalEntry, Invoice, ExpenseReimbursement
+		// 财务模块模型
 		&finance.Account{}, &finance.Period{}, &finance.Voucher{}, &finance.JournalEntry{},
-		&finance.Invoice{}, &finance.ExpenseReimbursement{},
+		&finance.Invoice{}, &finance.ExpenseReimbursement{}, &finance.ReportSnapshot{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -162,15 +162,25 @@ func main() {
 	voucherRepo := finance.NewVoucherRepository(db)
 	invoiceRepo := finance.NewInvoiceRepository(db)
 	expenseRepo := finance.NewExpenseRepository(db)
+	journalRepo := finance.NewJournalEntryRepository(db)
+	snapshotRepo := finance.NewSnapshotRepository(db)
+
 	accountSvc := finance.NewAccountServiceWithPeriod(accountRepo, periodRepo)
 	voucherSvc := finance.NewVoucherService(voucherRepo, periodRepo, accountRepo)
 	invoiceSvc := finance.NewInvoiceService(invoiceRepo, voucherRepo)
 	expenseSvc := finance.NewExpenseService(expenseRepo, accountRepo, voucherSvc)
+
+	reportSvc := finance.NewReportService(db, snapshotRepo, journalRepo, invoiceRepo, periodRepo)
+	bookSvc := finance.NewBookService(db, accountRepo, journalRepo, periodRepo)
+	periodSvc := finance.NewPeriodService(periodRepo, voucherRepo, journalRepo, reportSvc)
+
 	accountHandler := finance.NewAccountHandler(accountSvc)
 	voucherHandler := finance.NewVoucherHandler(voucherSvc)
 	invoiceHandler := finance.NewInvoiceHandler(invoiceSvc, voucherSvc)
 	expenseHandler := finance.NewExpenseHandler(expenseSvc, voucherSvc)
-	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler, invoiceHandler, expenseHandler)
+	bookHandler := finance.NewBookHandler(bookSvc)
+	reportHandler := finance.NewReportHandler(reportSvc, periodSvc)
+	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler, invoiceHandler, expenseHandler, bookHandler, reportHandler)
 
 	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
