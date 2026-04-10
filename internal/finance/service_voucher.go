@@ -108,7 +108,6 @@ func (s *VoucherService) CreateVoucher(orgID, userID int64, req *CreateVoucherRe
 	// Build voucher and entries
 	voucher := &Voucher{
 		BaseModel:   model.BaseModel{OrgID: orgID, CreatedBy: userID, UpdatedBy: userID},
-		OrgID:       orgID,
 		PeriodID:    periodID,
 		VoucherNo:   voucherNo,
 		Date:        voucherDate,
@@ -123,7 +122,6 @@ func (s *VoucherService) CreateVoucher(orgID, userID int64, req *CreateVoucherRe
 		amount, _ := decimal.NewFromString(entry.Amount)
 		journalEntries = append(journalEntries, JournalEntry{
 			BaseModel: model.BaseModel{OrgID: orgID, CreatedBy: userID, UpdatedBy: userID},
-			OrgID:     orgID,
 			AccountID: entry.AccountID,
 			DC:        DCType(entry.DC),
 			Amount:    amount,
@@ -211,7 +209,6 @@ func (s *VoucherService) ReverseVoucher(orgID int64, voucherID int64) (*Voucher,
 		}
 		entries[i] = JournalEntry{
 			BaseModel: model.BaseModel{OrgID: orgID},
-			OrgID:     orgID,
 			AccountID: entry.AccountID,
 			DC:        flippedDC,
 			Amount:    entry.Amount,

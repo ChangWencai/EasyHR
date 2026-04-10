@@ -52,7 +52,6 @@ func (s *InvoiceService) CreateInvoice(orgID, userID int64, req *CreateInvoiceRe
 
 	invoice := &Invoice{
 		BaseModel:   model.BaseModel{OrgID: orgID, CreatedBy: userID, UpdatedBy: userID},
-		OrgID:       orgID,
 		InvoiceType: req.InvoiceType,
 		Code:        req.Code,
 		Number:      req.Number,

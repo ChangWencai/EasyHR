@@ -1,6 +1,7 @@
 package finance
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -181,6 +182,32 @@ func TestBalanceSheet_EquationHolds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create voucher: %v", err)
 	}
-	_ = voucher // ReportService will query journal entries by period
-	t.Errorf("ReportService not yet implemented")
+	_ = voucher
+
+	// Build services
+	journalRepo := NewJournalEntryRepository(db)
+	snapshotRepo := NewSnapshotRepository(db)
+	periodRepo := NewPeriodRepository(db)
+	reportSvc := NewReportService(db, snapshotRepo, journalRepo, nil, periodRepo)
+
+	bs, err := reportSvc.GenerateBalanceSheet(context.Background(), org.ID, period.ID)
+	if err != nil {
+		t.Fatalf("GenerateBalanceSheet failed: %v", err)
+	}
+
+	if !bs.IsBalanced {
+		t.Errorf("balance sheet equation failed: Assets=%s != Liabilities+Equity=%s",
+			bs.AssetTotal.String(), bs.LiabilityTotal.Add(bs.EquityTotal).String())
+	}
+
+	// Verify actual amounts
+	if !bs.AssetTotal.Equal(decimal.NewFromInt(1000)) {
+		t.Errorf("AssetTotal=%s, want 1000", bs.AssetTotal.String())
+	}
+	if !bs.LiabilityTotal.Equal(decimal.NewFromInt(400)) {
+		t.Errorf("LiabilityTotal=%s, want 400", bs.LiabilityTotal.String())
+	}
+	if !bs.EquityTotal.Equal(decimal.NewFromInt(600)) {
+		t.Errorf("EquityTotal=%s, want 600", bs.EquityTotal.String())
+	}
 }

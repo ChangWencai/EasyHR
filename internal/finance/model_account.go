@@ -7,7 +7,6 @@ import (
 // Account represents an accounting account.
 type Account struct {
 	model.BaseModel
-	OrgID         int64           `gorm:"column:org_id;not null;index:idx_account_org_code,priority:1" json:"-"`
 	Code          string          `gorm:"type:varchar(20);not null;index:idx_account_org_code,priority:2" json:"code"`
 	Name          string          `gorm:"type:varchar(100);not null" json:"name"`
 	Category      AccountCategory `gorm:"type:varchar(20);not null" json:"category"`

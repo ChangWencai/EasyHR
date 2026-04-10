@@ -27,7 +27,6 @@ const (
 // Invoice represents a tax invoice (发票).
 type Invoice struct {
 	model.BaseModel
-	OrgID     int64           `gorm:"column:org_id;not null;index:idx_invoice_org_type,priority:1" json:"-"`
 	InvoiceType InvoiceType   `gorm:"type:varchar(20);not null;index:idx_invoice_org_type,priority:2" json:"invoice_type"`
 	Code      string          `gorm:"type:varchar(50)" json:"code"`         // 发票代码
 	Number    string          `gorm:"type:varchar(50)" json:"number"`       // 发票号码

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/wencai/easyhr/internal/common/model"
 )
 
 // AccountService handles business logic for accounting accounts.
@@ -83,7 +85,7 @@ func (s *AccountService) CreateCustomAccount(orgID int64, req *CreateAccountRequ
 	normalBalance := s.normalBalanceForCategory(req.Category)
 
 	account := &Account{
-		OrgID:         orgID,
+		BaseModel:     model.BaseModel{OrgID: orgID},
 		Code:          req.Code,
 		Name:          req.Name,
 		Category:      req.Category,

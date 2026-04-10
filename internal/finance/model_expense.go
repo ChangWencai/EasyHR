@@ -32,7 +32,6 @@ const (
 // ExpenseReimbursement represents an employee expense reimbursement record (费用报销).
 type ExpenseReimbursement struct {
 	model.BaseModel
-	OrgID        int64           `gorm:"column:org_id;not null;index:idx_expense_org_status,priority:1" json:"-"`
 	EmployeeID   int64           `gorm:"column:employee_id;not null;index:idx_expense_employee,priority:1" json:"employee_id"`
 	Amount       decimal.Decimal `gorm:"type:varchar(50);not null" json:"amount"` // 报销金额
 	ExpenseType  ExpenseType     `gorm:"type:varchar(20);not null" json:"expense_type"`

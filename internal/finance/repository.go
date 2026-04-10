@@ -364,7 +364,6 @@ func (r *VoucherRepository) CreateReversal(original *Voucher, entries []JournalE
 	origID := original.ID
 	reversal := &Voucher{
 		BaseModel:   model.BaseModel{OrgID: original.OrgID},
-		OrgID:       original.OrgID,
 		PeriodID:    original.PeriodID,
 		Date:        time.Now(),
 		Status:      VoucherStatusDraft,

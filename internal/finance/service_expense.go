@@ -54,7 +54,6 @@ func (s *ExpenseService) CreateExpense(orgID, userID int64, req *CreateExpenseRe
 
 	expense := &ExpenseReimbursement{
 		BaseModel:   model.BaseModel{OrgID: orgID, CreatedBy: userID, UpdatedBy: userID},
-		OrgID:       orgID,
 		EmployeeID:  req.EmployeeID,
 		Amount:      amount,
 		ExpenseType: req.ExpenseType,
