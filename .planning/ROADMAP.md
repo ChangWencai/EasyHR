@@ -116,8 +116,13 @@ Plans:
   3. 基于凭证数据实时生成总账、明细账、科目余额表，支持导出Excel
   4. 月末结账后自动生成资产负债表和利润表，支持多期对比；结账锁定当期凭证
   5. 基于发票和凭证数据自动计算增值税和企业所得税，生成纳税申报辅助数据
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 06-01-PLAN.md — 科目体系+凭证CRUD+红冲 (FINC-01, FINC-02, FINC-03, FINC-04, FINC-05, FINC-19, FINC-20)
+- [ ] 06-02-PLAN.md — 发票管理+费用报销审批+自动凭证生成 (FINC-06, FINC-07, FINC-08, FINC-09, FINC-10)
+- [ ] 06-03-PLAN.md — 账簿生成+财务报表+结账+纳税申报 (FINC-11, FINC-12, FINC-13, FINC-14, FINC-15, FINC-16, FINC-17, FINC-18, FINC-21, FINC-22)
 
 ### Phase 7: 首页工作台
 **Goal**: 老板打开APP第一时间知道要做什么，待办事项和核心功能1步可达
@@ -154,6 +159,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 3. 社保管理 | 0/3 | Not started | - |
 | 4. 个税计算 | 0/2 | Not started | - |
 | 5. 工资核算 | 3/3 | Complete   | 2026-04-09 |
-| 6. 财务记账 | 0/TBD | Not started | - |
+| 6. 财务记账 | 0/3 | Not started | - |
 | 7. 首页工作台 | 0/TBD | Not started | - |
 | 8. 员工微信小程序 | 0/TBD | Not started | - |
