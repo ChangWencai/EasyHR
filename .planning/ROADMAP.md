@@ -37,8 +37,8 @@
 **Context:** `.planning/phases/01a-login-boss/01-CONTEXT.md` ✅ 已完成
 
 Plans:
-- [ ] 01-01-PLAN.md — 前端登录页 + Auth Guard
-- [ ] 01-02-PLAN.md — 后端登录接口扩展（密码登录 + MEMBER 403 + /auth/me）
+- [x] 01-01-PLAN.md — 前端登录页 + Auth Guard
+- [x] 01-02-PLAN.md — 后端登录接口扩展（密码登录 + MEMBER 403 + /auth/me）
 
 ### Phase 02: 新增登陆界面，该登陆界面只允许老板账户登陆
 

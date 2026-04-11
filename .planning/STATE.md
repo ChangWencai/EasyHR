@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: complete
-stopped_at: "Completed 09-03-PLAN: Phase 09 COMPLETE — v1.0 MVP ALL DONE"
-last_updated: "2026-04-11T10:00:00.000Z"
-last_activity: 2026-04-11 -- Phase 09 completed (09-01 WXMP+Finance export, 09-02 Employee+Tool, 09-03 Finance+Mine)
+milestone: v1.1
+milestone_name: 老板登录界面优化
+status: executing
+stopped_at: Phase 01a-login-boss complete, Phase 03a-web context ready
+last_updated: "2026-04-11T13:00:00.000Z"
+last_activity: 2026-04-11 -- Phase 01a-login-boss execution complete (2/2 plans)
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 27
-  completed_plans: 27
+  total_phases: 1
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
   percent: 100
 ---
 
@@ -21,16 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-06)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 09 — v1.0 COMPLETE
+**Current focus:** Phase 01-login-boss (v1.1) — 老板专属登录页，Plans ready
 
 ## Current Position
 
-Phase: 09 (v1.0 收尾) — COMPLETE ✅
-Plan: 3 of 3
-Status: All plans executed
-Last activity: 2026-04-11 -- Phase 09 completed (09-01 WXMP+Finance export, 09-02 Employee+Tool, 09-03 Finance+Mine)
+Phase: 01-login-boss (v1.1) — 老板专属登录页
+Plan: 0 of 2 (01-01: LoginView.vue + Auth Guard, 01-02: Password login + /auth/me)
+Status: Executing
+Last activity: 2026-04-11 -- Phase 01-login-boss planning complete
 
-Progress: [█████████] 100% (9/9 phases, 27/27 plans)
+Progress: [▓░░░░░░░░░] 0% (1/2 phases, 0/0 plans)
+v1.1: Phase 01 Context ✅ | Phase 02 ⏸ deferred
 
 ## Performance Metrics
 
@@ -94,6 +95,14 @@ Progress: [█████████] 100% (9/9 phases, 27/27 plans)
 - [Phase 04]: TaxReminder deduplication by org_id + year + month (one reminder per org per month)
 - [Phase 04]: GetMyTaxRecords returns error stub, needs Phase 5 user-employee mapping
 
+### Roadmap Evolution
+
+- Phase 01 added: 新增登陆界面，该登陆界面只运行老板登陆
+- Phase 02 added: 新增登陆界面，该登陆界面只允许老板账户登陆 (2026-04-11)
+- Phase 03 added: web登陆界面中添加注册按钮以及流程 (2026-04-11)
+- Phase 01 discussed: 3种登录方式（手机+验证码/密码/微信OAuth），OWNER+ADMIN允许，MEMBER拒绝，Auth Guard，首次引导分流 (2026-04-11)
+- Phase 02 deferred: Phase 01 完成后重新定义范围（当前与 Phase 01 描述重复）
+
 ### Phase 1 Deliverables
 
 - 40 Go files, 7 test packages all PASS
@@ -107,15 +116,11 @@ Progress: [█████████] 100% (9/9 phases, 27/27 plans)
 
 ### Blockers/Concerns
 
-- Phase 4 (个税计算) 与 Phase 5 (工资核算) 存在循环依赖，需通过接口注入解耦
-- Phase 3 (社保管理) 需要收集30+城市社保政策库数据，建议使用 /gsd:research-phase
-- Phase 4 (个税计算) 需要验证2026年最新个税税率和专项附加扣除政策
-- Phase 6 (财务记账) 需要小微企业会计科目预置模板和中国小企业会计准则参考
-- Phase 8 (微信小程序) 需要提前研究审核政策和人力资源类目资质
+- Phase 1 (新增登陆界面): 需设计老板专属登录页，员工通过微信小程序登录（H5管理后台仅限老板）
 - 集成测试需要 Redis 运行（docker-compose up）
 
 ## Session Continuity
 
-Last session: 2026-04-09T13:42:24.950Z
-Stopped at: Completed 05-salary-03: Phase 05 COMPLETE
-Next step: /gsd-plan-phase 2
+Last session: 2026-04-11T11:32:00.000Z
+Stopped at: Phase 01 added to v1.1
+Next step: /gsd-plan-phase 01
