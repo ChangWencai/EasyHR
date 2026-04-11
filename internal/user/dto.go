@@ -45,3 +45,30 @@ type UserInfoResponse struct {
 	OrgID   int64  `json:"org_id"`
 	OrgName string `json:"org_name"`
 }
+
+// PasswordLoginRequest 密码登录请求
+type PasswordLoginRequest struct {
+	Phone    string `json:"phone" binding:"required,len=11"`
+	Password string `json:"password" binding:"required,min=6,max=20"`
+}
+
+// PasswordLoginResponse 密码登录响应（与 LoginResponse 结构一致）
+type PasswordLoginResponse = LoginResponse
+
+// MeResponse /auth/me 响应
+type MeResponse struct {
+	ID                 int64     `json:"id"`
+	Name               string    `json:"name"`
+	Phone              string    `json:"phone"` // 明文手机号
+	Role               string    `json:"role"` // "owner" | "admin" | "member"
+	Org                *OrgInfo  `json:"org,omitempty"`
+	OnboardingRequired bool      `json:"onboarding_required"`
+}
+
+// OrgInfo 企业基本信息（用于 /auth/me 响应）
+type OrgInfo struct {
+	ID         int64  `json:"id"`
+	Name       string `json:"name"`
+	CreditCode string `json:"credit_code"`
+	City       string `json:"city"`
+}
