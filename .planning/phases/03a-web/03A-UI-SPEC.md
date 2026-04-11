@@ -1,10 +1,11 @@
 ---
 phase: "03a"
 slug: web-register-tab
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: "2026-04-11"
+reviewed_at: "2026-04-11"
 ---
 
 # Phase 03a — UI Design Contract
@@ -139,4 +140,4 @@ created: "2026-04-11"
 - [ ] Dimension 5 Spacing: PASS — 间距均为 4px 倍数（4/8/16/24），按钮 44px 例外有文档记录
 - [ ] Dimension 6 Registry Safety: PASS — shadcn gate 不适用（Vue 项目），无第三方注册表声明
 
-**Approval:** pending — awaiting gsd-ui-checker validation
+**Approval:** approved 2026-04-11
