@@ -267,7 +267,6 @@ onMounted(() => {
 <style scoped lang="scss">
 .book-report {
   padding: 8px;
-  padding-bottom: 70px;
   .tab-toolbar {
     display: flex;
     gap: 8px;

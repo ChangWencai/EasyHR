@@ -1,22 +1,33 @@
 <template>
   <div class="home-view">
-    <!-- 顶部栏: 企业名称 + 我的入口 -->
-    <div class="header">
-      <span class="company-name">{{ companyName }}</span>
-      <router-link to="/mine" class="mine-link">
-        <el-icon><Avatar /></el-icon>
-      </router-link>
+    <!-- 页面标题区 -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">工作台</h1>
+        <span class="page-subtitle">{{ greeting }}，欢迎回来</span>
+      </div>
+      <div class="header-right">
+        <el-button type="primary" @click="$router.push('/employee/create')">
+          <el-icon><Plus /></el-icon>
+          新增员工
+        </el-button>
+      </div>
     </div>
 
-    <!-- 待办卡片区 -->
-    <div class="section">
+    <!-- 待办事项（全宽） -->
+    <div class="section todo-section">
+      <div class="section-header">
+        <span class="section-title">待办事项</span>
+        <el-badge :value="store.todos.length" :hidden="store.todos.length === 0" />
+      </div>
+
       <div v-if="store.loading" class="loading">
-        <el-icon class="is-loading"><Loading /></el-icon>
+        <el-icon class="is-loading" size="24"><Loading /></el-icon>
       </div>
       <div v-else-if="store.todos.length === 0" class="empty-state">
         <el-empty description="暂无待办事项，轻松搞定人事~" :image-size="80" />
       </div>
-      <div v-else class="todo-cards">
+      <div v-else class="todo-grid">
         <div
           v-for="todo in store.todos"
           :key="todo.type"
@@ -25,57 +36,71 @@
         >
           <div class="todo-info">
             <div class="todo-title">{{ todo.title }}</div>
-            <div v-if="todo.deadline" class="todo-deadline">截止: {{ todo.deadline }}</div>
+            <div v-if="todo.deadline" class="todo-deadline">
+              <el-icon><Clock /></el-icon>
+              截止 {{ todo.deadline }}
+            </div>
           </div>
-          <div class="todo-count">
-            <el-badge :value="todo.count" :max="99" />
+          <div class="todo-action">
+            <el-badge :value="todo.count" :max="99" class="todo-badge" />
+            <el-icon class="todo-arrow"><ArrowRight /></el-icon>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 5宫格入口 -->
-    <div class="section">
-      <div class="section-title">核心功能</div>
-      <el-row :gutter="16" class="grid-5">
-        <el-col v-for="item in gridItems" :key="item.path" :span="8">
-          <router-link :to="item.path" class="grid-item">
-            <el-icon :size="32" :color="item.color">
-              <component :is="item.icon" />
-            </el-icon>
-            <span class="grid-label">{{ item.label }}</span>
+    <!-- 快捷入口 + 数据概览 同行 -->
+    <div class="bottom-row">
+      <!-- 快捷入口（占2/3） -->
+      <div class="section shortcuts-section">
+        <div class="section-title">快捷入口</div>
+        <div class="shortcuts-grid">
+          <router-link
+            v-for="item in gridItems"
+            :key="item.path + item.label"
+            :to="item.path"
+            class="shortcut-item"
+          >
+            <div class="shortcut-icon" :style="{ background: item.bg }">
+              <el-icon size="22" :color="item.color">
+                <component :is="item.icon" />
+              </el-icon>
+            </div>
+            <span class="shortcut-label">{{ item.label }}</span>
           </router-link>
-        </el-col>
-      </el-row>
-    </div>
-
-    <!-- 数据概览 -->
-    <div class="section overview-section">
-      <div class="section-header" @click="store.toggleOverview">
-        <span class="section-title">数据概览</span>
-        <el-icon>
-          <ArrowDown v-if="store.overviewExpanded" />
-          <ArrowRight v-else />
-        </el-icon>
+        </div>
       </div>
-      <div v-if="store.overviewExpanded && store.overview" class="overview-grid">
-        <div class="overview-item">
-          <div class="overview-value">{{ store.overview.employee_count }}</div>
-          <div class="overview-label">在职员工</div>
+
+      <!-- 数据概览（占1/3） -->
+      <div class="section overview-section">
+        <div class="section-header" @click="store.toggleOverview">
+          <span class="section-title">数据概览</span>
+          <el-icon class="toggle-icon">
+            <ArrowUp v-if="store.overviewExpanded" />
+            <ArrowDown v-else />
+          </el-icon>
         </div>
-        <div class="overview-item">
-          <div class="overview-value">
-            +{{ store.overview.joined_this_month }}/-{{ store.overview.left_this_month }}
+        <div v-if="store.overviewExpanded && store.overview" class="overview-grid">
+          <div class="overview-item">
+            <div class="overview-value">{{ store.overview.employee_count }}</div>
+            <div class="overview-label">在职员工</div>
           </div>
-          <div class="overview-label">本月入/离职</div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-value">¥{{ store.overview.social_insurance_total }}</div>
-          <div class="overview-label">本月社保总额</div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-value">¥{{ store.overview.payroll_total }}</div>
-          <div class="overview-label">本月工资总额</div>
+          <div class="overview-item">
+            <div class="overview-value small">
+              <span class="green">+{{ store.overview.joined_this_month }}</span>
+              <span class="sep">/</span>
+              <span class="red">-{{ store.overview.left_this_month }}</span>
+            </div>
+            <div class="overview-label">本月入/离职</div>
+          </div>
+          <div class="overview-item">
+            <div class="overview-value">¥{{ store.overview.social_insurance_total }}</div>
+            <div class="overview-label">本月社保</div>
+          </div>
+          <div class="overview-item">
+            <div class="overview-value">¥{{ store.overview.payroll_total }}</div>
+            <div class="overview-label">本月工资</div>
+          </div>
         </div>
       </div>
     </div>
@@ -83,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   User,
@@ -91,9 +116,11 @@ import {
   Money,
   Document,
   Wallet,
-  Avatar,
-  ArrowDown,
+  Plus,
   ArrowRight,
+  ArrowDown,
+  ArrowUp,
+  Clock,
   Loading,
 } from '@element-plus/icons-vue'
 import { useDashboardStore } from '@/stores/dashboard'
@@ -101,28 +128,34 @@ import type { TodoItem } from '@/api/dashboard'
 
 const store = useDashboardStore()
 const router = useRouter()
-const companyName = ref('我的企业')
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return '上午好'
+  if (h < 18) return '下午好'
+  return '晚上好'
+})
 
 const gridItems = [
-  { path: '/employee', label: '员工管理', icon: User, color: '#1677ff' },
-  { path: '/tool', label: '社保管理', icon: Umbrella, color: '#1677ff' },
-  { path: '/tool', label: '工资管理', icon: Money, color: '#1677ff' },
-  { path: '/tool', label: '个税申报', icon: Document, color: '#1677ff' },
-  { path: '/finance', label: '财务管理', icon: Wallet, color: '#1677ff' },
+  { path: '/employee', label: '员工管理', icon: User, color: '#1677ff', bg: '#e6f4ff' },
+  { path: '/tool/salary', label: '薪资管理', icon: Money, color: '#52c41a', bg: '#f6ffed' },
+  { path: '/tool/socialinsurance', label: '社保管理', icon: Umbrella, color: '#722ed1', bg: '#f9f0ff' },
+  { path: '/tool/tax', label: '个税申报', icon: Document, color: '#fa8c16', bg: '#fff7e6' },
+  { path: '/finance/vouchers', label: '凭证管理', icon: Wallet, color: '#13c2c2', bg: '#e6fffa' },
+  { path: '/finance/invoices', label: '发票管理', icon: Document, color: '#eb2f96', bg: '#fff0f6' },
 ]
 
 function handleTodoClick(todo: TodoItem) {
   store.removeTodo(todo.type)
   const routeMap: Record<string, string> = {
-    social_insurance: '/tool',
-    tax: '/tool',
+    social_insurance: '/tool/socialinsurance',
+    tax: '/tool/tax',
     employee: '/employee',
     contract: '/employee',
-    expense: '/finance',
-    voucher: '/finance',
+    expense: '/finance/expenses',
+    voucher: '/finance/vouchers',
   }
-  const path = routeMap[todo.type] || '/home'
-  router.push(path)
+  router.push(routeMap[todo.type] || '/home')
 }
 
 onMounted(() => {
@@ -132,40 +165,74 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .home-view {
-  min-height: 100vh;
-  background: #f5f5f5;
-  padding-bottom: 70px;
+  padding: 20px 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.header {
-  background: #1677ff;
-  color: #fff;
-  padding: 16px;
+// ============================================================
+// 页面标题区
+// ============================================================
+.page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 18px;
+  margin-bottom: 20px;
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: #8c8c8c;
+  }
 }
 
-.mine-link {
-  color: #fff;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-}
-
+// ============================================================
+// 通用区块
+// ============================================================
 .section {
   background: #fff;
-  margin: 8px;
   border-radius: 8px;
-  padding: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
+  color: #1a1a1a;
+}
+
+.toggle-icon {
+  color: #8c8c8c;
+  cursor: pointer;
+}
+
+// ============================================================
+// 待办
+// ============================================================
+.todo-section {
+  // 全宽
 }
 
 .loading {
@@ -175,94 +242,216 @@ onMounted(() => {
 }
 
 .empty-state {
-  padding: 16px;
+  padding: 8px 0;
 }
 
-.todo-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.todo-grid {
+  display: grid;
+  // 响应式：4列(>1600px) → 3列(>1200px) → 2列(>768px) → 1列(<=768px)
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
 }
 
 .todo-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  background: #f5f7ff;
-  border-radius: 6px;
+  padding: 14px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 
-  &:active {
-    background: #e6efff;
+  &:hover {
+    border-color: #1677ff;
+    background: #f0f7ff;
+    box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
   }
+}
+
+.todo-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .todo-title {
   font-size: 14px;
-  color: #333;
+  font-weight: 500;
+  color: #1a1a1a;
 }
 
 .todo-deadline {
   font-size: 12px;
-  color: #999;
-  margin-top: 2px;
+  color: #8c8c8c;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.grid-5 {
-  .grid-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 16px 8px;
-    text-decoration: none;
-    cursor: pointer;
+.todo-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
-    &:active {
-      opacity: 0.7;
-    }
-  }
+.todo-arrow {
+  color: #bfbfbf;
+  transition: color 0.2s;
+}
 
-  .grid-label {
-    font-size: 12px;
-    color: #333;
+.todo-card:hover .todo-arrow {
+  color: #1677ff;
+}
+
+// ============================================================
+// 快捷入口 + 数据概览同行
+// ============================================================
+.bottom-row {
+  display: grid;
+  // 默认: 2/3 + 1/3
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.shortcuts-section {}
+
+.shortcuts-grid {
+  display: grid;
+  // 6个入口: 6列(>1400px) → 3列(>900px) → 2列(<=768px)
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    background: #f5f5f5;
   }
 }
 
-.overview-section {
-  .section-header {
+.shortcut-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shortcut-label {
+  font-size: 13px;
+  color: #595959;
+  text-align: center;
+  white-space: nowrap;
+}
+
+// ============================================================
+// 数据概览
+// ============================================================
+.overview-section {}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.overview-item {
+  text-align: center;
+  padding: 14px 12px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.overview-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1677ff;
+  line-height: 1.2;
+
+  &.small {
+    font-size: 16px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
+    justify-content: center;
+    gap: 4px;
   }
 
-  .overview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 8px;
-  }
+  .green { color: #52c41a; }
+  .sep { color: #d9d9d9; font-weight: 400; }
+  .red { color: #ff4d4f; }
+}
 
-  .overview-item {
-    text-align: center;
+.overview-label {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 4px;
+}
+
+// ============================================================
+// 响应式断点
+// ============================================================
+
+// 大屏: 1440px - 1600px
+@media (max-width: 1600px) {
+  .todo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .shortcuts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// 笔记本: 1200px - 1440px
+@media (max-width: 1200px) {
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+  .shortcuts-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+// iPad 横屏: 768px - 1200px
+@media (max-width: 900px) {
+  .todo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .shortcuts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// 移动端
+@media (max-width: 768px) {
+  .home-view {
     padding: 12px;
-    background: #fafafa;
-    border-radius: 6px;
   }
 
-  .overview-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1677ff;
+  .todo-grid {
+    grid-template-columns: 1fr;
   }
 
-  .overview-label {
-    font-size: 12px;
-    color: #999;
-    margin-top: 4px;
+  .shortcuts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

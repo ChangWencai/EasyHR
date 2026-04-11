@@ -106,7 +106,6 @@ onMounted(() => load())
 
 <style scoped lang="scss">
 .employee-list {
-  padding-bottom: 70px;
 }
 .header {
   display: flex;

@@ -128,7 +128,6 @@ onMounted(() => load())
 
 <style scoped lang="scss">
 .offboarding-list {
-  padding-bottom: 70px;
 }
 .header {
   display: flex;

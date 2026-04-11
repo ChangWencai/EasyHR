@@ -157,7 +157,6 @@ onMounted(() => load())
 
 <style scoped lang="scss">
 .invitation-list {
-  padding-bottom: 70px;
 }
 .header {
   display: flex;

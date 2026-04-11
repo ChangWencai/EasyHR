@@ -14,7 +14,7 @@
         </div>
         <div class="step">
           <span class="step-num">3</span>
-          <span>点击底部导航切换不同功能模块</span>
+          <span>点击左侧菜单切换不同功能模块</span>
         </div>
       </div>
       <el-button type="primary" class="onboarding-btn" @click="dismissOnboarding">

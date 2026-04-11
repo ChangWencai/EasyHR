@@ -54,7 +54,6 @@ onMounted(() => load())
 
 <style scoped lang="scss">
 .employee-detail {
-  padding-bottom: 70px;
 }
 .header {
   display: flex;

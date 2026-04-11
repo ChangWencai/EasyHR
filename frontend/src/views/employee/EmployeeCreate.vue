@@ -148,7 +148,6 @@ onMounted(() => loadEmployee())
 
 <style scoped lang="scss">
 .employee-create {
-  padding-bottom: 70px;
 }
 .header {
   display: flex;

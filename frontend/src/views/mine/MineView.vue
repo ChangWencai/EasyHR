@@ -103,7 +103,6 @@ onMounted(() => {
 <style scoped lang="scss">
 .mine-view {
   padding: 8px;
-  padding-bottom: 70px;
 }
 .mb-4 {
   margin-bottom: 12px;
