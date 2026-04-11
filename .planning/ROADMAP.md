@@ -49,15 +49,16 @@ Plans:
 Plans:
 - [ ] TBD
 
-### Phase 3: web登陆界面中添加注册按钮以及流程
+### Phase 03a: web注册界面
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 2
-**Plans:** 0 plans
+**Goal:** 在 H5 登录页将 Tab 3「微信登录」改为「注册」Tab，手机号+验证码完成账号创建，复用已有后端接口，注册成功后跳 /onboarding/org-setup
+**Requirements**: 无 REQ-ID（纯前端 UI 修改）
+**Depends on:** Phase 01-login-boss
+**Plans:** 1 plan
+**Context:** `.planning/phases/03a-web/03a-CONTEXT.md` | `.planning/phases/03a-web/03A-UI-SPEC.md`
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 3 to break down)
+- [x] 03a-01-PLAN.md — 将 Tab 3「微信登录」替换为注册表单
 
 ---
-_Last updated: 2026-04-11 — Phase 01 discussed, Phase 02 deferred pending Phase 01 delivery_
+_Last updated: 2026-04-11 — Phase 03a planned_
