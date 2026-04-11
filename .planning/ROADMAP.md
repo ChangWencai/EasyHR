@@ -34,7 +34,7 @@
 **Requirements**: 手机号+验证码/密码/微信OAuth，角色过滤，Auth Guard，首次引导分流，品牌极简商务风
 **Depends on:** v1.0 MVP
 **Plans:** 2 plans
-**Context:** `.planning/phases/01-login-boss/01-CONTEXT.md` ✅ 已完成
+**Context:** `.planning/phases/01a-login-boss/01-CONTEXT.md` ✅ 已完成
 
 Plans:
 - [ ] 01-01-PLAN.md — 前端登录页 + Auth Guard
@@ -48,6 +48,16 @@ Plans:
 
 Plans:
 - [ ] TBD
+
+### Phase 3: web登陆界面中添加注册按钮以及流程
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 3 to break down)
 
 ---
 _Last updated: 2026-04-11 — Phase 01 discussed, Phase 02 deferred pending Phase 01 delivery_
