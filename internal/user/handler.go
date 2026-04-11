@@ -3,6 +3,7 @@ package user
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/middleware"
@@ -23,8 +24,10 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 
 	rg.POST("/auth/send-code", h.SendCode)
 	rg.POST("/auth/login", h.Login)
+	rg.POST("/auth/login/password", h.LoginPassword) // 新增：密码登录
 	rg.POST("/auth/refresh", h.Refresh)
 	authGroup.POST("/auth/logout", h.Logout)
+	authGroup.GET("/auth/me", h.GetMe) // 新增：获取当前用户信息
 	authGroup.PUT("/org/onboarding", h.CompleteOnboarding)
 
 	authGroup.GET("/users", middleware.RequireRole("owner", "admin"), h.ListSubAccounts)
@@ -54,6 +57,10 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 	resp, err := h.svc.Login(c.Request.Context(), req.Phone, req.Code)
 	if err != nil {
+		if strings.Contains(err.Error(), "MEMBER_ROLE_FORBIDDEN") {
+			response.Error(c, http.StatusForbidden, 10010, "您的账号为员工账号，请使用员工端微信小程序登录")
+			return
+		}
 		response.Error(c, http.StatusUnauthorized, 10003, err.Error())
 		return
 	}
@@ -162,4 +169,40 @@ func (h *Handler) DeleteSubAccount(c *gin.Context) {
 		return
 	}
 	response.Success(c, gin.H{"message": "用户已删除"})
+}
+
+func (h *Handler) LoginPassword(c *gin.Context) {
+	var req PasswordLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	resp, err := h.svc.LoginPassword(c.Request.Context(), req.Phone, req.Password)
+	if err != nil {
+		if strings.Contains(err.Error(), "MEMBER_ROLE_FORBIDDEN") {
+			// MEMBER 角色返回 403（per D-06, D-19, D-20）
+			response.Error(c, http.StatusForbidden, 10010, "您的账号为员工账号，请使用员工端微信小程序登录")
+			return
+		}
+		if strings.Contains(err.Error(), "该账号未设置密码") {
+			response.Error(c, http.StatusUnauthorized, 10011, err.Error())
+			return
+		}
+		response.Error(c, http.StatusUnauthorized, 10012, "手机号或密码错误")
+		return
+	}
+	response.Success(c, resp)
+}
+
+func (h *Handler) GetMe(c *gin.Context) {
+	userID := c.GetInt64("user_id")
+	orgID := c.GetInt64("org_id")
+
+	resp, err := h.svc.GetMe(c.Request.Context(), userID, orgID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 10013, "获取用户信息失败")
+		return
+	}
+	response.Success(c, resp)
 }
