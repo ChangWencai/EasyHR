@@ -12,6 +12,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/pkg/jwt"
 	"github.com/wencai/easyhr/pkg/sms"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -111,6 +112,11 @@ func (s *Service) Login(ctx context.Context, phone, code string) (*LoginResponse
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find user: %w", err)
+	}
+
+	// MEMBER 角色拒绝登录（per D-06, D-20）
+	if user.Role == "member" {
+		return nil, fmt.Errorf("MEMBER_ROLE_FORBIDDEN")
 	}
 
 	accessToken, _ := jwt.GenerateAccessToken(user.ID, user.OrgID, user.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
@@ -218,4 +224,96 @@ func (s *Service) UpdateSubAccountRole(ctx context.Context, orgID, targetUserID 
 
 func (s *Service) DeleteSubAccount(ctx context.Context, orgID, targetUserID int64) error {
 	return s.repo.DeleteUser(orgID, targetUserID)
+}
+
+// RegisterPassword 设置用户密码（bcrypt 哈希）
+func (s *Service) RegisterPassword(ctx context.Context, phone, password string) error {
+	phoneHash := crypto.HashSHA256(phone)
+	user, err := s.repo.FindByPhoneHash(phoneHash)
+	if err != nil {
+		return fmt.Errorf("用户不存在: %w", err)
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("密码哈希失败: %w", err)
+	}
+
+	return s.repo.UpdateUserPassword(user.ID, string(hashed))
+}
+
+// LoginPassword 手机号+密码登录
+func (s *Service) LoginPassword(ctx context.Context, phone, password string) (*LoginResponse, error) {
+	phoneHash := crypto.HashSHA256(phone)
+	user, err := s.repo.FindByPhoneHash(phoneHash)
+	if err != nil {
+		return nil, fmt.Errorf("手机号或密码错误")
+	}
+
+	// MEMBER 角色拒绝登录（per D-06, D-20）
+	if user.Role == "member" {
+		return nil, fmt.Errorf("MEMBER_ROLE_FORBIDDEN")
+	}
+
+	// 密码校验
+	if user.PasswordHash == "" {
+		return nil, fmt.Errorf("该账号未设置密码，请使用手机验证码登录")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return nil, fmt.Errorf("手机号或密码错误")
+	}
+
+	// 生成 token
+	accessToken, _ := jwt.GenerateAccessToken(user.ID, user.OrgID, user.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+	refreshToken, _ := jwt.GenerateRefreshToken(user.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+
+	// 判断 onboarding 状态
+	onboardingRequired := false
+	org, _ := s.repo.FindByOrgID(user.OrgID)
+	if org != nil && org.Status == "inactive" {
+		onboardingRequired = true
+	}
+
+	return &LoginResponse{
+		AccessToken:         accessToken,
+		RefreshToken:        refreshToken,
+		OnboardingRequired:  onboardingRequired,
+	}, nil
+}
+
+// GetMe 获取当前用户信息（含企业信息）
+func (s *Service) GetMe(ctx context.Context, userID, orgID int64) (*MeResponse, error) {
+	user, err := s.repo.FindUserByID(orgID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("用户不存在")
+	}
+
+	// 解密手机号
+	aesKey := []byte(s.crypto.AESKey)
+	decryptedPhone, _ := crypto.Decrypt(user.Phone, aesKey)
+
+	resp := &MeResponse{
+		ID:       user.ID,
+		Name:     user.Name,
+		Phone:    decryptedPhone,
+		Role:     user.Role,
+		OnboardingRequired: false,
+	}
+
+	if orgID > 0 {
+		org, err := s.repo.FindByOrgID(orgID)
+		if err == nil && org != nil {
+			resp.Org = &OrgInfo{
+				ID:         org.ID,
+				Name:       org.Name,
+				CreditCode: org.CreditCode,
+				City:       org.City,
+			}
+			if org.Status == "inactive" {
+				resp.OnboardingRequired = true
+			}
+		}
+	}
+
+	return resp, nil
 }
