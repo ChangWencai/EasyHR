@@ -75,14 +75,42 @@
           </el-form>
         </el-tab-pane>
 
-        <!-- Tab 3: 微信登录 -->
-        <el-tab-pane label="微信登录" name="wechat">
-          <div class="wechat-placeholder">
-            <p>微信授权登录，适合已有微信账号的老板</p>
-            <el-button type="primary" style="width: 100%; height: 44px; font-size: 16px" @click="handleWechatLogin">
-              微信登录
-            </el-button>
-          </div>
+        <!-- Tab 3: 注册 -->
+        <el-tab-pane label="注册" name="register">
+          <el-form @submit.prevent="handleSmsLogin">
+            <el-form-item>
+              <el-input
+                v-model="smsForm.phone"
+                placeholder="请输入手机号"
+                maxlength="11"
+                type="number"
+                :prefix-icon="User"
+              />
+            </el-form-item>
+            <el-form-item>
+              <div class="code-row">
+                <el-input
+                  v-model="smsForm.code"
+                  placeholder="请输入验证码"
+                  maxlength="6"
+                  style="width: 60%"
+                  :prefix-icon="Lock"
+                />
+                <el-button
+                  :disabled="countdown > 0"
+                  style="width: 38%"
+                  @click="handleSendCode"
+                >
+                  {{ countdown > 0 ? `已发送(${countdown}s)` : '获取验证码' }}
+                </el-button>
+              </div>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" style="width: 100%; height: 44px; font-size: 16px" @click="handleSmsLogin">
+                注册
+              </el-button>
+            </el-form-item>
+          </el-form>
         </el-tab-pane>
       </el-tabs>
 
