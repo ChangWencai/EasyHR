@@ -104,6 +104,11 @@ func (r *Repository) FindByPhone(phone string, aesKey []byte) (*model.User, erro
 	return r.FindByPhoneHash(hash)
 }
 
+// UpdateUserPassword 更新用户密码哈希
+func (r *Repository) UpdateUserPassword(userID int64, passwordHash string) error {
+	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("password_hash", passwordHash).Error
+}
+
 func (r *Repository) CreateOrgAndOwner(org *model.Organization, user *model.User) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(org).Error; err != nil {
