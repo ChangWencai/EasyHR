@@ -27,9 +27,9 @@ type FiveInsurances struct {
 // 政策库为全局共享数据，OrgID 设为 0（不使用 TenantScope）
 type SocialInsurancePolicy struct {
 	model.BaseModel
-	CityID        int                               `gorm:"column:city_id;not null;index" json:"city_id"`
-	EffectiveYear int                               `gorm:"column:effective_year;not null;index" json:"effective_year"`
-	Config        datatypes.JSONType[FiveInsurances] `gorm:"column:config;type:jsonb" json:"config"`
+	CityID        int                               `gorm:"column:city_id;not null;index;comment:城市ID" json:"city_id"`
+	EffectiveYear int                               `gorm:"column:effective_year;not null;index;comment:生效年份" json:"effective_year"`
+	Config        datatypes.JSONType[FiveInsurances] `gorm:"column:config;type:jsonb;comment:五险一金配置（各险种缴费比例和基数上下限）" json:"config"`
 }
 
 // TableName 指定表名
@@ -54,17 +54,17 @@ const (
 // SocialInsuranceRecord 参保记录（一条记录存所有险种明细）
 type SocialInsuranceRecord struct {
 	model.BaseModel
-	EmployeeID   int64          `gorm:"column:employee_id;not null;index" json:"employee_id"`
-	EmployeeName string         `gorm:"column:employee_name;type:varchar(50);not null" json:"employee_name"`
-	CityID       int            `gorm:"column:city_id;not null" json:"city_id"`
-	PolicyID     int64          `gorm:"column:policy_id;not null" json:"policy_id"`
-	BaseAmount   float64        `gorm:"column:base_amount;not null" json:"base_amount"`
-	Status       string         `gorm:"column:status;type:varchar(20);not null;default:pending" json:"status"`
-	StartMonth   string         `gorm:"column:start_month;type:varchar(7);not null" json:"start_month"`
-	EndMonth     *string        `gorm:"column:end_month;type:varchar(7)" json:"end_month"`
-	Details      datatypes.JSON `gorm:"column:details;type:jsonb" json:"details"`
-	TotalCompany float64        `gorm:"column:total_company;not null" json:"total_company"`
-	TotalPersonal float64       `gorm:"column:total_personal;not null" json:"total_personal"`
+	EmployeeID    int64          `gorm:"column:employee_id;not null;index;comment:员工ID，外键到employees.id" json:"employee_id"`
+	EmployeeName  string         `gorm:"column:employee_name;type:varchar(50);not null;comment:员工姓名" json:"employee_name"`
+	CityID        int            `gorm:"column:city_id;not null;comment:参保城市ID" json:"city_id"`
+	PolicyID      int64          `gorm:"column:policy_id;not null;comment:社保政策ID，外键到social_insurance_policies.id" json:"policy_id"`
+	BaseAmount    float64        `gorm:"column:base_amount;not null;comment:社保缴费基数" json:"base_amount"`
+	Status        string         `gorm:"column:status;type:varchar(20);not null;default:pending;comment:参保状态（pending/active/stopped）" json:"status"`
+	StartMonth    string         `gorm:"column:start_month;type:varchar(7);not null;comment:参保起始月份（YYYY-MM）" json:"start_month"`
+	EndMonth      *string        `gorm:"column:end_month;type:varchar(7);comment:参保结束月份（停缴时填写）" json:"end_month"`
+	Details       datatypes.JSON `gorm:"column:details;type:jsonb;comment:各险种明细（JSON格式）" json:"details"`
+	TotalCompany  float64        `gorm:"column:total_company;not null;comment:企业总缴费金额" json:"total_company"`
+	TotalPersonal float64        `gorm:"column:total_personal;not null;comment:个人总缴费金额" json:"total_personal"`
 }
 
 // TableName 指定表名
@@ -75,12 +75,12 @@ func (SocialInsuranceRecord) TableName() string {
 // ChangeHistory 变更历史
 type ChangeHistory struct {
 	model.BaseModel
-	RecordID    int64          `gorm:"column:record_id;not null;index" json:"record_id"`
-	EmployeeID  int64          `gorm:"column:employee_id;not null;index" json:"employee_id"`
-	ChangeType  string         `gorm:"column:change_type;type:varchar(20);not null" json:"change_type"`
-	BeforeValue datatypes.JSON `gorm:"column:before_value;type:jsonb" json:"before_value"`
-	AfterValue  datatypes.JSON `gorm:"column:after_value;type:jsonb" json:"after_value"`
-	Remark      string         `gorm:"column:remark;type:varchar(500)" json:"remark"`
+	RecordID    int64          `gorm:"column:record_id;not null;index;comment:参保记录ID" json:"record_id"`
+	EmployeeID  int64          `gorm:"column:employee_id;not null;index;comment:员工ID" json:"employee_id"`
+	ChangeType  string         `gorm:"column:change_type;type:varchar(20);not null;comment:变更类型（enroll/base_adjust/stop）" json:"change_type"`
+	BeforeValue datatypes.JSON `gorm:"column:before_value;type:jsonb;comment:变更前数据" json:"before_value"`
+	AfterValue  datatypes.JSON `gorm:"column:after_value;type:jsonb;comment:变更后数据" json:"after_value"`
+	Remark      string         `gorm:"column:remark;type:varchar(500);comment:备注" json:"remark"`
 }
 
 // TableName 指定表名
