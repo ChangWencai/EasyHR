@@ -11,15 +11,15 @@ import (
 
 // DashboardRepository defines the data access interface for the dashboard.
 type DashboardRepository interface {
-	GetEmployeeStats(ctx context.Context, orgID uint) (active, joined, left int, err error)
-	GetPayrollTotal(ctx context.Context, orgID uint) (string, error)
-	GetSocialInsuranceTotal(ctx context.Context, orgID uint) (string, error)
-	GetPendingVouchers(ctx context.Context, orgID uint) (int, error)
-	GetPendingExpenses(ctx context.Context, orgID uint) (int, error)
-	GetTaxReminders(ctx context.Context, orgID uint) (int, error)
-	GetContractExpirations(ctx context.Context, orgID uint) (int, error)
-	GetPendingOffboardings(ctx context.Context, orgID uint) (int, error)
-	GetPendingInvitations(ctx context.Context, orgID uint) (int, error)
+	GetEmployeeStats(ctx context.Context, orgID int64) (active, joined, left int, err error)
+	GetPayrollTotal(ctx context.Context, orgID int64) (string, error)
+	GetSocialInsuranceTotal(ctx context.Context, orgID int64) (string, error)
+	GetPendingVouchers(ctx context.Context, orgID int64) (int, error)
+	GetPendingExpenses(ctx context.Context, orgID int64) (int, error)
+	GetTaxReminders(ctx context.Context, orgID int64) (int, error)
+	GetContractExpirations(ctx context.Context, orgID int64) (int, error)
+	GetPendingOffboardings(ctx context.Context, orgID int64) (int, error)
+	GetPendingInvitations(ctx context.Context, orgID int64) (int, error)
 }
 
 // DashboardRepositoryImpl is the concrete GORM implementation.
@@ -33,7 +33,7 @@ func NewRepository(db *gorm.DB) *DashboardRepositoryImpl {
 }
 
 // GetEmployeeStats returns active employee count, joined this month, and left this month.
-func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID uint) (active, joined, left int, err error) {
+func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID int64) (active, joined, left int, err error) {
 	now := time.Now()
 	year, month, _ := now.Date()
 	startOfMonth := time.Date(year, month, 1, 0, 0, 0, 0, now.Location())
@@ -42,7 +42,7 @@ func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID ui
 	// Active employees (active + probation)
 	var activeCount int64
 	if err := r.db.Model(&EmployeeRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status IN ?", []string{StatusActive, StatusProbation}).
 		Count(&activeCount).Error; err != nil {
 		return 0, 0, 0, fmt.Errorf("count active employees: %w", err)
@@ -51,7 +51,7 @@ func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID ui
 	// Joined this month
 	var joinedCount int64
 	if err := r.db.Model(&EmployeeRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status IN ? AND created_at >= ? AND created_at <= ?",
 			[]string{StatusActive, StatusProbation}, startOfMonth, endOfMonth).
 		Count(&joinedCount).Error; err != nil {
@@ -61,7 +61,7 @@ func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID ui
 	// Left this month
 	var leftCount int64
 	if err := r.db.Model(&EmployeeRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status = ? AND updated_at >= ? AND updated_at <= ?",
 			StatusResigned, startOfMonth, endOfMonth).
 		Count(&leftCount).Error; err != nil {
@@ -72,7 +72,7 @@ func (r *DashboardRepositoryImpl) GetEmployeeStats(ctx context.Context, orgID ui
 }
 
 // GetPayrollTotal returns the sum of net income for paid payroll records this month.
-func (r *DashboardRepositoryImpl) GetPayrollTotal(ctx context.Context, orgID uint) (string, error) {
+func (r *DashboardRepositoryImpl) GetPayrollTotal(ctx context.Context, orgID int64) (string, error) {
 	now := time.Now()
 	year, month := now.Year(), int(now.Month())
 
@@ -80,7 +80,7 @@ func (r *DashboardRepositoryImpl) GetPayrollTotal(ctx context.Context, orgID uin
 		Total string
 	}
 	err := r.db.Model(&PayrollRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Select("COALESCE(SUM(net_income), 0) as total").
 		Where("year = ? AND month = ? AND status = ?", year, month, PayrollStatusPaid).
 		Scan(&result).Error
@@ -91,7 +91,7 @@ func (r *DashboardRepositoryImpl) GetPayrollTotal(ctx context.Context, orgID uin
 }
 
 // GetSocialInsuranceTotal returns the sum of social insurance (personal + employer) for this month.
-func (r *DashboardRepositoryImpl) GetSocialInsuranceTotal(ctx context.Context, orgID uint) (string, error) {
+func (r *DashboardRepositoryImpl) GetSocialInsuranceTotal(ctx context.Context, orgID int64) (string, error) {
 	now := time.Now()
 	paymentMonth := fmt.Sprintf("%d-%02d", now.Year(), now.Month())
 
@@ -104,9 +104,9 @@ func (r *DashboardRepositoryImpl) GetSocialInsuranceTotal(ctx context.Context, o
 		Total string
 	}
 	err := r.db.Model(&SIRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Select("COALESCE(SUM(total_company + total_personal), 0) as total").
-		Where("payment_month = ?", paymentMonth).
+		Where("start_month = ?", paymentMonth).
 		Scan(&result).Error
 	if err != nil {
 		return "0", fmt.Errorf("get social insurance total: %w", err)
@@ -115,13 +115,13 @@ func (r *DashboardRepositoryImpl) GetSocialInsuranceTotal(ctx context.Context, o
 }
 
 // GetPendingVouchers returns the count of vouchers with status 'submitted'.
-func (r *DashboardRepositoryImpl) GetPendingVouchers(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetPendingVouchers(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&VoucherRecord{}) {
 		return 0, nil
 	}
 	var count int64
 	err := r.db.Model(&VoucherRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status = ?", VoucherStatusSubmitted).
 		Count(&count).Error
 	if err != nil {
@@ -131,13 +131,13 @@ func (r *DashboardRepositoryImpl) GetPendingVouchers(ctx context.Context, orgID 
 }
 
 // GetPendingExpenses returns the count of expense reimbursements with status 'pending'.
-func (r *DashboardRepositoryImpl) GetPendingExpenses(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetPendingExpenses(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&ExpenseRecord{}) {
 		return 0, nil
 	}
 	var count int64
 	err := r.db.Model(&ExpenseRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status = ?", ExpenseStatusPending).
 		Count(&count).Error
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *DashboardRepositoryImpl) GetPendingExpenses(ctx context.Context, orgID 
 }
 
 // GetTaxReminders returns the count of unread, undismissed tax reminders due within 3 days.
-func (r *DashboardRepositoryImpl) GetTaxReminders(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetTaxReminders(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&TaxReminderRecord{}) {
 		return 0, nil
 	}
@@ -156,7 +156,7 @@ func (r *DashboardRepositoryImpl) GetTaxReminders(ctx context.Context, orgID uin
 
 	var count int64
 	err := r.db.Model(&TaxReminderRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("is_read = ? AND is_dismissed = ? AND due_date IS NOT NULL AND due_date <= ?",
 			false, false, deadline).
 		Count(&count).Error
@@ -167,7 +167,7 @@ func (r *DashboardRepositoryImpl) GetTaxReminders(ctx context.Context, orgID uin
 }
 
 // GetContractExpirations returns the count of active contracts expiring within 30 days.
-func (r *DashboardRepositoryImpl) GetContractExpirations(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetContractExpirations(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&ContractRecord{}) {
 		return 0, nil
 	}
@@ -176,8 +176,8 @@ func (r *DashboardRepositoryImpl) GetContractExpirations(ctx context.Context, or
 
 	var count int64
 	err := r.db.Model(&ContractRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
-		Where("status = ? AND expiry_date IS NOT NULL AND expiry_date <= ? AND expiry_date >= ?",
+		Scopes(middleware.TenantScope(orgID)).
+		Where("status = ? AND end_date IS NOT NULL AND end_date <= ? AND end_date >= ?",
 			ContractStatusActive, deadline, now).
 		Count(&count).Error
 	if err != nil {
@@ -187,13 +187,13 @@ func (r *DashboardRepositoryImpl) GetContractExpirations(ctx context.Context, or
 }
 
 // GetPendingOffboardings returns the count of offboardings with status 'pending' or 'approved'.
-func (r *DashboardRepositoryImpl) GetPendingOffboardings(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetPendingOffboardings(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&OffboardingRecord{}) {
 		return 0, nil
 	}
 	var count int64
 	err := r.db.Model(&OffboardingRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status IN ?", []string{OffboardingStatusPending, OffboardingStatusApproved}).
 		Count(&count).Error
 	if err != nil {
@@ -203,13 +203,13 @@ func (r *DashboardRepositoryImpl) GetPendingOffboardings(ctx context.Context, or
 }
 
 // GetPendingInvitations returns the count of invitations with status 'pending'.
-func (r *DashboardRepositoryImpl) GetPendingInvitations(ctx context.Context, orgID uint) (int, error) {
+func (r *DashboardRepositoryImpl) GetPendingInvitations(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&InvitationRecord{}) {
 		return 0, nil
 	}
 	var count int64
 	err := r.db.Model(&InvitationRecord{}).
-		Scopes(middleware.TenantScope(int64(orgID))).
+		Scopes(middleware.TenantScope(orgID)).
 		Where("status = ?", InvitationStatusPending).
 		Count(&count).Error
 	if err != nil {
@@ -246,10 +246,10 @@ func (PayrollRecord) TableName() string { return "payroll_records" }
 
 // SIRecord mirrors socialinsurance.SocialInsuranceRecord for querying.
 type SIRecord struct {
-	OrgID          uint
-	PaymentMonth   string
-	TotalCompany   float64
-	TotalPersonal  float64
+	OrgID         uint
+	StartMonth    string
+	TotalCompany  float64
+	TotalPersonal float64
 }
 
 func (SIRecord) TableName() string { return "social_insurance_records" }
@@ -282,9 +282,9 @@ func (TaxReminderRecord) TableName() string { return "tax_reminders" }
 
 // ContractRecord mirrors employee.Contract for querying.
 type ContractRecord struct {
-	OrgID      uint
-	Status     string
-	ExpiryDate *time.Time
+	OrgID   uint
+	Status  string
+	EndDate *time.Time
 }
 
 func (ContractRecord) TableName() string { return "contracts" }

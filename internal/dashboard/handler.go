@@ -25,7 +25,7 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 		response.Error(c, http.StatusUnauthorized, 40100, "missing org_id in context")
 		return
 	}
-	orgID, ok := orgIDVal.(uint)
+	orgID, ok := orgIDVal.(int64)
 	if !ok {
 		response.Error(c, http.StatusUnauthorized, 40100, "invalid org_id type")
 		return
