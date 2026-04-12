@@ -21,6 +21,7 @@ type Config struct {
 	SignName        string
 	TemplateCode    string
 	Endpoint        string
+	TestMode        bool
 }
 
 type Client struct {
@@ -38,7 +39,14 @@ func NewClient(cfg Config) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) IsTestMode() bool {
+	return c.cfg.TestMode
+}
+
 func (c *Client) SendCode(ctx context.Context, phone, code string) error {
+	if c.cfg.TestMode {
+		return nil
+	}
 	params := map[string]string{
 		"AccessKeyId":      c.cfg.AccessKeyID,
 		"Action":           "SendSms",

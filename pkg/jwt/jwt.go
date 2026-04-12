@@ -89,7 +89,7 @@ func ParseRefreshToken(tokenStr, secret string) (*RefreshClaims, error) {
 	return claims, nil
 }
 
-func RefreshTokens(refreshTokenStr, secret string, accessTTL, refreshTTL time.Duration, blacklistFunc BlacklistFunc) (*TokenPair, error) {
+func RefreshTokens(refreshTokenStr, secret string, accessTTL, refreshTTL time.Duration, blacklistFunc BlacklistFunc, userID int64, orgID int64, role string) (*TokenPair, error) {
 	claims, err := ParseRefreshToken(refreshTokenStr, secret)
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
@@ -99,7 +99,7 @@ func RefreshTokens(refreshTokenStr, secret string, accessTTL, refreshTTL time.Du
 		return nil, fmt.Errorf("blacklist old token: %w", err)
 	}
 
-	accessToken, err := GenerateAccessToken(claims.UserID, 0, "", secret, accessTTL)
+	accessToken, err := GenerateAccessToken(claims.UserID, orgID, role, secret, accessTTL)
 	if err != nil {
 		return nil, fmt.Errorf("generate access token: %w", err)
 	}

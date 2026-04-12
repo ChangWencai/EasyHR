@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
+	Log      LogConfig      `mapstructure:"log"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
@@ -21,6 +22,16 @@ type Config struct {
 type ServerConfig struct {
 	Port int    `mapstructure:"port"`
 	Mode string `mapstructure:"mode"`
+}
+
+type LogConfig struct {
+	Level      string `mapstructure:"level"`       // debug/info/warn/error
+	Path       string `mapstructure:"path"`        // 日志文件目录
+	Filename   string `mapstructure:"filename"`    // 日志文件名
+	MaxSize    int    `mapstructure:"max_size"`    // MB
+	MaxBackups int    `mapstructure:"max_backups"` // 保留的旧日志文件数量
+	MaxAge     int    `mapstructure:"max_age"`      // 天
+	Compress   bool   `mapstructure:"compress"`    // 是否压缩
 }
 
 type DatabaseConfig struct {
@@ -58,6 +69,7 @@ type SMSConfig struct {
 	AccessKeySecret string `mapstructure:"access_key_secret"`
 	SignName        string `mapstructure:"sign_name"`
 	TemplateCode    string `mapstructure:"template_code"`
+	TestMode        bool   `mapstructure:"test_mode"`
 }
 
 type CryptoConfig struct {

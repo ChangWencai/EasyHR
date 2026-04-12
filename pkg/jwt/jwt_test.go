@@ -56,7 +56,7 @@ func TestRefreshTokens(t *testing.T) {
 		return nil
 	}
 
-	pair, err := RefreshTokens(refreshToken, testSecret, time.Minute, time.Hour, blacklistFunc)
+	pair, err := RefreshTokens(refreshToken, testSecret, time.Minute, time.Hour, blacklistFunc, 1, 100, "owner")
 	require.NoError(t, err)
 	assert.NotEmpty(t, pair.AccessToken)
 	assert.NotEmpty(t, pair.RefreshToken)
@@ -66,7 +66,7 @@ func TestRefreshTokens(t *testing.T) {
 
 func TestRefreshTokensWithInvalidToken(t *testing.T) {
 	blacklistFunc := func(jti string, ttl time.Duration) error { return nil }
-	_, err := RefreshTokens("invalid.token.here", testSecret, time.Minute, time.Hour, blacklistFunc)
+	_, err := RefreshTokens("invalid.token.here", testSecret, time.Minute, time.Hour, blacklistFunc, 0, 0, "")
 	assert.Error(t, err)
 }
 
@@ -75,6 +75,6 @@ func TestRefreshTokensBlacklistError(t *testing.T) {
 	blacklistFunc := func(jti string, ttl time.Duration) error {
 		return assert.AnError
 	}
-	_, err := RefreshTokens(refreshToken, testSecret, time.Minute, time.Hour, blacklistFunc)
+	_, err := RefreshTokens(refreshToken, testSecret, time.Minute, time.Hour, blacklistFunc, 1, 100, "owner")
 	assert.Error(t, err)
 }
