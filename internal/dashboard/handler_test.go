@@ -39,7 +39,7 @@ func TestGetDashboardHandler_ValidToken(t *testing.T) {
 	router := gin.New()
 	router.GET("/api/v1/dashboard", func(c *gin.Context) {
 		// Simulate JWT middleware injecting org_id
-		c.Set("org_id", uint(1))
+		c.Set("org_id", int64(1))
 		c.Next()
 	}, handler.GetDashboard)
 
@@ -108,7 +108,7 @@ func TestGetDashboardHandler_ServiceError(t *testing.T) {
 
 	router := gin.New()
 	router.GET("/api/v1/dashboard", func(c *gin.Context) {
-		c.Set("org_id", uint(1))
+		c.Set("org_id", int64(1))
 		c.Next()
 	}, handler.GetDashboard)
 
@@ -127,7 +127,7 @@ type MockDashboardService struct {
 	Err    error
 }
 
-func (m *MockDashboardService) GetDashboard(ctx context.Context, orgID uint) (*DashboardResult, error) {
+func (m *MockDashboardService) GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error) {
 	if m.Err != nil {
 		return nil, m.Err
 	}
