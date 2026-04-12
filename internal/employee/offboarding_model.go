@@ -12,15 +12,15 @@ import (
 // ChecklistItems 使用 JSONB 存储模板化交接清单
 type Offboarding struct {
 	model.BaseModel
-	EmployeeID      int64          `gorm:"column:employee_id;index;not null" json:"employee_id"`
-	Type            string         `gorm:"column:type;type:varchar(20);not null" json:"type"`               // voluntary/involuntary
-	ResignationDate time.Time      `gorm:"column:resignation_date;type:date;not null" json:"resignation_date"`
-	Reason          string         `gorm:"column:reason;type:varchar(500)" json:"reason"`
-	Status          string         `gorm:"column:status;type:varchar(20);not null;default:pending" json:"status"` // pending/approved/completed
-	ChecklistItems  datatypes.JSON `gorm:"column:checklist_items;type:jsonb;not null" json:"checklist_items"`
-	CompletedAt     *time.Time     `gorm:"column:completed_at" json:"completed_at"`
-	ApprovedBy      *int64         `gorm:"column:approved_by" json:"approved_by"`
-	ApprovedAt      *time.Time     `gorm:"column:approved_at" json:"approved_at"`
+	EmployeeID      int64          `gorm:"column:employee_id;index;not null;comment:员工ID，外键到employees.id" json:"employee_id"`
+	Type            string         `gorm:"column:type;type:varchar(20);not null;comment:离职类型（voluntary/involuntary）" json:"type"`
+	ResignationDate time.Time      `gorm:"column:resignation_date;type:date;not null;comment:离职日期" json:"resignation_date"`
+	Reason          string         `gorm:"column:reason;type:varchar(500);comment:离职原因" json:"reason"`
+	Status          string         `gorm:"column:status;type:varchar(20);not null;default:pending;comment:状态（pending/approved/completed）" json:"status"`
+	ChecklistItems  datatypes.JSON `gorm:"column:checklist_items;type:jsonb;not null;comment:交接清单（JSON格式）" json:"checklist_items"`
+	CompletedAt     *time.Time     `gorm:"column:completed_at;comment:完成时间" json:"completed_at"`
+	ApprovedBy      *int64         `gorm:"column:approved_by;comment:审批人ID" json:"approved_by"`
+	ApprovedAt      *time.Time     `gorm:"column:approved_at;comment:审批时间" json:"approved_at"`
 }
 
 // TableName 指定表名

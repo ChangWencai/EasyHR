@@ -11,17 +11,17 @@ import (
 // 合同生命周期：draft -> pending_sign -> signed -> active -> terminated/expired
 type Contract struct {
 	model.BaseModel
-	EmployeeID      int64      `gorm:"column:employee_id;index;not null" json:"employee_id"`
-	ContractType    string     `gorm:"column:contract_type;type:varchar(20);not null" json:"contract_type"` // fixed_term/indefinite/intern
-	StartDate       time.Time  `gorm:"column:start_date;type:date;not null" json:"start_date"`
-	EndDate         *time.Time `gorm:"column:end_date;type:date" json:"end_date"` // 无固定期限为 nil
-	Salary          float64    `gorm:"column:salary;type:decimal(10,2)" json:"salary"`
-	Status          string     `gorm:"column:status;type:varchar(20);not null;default:draft" json:"status"` // draft/pending_sign/signed/active/terminated/expired
-	PDFURL          string     `gorm:"column:pdf_url;type:varchar(500)" json:"pdf_url"`
-	SignedPDFURL    string     `gorm:"column:signed_pdf_url;type:varchar(500)" json:"signed_pdf_url"`
-	SignDate        *time.Time `gorm:"column:sign_date;type:date" json:"sign_date"`
-	TerminateDate   *time.Time `gorm:"column:terminate_date;type:date" json:"terminate_date"`
-	TerminateReason string     `gorm:"column:terminate_reason;type:varchar(500)" json:"terminate_reason"`
+	EmployeeID      int64      `gorm:"column:employee_id;index;not null;comment:员工ID，外键到employees.id" json:"employee_id"`
+	ContractType    string     `gorm:"column:contract_type;type:varchar(20);not null;comment:合同类型（fixed_term/indefinite/intern）" json:"contract_type"`
+	StartDate       time.Time  `gorm:"column:start_date;type:date;not null;comment:合同开始日期" json:"start_date"`
+	EndDate         *time.Time `gorm:"column:end_date;type:date;comment:合同结束日期（无固定期限为空）" json:"end_date"`
+	Salary          float64    `gorm:"column:salary;type:decimal(10,2);comment:月薪" json:"salary"`
+	Status          string     `gorm:"column:status;type:varchar(20);not null;default:draft;comment:状态（draft/pending_sign/signed/active/terminated/expired）" json:"status"`
+	PDFURL          string     `gorm:"column:pdf_url;type:varchar(500);comment:合同PDF模板URL" json:"pdf_url"`
+	SignedPDFURL    string     `gorm:"column:signed_pdf_url;type:varchar(500);comment:已签署合同PDF URL" json:"signed_pdf_url"`
+	SignDate        *time.Time `gorm:"column:sign_date;type:date;comment:签署日期" json:"sign_date"`
+	TerminateDate   *time.Time `gorm:"column:terminate_date;type:date;comment:终止日期" json:"terminate_date"`
+	TerminateReason string     `gorm:"column:terminate_reason;type:varchar(500);comment:终止原因" json:"terminate_reason"`
 }
 
 // TableName 指定表名

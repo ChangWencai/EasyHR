@@ -7,16 +7,16 @@ import (
 // Invitation 入职邀请模型
 // 独立于 BaseModel，使用简化字段（邀请创建后仅更新 status/used_at/employee_id）
 type Invitation struct {
-	ID         int64      `gorm:"primaryKey;autoIncrement" json:"id"`
-	OrgID      int64      `gorm:"column:org_id;index;not null" json:"org_id"`
-	Token      string     `gorm:"column:token;type:varchar(64);uniqueIndex;not null" json:"token"`
-	Position   string     `gorm:"column:position;type:varchar(100)" json:"position"`
-	Status     string     `gorm:"column:status;type:varchar(20);not null;default:pending" json:"status"` // pending/used/expired/cancelled
-	CreatedBy  int64      `gorm:"column:created_by;not null" json:"created_by"`
-	CreatedAt  time.Time  `gorm:"column:created_at;autoCreateTime" json:"created_at"`
-	ExpiresAt  time.Time  `gorm:"column:expires_at;not null" json:"expires_at"`
-	UsedAt     *time.Time `gorm:"column:used_at" json:"used_at"`
-	EmployeeID *int64     `gorm:"column:employee_id" json:"employee_id"`
+	ID         int64      `gorm:"primaryKey;autoIncrement;comment:主键ID" json:"id"`
+	OrgID      int64      `gorm:"column:org_id;index;not null;comment:所属企业ID" json:"org_id"`
+	Token      string     `gorm:"column:token;type:varchar(64);uniqueIndex;not null;comment:邀请Token" json:"token"`
+	Position   string     `gorm:"column:position;type:varchar(100);comment:岗位" json:"position"`
+	Status     string     `gorm:"column:status;type:varchar(20);not null;default:pending;comment:状态（pending/used/expired/cancelled）" json:"status"`
+	CreatedBy  int64      `gorm:"column:created_by;not null;comment:创建人ID" json:"created_by"`
+	CreatedAt  time.Time  `gorm:"column:created_at;autoCreateTime;comment:创建时间" json:"created_at"`
+	ExpiresAt  time.Time  `gorm:"column:expires_at;not null;comment:邀请过期时间" json:"expires_at"`
+	UsedAt     *time.Time `gorm:"column:used_at;comment:使用时间" json:"used_at"`
+	EmployeeID *int64     `gorm:"column:employee_id;comment:关联员工ID（使用后填写）" json:"employee_id"`
 }
 
 // TableName 指定表名

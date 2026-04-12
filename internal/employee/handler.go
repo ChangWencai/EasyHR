@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wencai/easyhr/internal/common/logger"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
 )
@@ -39,15 +40,18 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 func (h *Handler) CreateEmployee(c *gin.Context) {
 	var req CreateEmployeeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.SugarLogger.Debugw("CreateEmployee: 参数错误", "error", err.Error())
 		response.BadRequest(c, "参数错误: "+err.Error())
 		return
 	}
 
 	orgID := c.GetInt64("org_id")
 	userID := c.GetInt64("user_id")
+	logger.SugarLogger.Debugw("CreateEmployee: 请求", "org_id", orgID, "user_id", userID, "name", req.Name)
 
 	emp, err := h.svc.CreateEmployee(orgID, userID, &req)
 	if err != nil {
+		logger.SugarLogger.Debugw("CreateEmployee: 失败", "error", err.Error(), "org_id", orgID)
 		response.Error(c, http.StatusBadRequest, 20100, err.Error())
 		return
 	}
@@ -59,13 +63,17 @@ func (h *Handler) CreateEmployee(c *gin.Context) {
 func (h *Handler) ListEmployees(c *gin.Context) {
 	var query ListQueryParams
 	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.SugarLogger.Debugw("ListEmployees: 参数错误", "error", err.Error())
 		response.BadRequest(c, "参数错误: "+err.Error())
 		return
 	}
 
 	orgID := c.GetInt64("org_id")
+	logger.SugarLogger.Debugw("ListEmployees: 查询", "org_id", orgID, "page", query.Page, "page_size", query.PageSize)
+
 	employees, total, err := h.svc.ListEmployees(orgID, query)
 	if err != nil {
+		logger.SugarLogger.Debugw("ListEmployees: 失败", "error", err.Error(), "org_id", orgID)
 		response.Error(c, http.StatusInternalServerError, 20101, "查询员工列表失败")
 		return
 	}
@@ -78,12 +86,15 @@ func (h *Handler) GetEmployee(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		logger.SugarLogger.Debugw("GetEmployee: 无效ID", "param", c.Param("id"))
 		response.BadRequest(c, "无效的员工ID")
 		return
 	}
 
+	logger.SugarLogger.Debugw("GetEmployee: 查询", "org_id", orgID, "employee_id", id)
 	emp, err := h.svc.GetEmployee(orgID, id)
 	if err != nil {
+		logger.SugarLogger.Debugw("GetEmployee: 失败", "error", err.Error(), "employee_id", id)
 		response.Error(c, http.StatusNotFound, 20102, err.Error())
 		return
 	}
@@ -95,6 +106,7 @@ func (h *Handler) GetEmployee(c *gin.Context) {
 func (h *Handler) UpdateEmployee(c *gin.Context) {
 	var req UpdateEmployeeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.SugarLogger.Debugw("UpdateEmployee: 参数错误", "error", err.Error())
 		response.BadRequest(c, "参数错误: "+err.Error())
 		return
 	}
@@ -103,12 +115,15 @@ func (h *Handler) UpdateEmployee(c *gin.Context) {
 	userID := c.GetInt64("user_id")
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		logger.SugarLogger.Debugw("UpdateEmployee: 无效ID", "param", c.Param("id"))
 		response.BadRequest(c, "无效的员工ID")
 		return
 	}
 
+	logger.SugarLogger.Debugw("UpdateEmployee: 更新", "org_id", orgID, "employee_id", id, "user_id", userID)
 	emp, err := h.svc.UpdateEmployee(orgID, userID, id, &req)
 	if err != nil {
+		logger.SugarLogger.Debugw("UpdateEmployee: 失败", "error", err.Error(), "employee_id", id)
 		response.Error(c, http.StatusBadRequest, 20103, err.Error())
 		return
 	}
@@ -121,11 +136,14 @@ func (h *Handler) DeleteEmployee(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		logger.SugarLogger.Debugw("DeleteEmployee: 无效ID", "param", c.Param("id"))
 		response.BadRequest(c, "无效的员工ID")
 		return
 	}
 
+	logger.SugarLogger.Debugw("DeleteEmployee: 删除", "org_id", orgID, "employee_id", id)
 	if err := h.svc.DeleteEmployee(orgID, id); err != nil {
+		logger.SugarLogger.Debugw("DeleteEmployee: 失败", "error", err.Error(), "employee_id", id)
 		response.Error(c, http.StatusBadRequest, 20104, err.Error())
 		return
 	}
@@ -137,13 +155,17 @@ func (h *Handler) DeleteEmployee(c *gin.Context) {
 func (h *Handler) ExportExcel(c *gin.Context) {
 	var query ListQueryParams
 	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.SugarLogger.Debugw("ExportExcel: 参数错误", "error", err.Error())
 		response.BadRequest(c, "参数错误: "+err.Error())
 		return
 	}
 
 	orgID := c.GetInt64("org_id")
+	logger.SugarLogger.Debugw("ExportExcel: 导出", "org_id", orgID)
+
 	data, err := h.svc.ExportExcel(orgID, query)
 	if err != nil {
+		logger.SugarLogger.Debugw("ExportExcel: 失败", "error", err.Error(), "org_id", orgID)
 		response.Error(c, http.StatusInternalServerError, 20105, "导出失败")
 		return
 	}
@@ -158,12 +180,15 @@ func (h *Handler) GetSensitiveInfo(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
+		logger.SugarLogger.Debugw("GetSensitiveInfo: 无效ID", "param", c.Param("id"))
 		response.BadRequest(c, "无效的员工ID")
 		return
 	}
 
+	logger.SugarLogger.Debugw("GetSensitiveInfo: 查询", "org_id", orgID, "employee_id", id)
 	info, err := h.svc.GetSensitiveInfo(orgID, id)
 	if err != nil {
+		logger.SugarLogger.Debugw("GetSensitiveInfo: 失败", "error", err.Error(), "employee_id", id)
 		response.Error(c, http.StatusNotFound, 20106, err.Error())
 		return
 	}
