@@ -10,7 +10,7 @@ import (
 
 // ServiceInterface abstracts DashboardService for handler dependency injection.
 type ServiceInterface interface {
-	GetDashboard(ctx context.Context, orgID uint) (*DashboardResult, error)
+	GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error)
 }
 
 // DashboardService aggregates dashboard data from multiple sources.
@@ -24,7 +24,7 @@ func NewService(repo DashboardRepository) *DashboardService {
 }
 
 // GetDashboard returns the dashboard for the given org.
-func (s *DashboardService) GetDashboard(ctx context.Context, orgID uint) (*DashboardResult, error) {
+func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error) {
 	var (
 		empStats        struct{ active, joined, left int }
 		payrollTotal    string
@@ -127,7 +127,7 @@ func (s *DashboardService) GetDashboard(ctx context.Context, orgID uint) (*Dashb
 	}
 
 	// Build todos only for types with count > 0
-	var todos []TodoItem
+	todos := []TodoItem{}
 
 	if siTotal != "" {
 		if f, err := strconv.ParseFloat(siTotal, 64); err == nil && f > 0 {

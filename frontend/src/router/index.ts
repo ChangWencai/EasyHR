@@ -127,12 +127,11 @@ const router = createRouter({
 })
 
 // Auth Guard：未登录访问受保护路由时重定向到 /login
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
   // /login 和 /onboarding/org-setup 不做守卫检查
   if (to.path === '/login' || to.path === '/onboarding/org-setup') {
-    next()
     return
   }
 
@@ -145,11 +144,8 @@ router.beforeEach((to, from, next) => {
     to.path.startsWith('/mine')
 
   if (isProtectedRoute && !authStore.isLoggedIn) {
-    next('/login')
-    return
+    return { path: '/login' }
   }
-
-  next()
 })
 
 export default router

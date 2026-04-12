@@ -330,9 +330,7 @@ func (r *VoucherRepository) Search(orgID int64, periodID *int64, accountID *int6
 	q.Count(&total)
 
 	offset := (page - 1) * size
-	err := r.db.Scopes(middleware.TenantScope(orgID)).
-		Preload("Entries").
-		Where(q.Statement).
+	err := q.Preload("Entries").
 		Order("voucher_no ASC").
 		Offset(offset).
 		Limit(size).

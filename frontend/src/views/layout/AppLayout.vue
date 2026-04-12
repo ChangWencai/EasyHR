@@ -111,7 +111,7 @@
       :size="240"
       :show-close="false"
     >
-      <template #title>
+      <template #header>
         <div class="drawer-header">
           <el-icon size="20"><Management /></el-icon>
           <span class="logo-text">易人事</span>

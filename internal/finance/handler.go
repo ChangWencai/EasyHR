@@ -34,23 +34,26 @@ func NewFinanceHandler(
 }
 
 // RegisterRoutes registers all finance routes within the given router group.
-func (h *FinanceHandler) RegisterRoutes(rg *gin.RouterGroup) {
+// authMiddleware is applied as a middleware to all finance routes.
+func (h *FinanceHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+	authGroup := rg.Group("", authMiddleware)
+
 	if h.accountHandler != nil {
-		h.accountHandler.RegisterRoutes(rg)
+		h.accountHandler.RegisterRoutes(authGroup)
 	}
 	if h.voucherHandler != nil {
-		h.voucherHandler.RegisterRoutes(rg)
+		h.voucherHandler.RegisterRoutes(authGroup)
 	}
 	if h.invoiceHandler != nil {
-		h.invoiceHandler.RegisterRoutes(rg)
+		h.invoiceHandler.RegisterRoutes(authGroup)
 	}
 	if h.expenseHandler != nil {
-		h.expenseHandler.RegisterRoutes(rg)
+		h.expenseHandler.RegisterRoutes(authGroup)
 	}
 	if h.bookHandler != nil {
-		h.bookHandler.RegisterRoutes(rg)
+		h.bookHandler.RegisterRoutes(authGroup)
 	}
 	if h.reportHandler != nil {
-		h.reportHandler.RegisterRoutes(rg)
+		h.reportHandler.RegisterRoutes(authGroup)
 	}
 }

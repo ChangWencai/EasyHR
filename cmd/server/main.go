@@ -48,7 +48,12 @@ func initApp() {
 		os.Exit(1)
 	}
 
-	logger.Init(cfg.Server.Mode)
+	logger.InitWithConfig(&cfg.Log)
+	logger.Logger.Info("logger initialized",
+		zap.String("level", cfg.Log.Level),
+		zap.String("path", cfg.Log.Path),
+		zap.String("filename", cfg.Log.Filename),
+	)
 
 	db = database.Init(&cfg.Database)
 
@@ -109,6 +114,7 @@ func main() {
 		AccessKeySecret: cfg.SMS.AccessKeySecret,
 		SignName:        cfg.SMS.SignName,
 		TemplateCode:    cfg.SMS.TemplateCode,
+		TestMode:        cfg.SMS.TestMode,
 	})
 
 	userRepo := user.NewRepository(db)
@@ -196,7 +202,7 @@ func main() {
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
-		financeHandler.RegisterRoutes(v1.Group(""))
+		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 		dashboard.RegisterRouter(v1.Group("/dashboard"), authMiddleware, db)
