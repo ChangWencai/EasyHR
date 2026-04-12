@@ -68,6 +68,16 @@ func (r *Repository) ListUsers(orgID int64, page, pageSize int) ([]model.User, i
 	return users, total, nil
 }
 
+// FindByID 根据 userID 查询用户（不使用 tenant scope，用于 token 刷新等场景）
+func (r *Repository) FindByID(userID int64) (*model.User, error) {
+	var user model.User
+	err := r.db.Where("id = ?", userID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *Repository) FindUserByID(orgID, userID int64) (*model.User, error) {
 	var user model.User
 	err := r.db.Scopes(middleware.TenantScope(orgID)).Where("id = ?", userID).First(&user).Error
@@ -107,6 +117,18 @@ func (r *Repository) FindByPhone(phone string, aesKey []byte) (*model.User, erro
 // UpdateUserPassword 更新用户密码哈希
 func (r *Repository) UpdateUserPassword(userID int64, passwordHash string) error {
 	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("password_hash", passwordHash).Error
+}
+
+func (r *Repository) UpdateUserOrgID(userID, orgID int64) error {
+	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("org_id", orgID).Error
+}
+
+func (r *Repository) UpdateUserAvatar(userID int64, avatar string) error {
+	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("avatar", avatar).Error
+}
+
+func (r *Repository) UpdateUserName(userID int64, name string) error {
+	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("name", name).Error
 }
 
 func (r *Repository) CreateOrgAndOwner(org *model.Organization, user *model.User) error {

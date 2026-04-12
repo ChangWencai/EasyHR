@@ -9,11 +9,29 @@ type LoginRequest struct {
 	Code  string `json:"code" binding:"required,len=6"`
 }
 
+// RegisterRequest 注册请求（与 LoginRequest 结构一致，共享同一套验证码校验逻辑）
+type RegisterRequest = LoginRequest
+
 type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
 type CompleteOnboardingRequest struct {
+	Name         string `json:"name" binding:"required,min=2,max=100"`
+	CreditCode   string `json:"credit_code" binding:"required,len=18"`
+	City         string `json:"city" binding:"required"`
+	ContactName  string `json:"contact_name" binding:"required"`
+	ContactPhone string `json:"contact_phone" binding:"required,len=11"`
+}
+
+// ChangePasswordRequest 修改密码请求
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6,max=20"`
+}
+
+// UpdateOrgRequest 更新企业信息请求
+type UpdateOrgRequest struct {
 	Name         string `json:"name" binding:"required,min=2,max=100"`
 	CreditCode   string `json:"credit_code" binding:"required,len=18"`
 	City         string `json:"city" binding:"required"`
@@ -60,15 +78,28 @@ type MeResponse struct {
 	ID                 int64     `json:"id"`
 	Name               string    `json:"name"`
 	Phone              string    `json:"phone"` // 明文手机号
-	Role               string    `json:"role"` // "owner" | "admin" | "member"
+	Role               string    `json:"role"`  // "owner" | "admin" | "member"
+	Avatar             string    `json:"avatar"`
 	Org                *OrgInfo  `json:"org,omitempty"`
 	OnboardingRequired bool      `json:"onboarding_required"`
 }
 
+// UpdateAvatarRequest 更新头像请求
+type UpdateAvatarRequest struct {
+	Avatar string `json:"avatar" binding:"required"`
+}
+
+// UpdateNameRequest 更新姓名请求
+type UpdateNameRequest struct {
+	Name string `json:"name" binding:"required,min=2,max=50"`
+}
+
 // OrgInfo 企业基本信息（用于 /auth/me 响应）
 type OrgInfo struct {
-	ID         int64  `json:"id"`
-	Name       string `json:"name"`
-	CreditCode string `json:"credit_code"`
-	City       string `json:"city"`
+	ID           int64  `json:"id"`
+	Name         string `json:"name"`
+	CreditCode   string `json:"credit_code"`
+	City         string `json:"city"`
+	ContactName  string `json:"contact_name"`
+	ContactPhone string `json:"contact_phone"`
 }
