@@ -54,7 +54,7 @@ Plans:
 **Goal:** 在 H5 登录页将 Tab 3「微信登录」改为「注册」Tab，手机号+验证码完成账号创建，复用已有后端接口，注册成功后跳 /onboarding/org-setup
 **Requirements**: 无 REQ-ID（纯前端 UI 修改）
 **Depends on:** Phase 01-login-boss
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 **Context:** `.planning/phases/03a-web/03a-CONTEXT.md` | `.planning/phases/03a-web/03A-UI-SPEC.md`
 
 Plans:

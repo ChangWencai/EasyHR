@@ -2,6 +2,15 @@ server:
   port: 8089
   mode: debug  # debug/release
 
+log:
+  level: debug  # debug/info/warn/error
+  path: ./logs   # 日志文件目录
+  filename: server.log  # 日志文件名
+  max_size: 100  # 单个日志文件最大大小 (MB)
+  max_backups: 10 # 保留的旧日志文件数量
+  max_age: 7      # 旧日志文件保留天数
+  compress: true  # 是否压缩旧日志文件
+
 database:
   host: localhost
   port: 5432
@@ -33,6 +42,7 @@ sms:
   access_key_secret: ""
   sign_name: ""
   template_code: ""
+  test_mode: true  # 测试模式：跳过短信发送，固定验证码 123456
 
 crypto:
-  aes_key: ""  # 32字节 hex，从环境变量 AES_KEY 读取
+  aes_key: "AES_KEY"  # 32字节 hex，从环境变量 AES_KEY 读取
