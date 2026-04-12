@@ -77,10 +77,10 @@
 
         <!-- Tab 3: 注册 -->
         <el-tab-pane label="注册" name="register">
-          <el-form @submit.prevent="handleSmsLogin">
+          <el-form @submit.prevent="handleRegister">
             <el-form-item>
               <el-input
-                v-model="smsForm.phone"
+                v-model="registerForm.phone"
                 placeholder="请输入手机号"
                 maxlength="11"
                 type="number"
@@ -90,7 +90,7 @@
             <el-form-item>
               <div class="code-row">
                 <el-input
-                  v-model="smsForm.code"
+                  v-model="registerForm.code"
                   placeholder="请输入验证码"
                   maxlength="6"
                   style="width: 60%"
@@ -106,7 +106,7 @@
               </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" style="width: 100%; height: 44px; font-size: 16px" @click="handleSmsLogin">
+              <el-button type="primary" style="width: 100%; height: 44px; font-size: 16px" @click="handleRegister">
                 注册
               </el-button>
             </el-form-item>
@@ -140,14 +140,18 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null
 // 密码登录表单
 const passwordForm = ref({ phone: '', password: '' })
 
+// 注册表单
+const registerForm = ref({ phone: '', code: '' })
+
 // 发送验证码
 async function handleSendCode() {
-  if (!smsForm.value.phone || smsForm.value.phone.length !== 11) {
+  const phone = activeTab.value === 'register' ? registerForm.value.phone : smsForm.value.phone
+  if (!phone || phone.length !== 11) {
     ElMessage.error('请输入正确的手机号')
     return
   }
   try {
-    await request.post('/auth/send-code', { phone: smsForm.value.phone })
+    await request.post('/auth/send-code', { phone })
     ElMessage.success('验证码已发送')
     startCountdown()
   } catch (err: any) {
@@ -165,6 +169,23 @@ function startCountdown() {
       if (countdownTimer) clearInterval(countdownTimer)
     }
   }, 1000)
+}
+
+// 注册
+async function handleRegister() {
+  if (!registerForm.value.phone || !registerForm.value.code) {
+    ElMessage.error('请填写手机号和验证码')
+    return
+  }
+  try {
+    const resp = await request.post('/auth/register', {
+      phone: registerForm.value.phone,
+      code: registerForm.value.code,
+    })
+    handleLoginSuccess(resp.data)
+  } catch (err: any) {
+    ElMessage.error(err.response?.data?.message || '注册失败')
+  }
 }
 
 // 短信登录

@@ -5,7 +5,7 @@
         <span>企业信息录入</span>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
         <el-form-item label="企业名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入企业全称" maxlength="100" />
         </el-form-item>
@@ -75,7 +75,7 @@ const rules = {
   name: [{ required: true, message: '请输入企业名称', trigger: 'blur' }],
   credit_code: [
     { required: true, message: '请输入统一社会信用代码', trigger: 'blur' },
-    { pattern: /^[1-9A-HJ-NPQRTUWXY2-9]{17}$/, message: '统一社会信用代码格式不正确', trigger: 'blur' },
+    { pattern: /^[1-9][0-9A-HJ-NPQRTUWXY]{17}$/, message: '统一社会信用代码格式不正确', trigger: 'blur' },
   ],
   city_id: [{ required: true, message: '请选择城市', trigger: 'change' }],
   contact_name: [{ required: true, message: '请输入联系人', trigger: 'blur' }],
@@ -88,7 +88,7 @@ const rules = {
 async function loadCities() {
   try {
     const res = await request.get('/cities')
-    cityList.value = res
+    cityList.value = res.data
   } catch {
     // ignore
   }
@@ -134,11 +134,20 @@ async function handleSubmit() {
   }
   saving.value = true
   try {
-    await request.post('/orgs', form)
+    const res = await request.put('/org/onboarding', {
+      name: form.name,
+      credit_code: form.credit_code,
+      city: cityList.value.find(c => c.id === form.city_id)?.name || '',
+      contact_name: form.contact_name,
+      contact_phone: form.contact_phone,
+    })
+    // 保存新 token（onboarding 完成后 org_id 已更新到 token 中）
+    localStorage.setItem('token', res.data.access_token)
+    localStorage.setItem('refresh_token', res.data.refresh_token)
     ElMessage.success('保存成功')
     router.push('/home')
-  } catch {
-    ElMessage.error('保存失败')
+  } catch (err: any) {
+    ElMessage.error(err.response?.data?.message || '保存失败')
   } finally {
     saving.value = false
   }

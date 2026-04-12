@@ -7,18 +7,34 @@ const request = axios.create({
   timeout: 10000,
 })
 
+const PUBLIC_AUTH_PATHS = ['/auth/send-code', '/auth/login', '/auth/register', '/auth/login/password', '/auth/refresh']
+
+interface ApiError {
+  response?: {
+    status?: number
+    data?: {
+      code?: number
+      message?: string
+    }
+  }
+}
+
 request.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const isPublic = PUBLIC_AUTH_PATHS.some((p) => config.url?.startsWith(p))
+  if (!isPublic) {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
   }
   return config
 })
 
 request.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    const err = error as unknown as ApiError
+    if (err.response?.status === 401) {
       localStorage.removeItem('token')
       ElMessage.error('登录已过期，请重新登录')
       router.push('/login')
