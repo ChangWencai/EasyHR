@@ -18,12 +18,12 @@ const (
 // ReportSnapshot represents a snapshot of a financial report generated at period close.
 type ReportSnapshot struct {
 	model.BaseModel
-	PeriodID     int64       `gorm:"not null;index:idx_snapshot_org_period_type,priority:1" json:"period_id"`
-	ReportType   ReportType  `gorm:"type:varchar(30);not null;index:idx_snapshot_org_period_type,priority:2" json:"report_type"`
-	Data         string      `gorm:"type:text;not null" json:"data"` // JSON string holding the computed report
-	GeneratedBy  int64       `gorm:"not null" json:"generated_by"`
-	GeneratedAt  time.Time   `gorm:"not null" json:"generated_at"`
-	IsValid      bool        `gorm:"default:true" json:"is_valid"` // false when period is reopened
+	PeriodID    int64       `gorm:"not null;index:idx_snapshot_org_period_type,priority:1;comment:会计期间ID" json:"period_id"`
+	ReportType  ReportType  `gorm:"type:varchar(30);not null;index:idx_snapshot_org_period_type,priority:2;comment:报表类型（balance_sheet/income_statement）" json:"report_type"`
+	Data        string      `gorm:"type:text;not null;comment:报表数据（JSON格式）" json:"data"`
+	GeneratedBy int64       `gorm:"not null;comment:生成人ID" json:"generated_by"`
+	GeneratedAt time.Time   `gorm:"not null;comment:生成时间" json:"generated_at"`
+	IsValid     bool        `gorm:"default:true;comment:是否有效（期间重新开启时置为false）" json:"is_valid"`
 }
 
 // TableName returns the table name for ReportSnapshot.

@@ -7,14 +7,14 @@ import (
 // Account represents an accounting account.
 type Account struct {
 	model.BaseModel
-	Code          string          `gorm:"type:varchar(20);not null;index:idx_account_org_code,priority:2" json:"code"`
-	Name          string          `gorm:"type:varchar(100);not null" json:"name"`
-	Category      AccountCategory `gorm:"type:varchar(20);not null" json:"category"`
-	NormalBalance NormalBalance   `gorm:"type:varchar(10);not null" json:"normal_balance"`
-	IsActive      bool            `gorm:"default:true" json:"is_active"`
-	IsSystem      bool            `gorm:"default:false" json:"is_system"`
-	ParentID      *int64          `gorm:"index" json:"parent_id,omitempty"`
-	Level         int             `gorm:"default:1" json:"level"`
+	Code          string          `gorm:"type:varchar(20);not null;index:idx_account_org_code,priority:2;comment:科目编码" json:"code"`
+	Name          string          `gorm:"type:varchar(100);not null;comment:科目名称" json:"name"`
+	Category      AccountCategory `gorm:"type:varchar(20);not null;comment:科目类别" json:"category"`
+	NormalBalance NormalBalance   `gorm:"type:varchar(10);not null;comment:余额方向（debit/credit）" json:"normal_balance"`
+	IsActive      bool            `gorm:"default:true;comment:是否启用" json:"is_active"`
+	IsSystem      bool            `gorm:"default:false;comment:是否系统预置科目" json:"is_system"`
+	ParentID      *int64          `gorm:"index;comment:上级科目ID" json:"parent_id,omitempty"`
+	Level         int             `gorm:"default:1;comment:科目级次" json:"level"`
 }
 
 // TableName returns the table name for Account.
