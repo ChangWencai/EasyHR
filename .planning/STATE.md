@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: H5 管理后台 UI 重构
-status: defining
-stopped_at: Milestone v1.2 started
+status: planning
+stopped_at: Milestone v1.2 roadmap created
 last_updated: "2026-04-14"
 last_activity: 2026-04-14
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -25,14 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (planning)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-14 — Milestone v1.2 started
-Last activity: 2026-04-13
+Status: Planning
+Last activity: 2026-04-14 — Roadmap created
 
-Progress: [▓░░░░░░░░░] 0% (1/2 phases, 0/0 plans)
-v1.1: Phase 01 Context ✅ | Phase 02 ⏸ deferred
+Progress: [░░░░░░░░░░] 0% (0/4 phases, 0/0 plans)
 
 ## Performance Metrics
 
@@ -88,23 +86,22 @@ v1.1: Phase 01 Context ✅ | Phase 02 ⏸ deferred
 - [Phase 02]: LIKE替代ILIKE用于姓名/岗位搜索（SQLite兼容）
 - [Phase 02]: StatusProbation常量补充完整员工生命周期
 - [Phase 03]: 政策库为全局共享数据(OrgID=0)，不使用TenantScope — 社保政策是全国统一数据，所有企业共用同一套政策库，参保记录才按org_id隔离
-- [Phase 03]: 政策库为全局共享数据(OrgID=0)，不使用TenantScope — 社保政策是全国统一数据，所有企业共用同一套政策库，参保记录才按org_id隔离
 - [Phase 04]: TaxBracket uses OrgID=0 global data pattern for nationally standardized tax rates
 - [Phase 04]: Special deductions: 6 monthly types only (excludes serious illness per D-07 research)
 - [Phase 04]: TaxCalculator interface accepts grossIncome parameter for Phase 5 decoupling
 - [Phase 04]: ContractRepo DI ordering moved before tax module to resolve compile dependency
 - [Phase 04]: TaxReminder deduplication by org_id + year + month (one reminder per org per month)
 - [Phase 04]: GetMyTaxRecords returns error stub, needs Phase 5 user-employee mapping
+- [v1.2]: H5 UI 重构遵循 web-design/EasyHR-web.pen 原型图设计
+- [v1.2]: 主色调商务蓝 #4F6EF7，卡片圆角 12px，侧边栏固定 220px
 
 ### Roadmap Evolution
 
-- Phase 01 added: 新增登陆界面，该登陆界面只运行老板登陆
-- Phase 02 added: 新增登陆界面，该登陆界面只允许老板账户登陆 (2026-04-11)
-- Phase 03 added: web登陆界面中添加注册按钮以及流程 (2026-04-11)
-- Phase 01 discussed: 3种登录方式（手机+验证码/密码/微信OAuth），OWNER+ADMIN允许，MEMBER拒绝，Auth Guard，首次引导分流 (2026-04-11)
-- Phase 02 deferred: Phase 01 完成后重新定义范围（当前与 Phase 01 描述重复）
+- v1.0: 后端核心 API + 原生 APP MVP
+- v1.1: H5 管理后台基础框架（路由/布局/登录/员工管理）
+- v1.2: H5 管理后台 UI 重构（全面对齐原型图）
 
-### Phase 1 Deliverables
+### Phase 1 Deliverables (v1.1)
 
 - 40 Go files, 7 test packages all PASS
 - Complete auth flow: SMS code login → auto-register → onboarding → token refresh → logout
@@ -117,11 +114,12 @@ v1.1: Phase 01 Context ✅ | Phase 02 ⏸ deferred
 
 ### Blockers/Concerns
 
-- Phase 1 (新增登陆界面): 需设计老板专属登录页，员工通过微信小程序登录（H5管理后台仅限老板）
-- 集成测试需要 Redis 运行（docker-compose up）
+- v1.2 仅改 UI，不动后端 API
+- v1.2 保持现有路由结构不变
+- 考勤打卡设备对接/手机定位打卡 属于 V2.0 范围
 
 ## Session Continuity
 
-Last session: 2026-04-11T05:13:04.196Z
-Stopped at: Phase 03a UI-SPEC approved
-Next step: /gsd-plan-phase 01
+Last session: 2026-04-14T00:00:00.000Z
+Stopped at: v1.2 roadmap created
+Next step: /gsd-plan-phase 1
