@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+const e=require(`./index.cjs`);e.C.add(e.y),e.C.add(e.v),e.C.add(e.d),e.C.add(e._),e.C.add(e.u),e.C.add(e.l),e.C.add(e.c),e.C.add(e.t),e.C.add(e.n),e.C.add(e.a),e.C.add(e.r),e.C.add(e.i),e.C.add(e.o),e.C.add(e.s),e.C.add(e.f),e.C.add(e.p);

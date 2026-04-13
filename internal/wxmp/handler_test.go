@@ -60,7 +60,7 @@ func TestHandler_Login_ValidCode(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	r.POST("/wxmp/auth/login", h.Login)
 
 	ctx := context.Background()
@@ -93,7 +93,7 @@ func TestHandler_Login_InvalidCode(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	r.POST("/wxmp/auth/login", h.Login)
 
 	ctx := context.Background()
@@ -122,7 +122,7 @@ func TestHandler_Payslips_NoToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/payslips", h.ListPayslips)
@@ -151,7 +151,7 @@ func TestHandler_Payslips_WithValidToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/payslips", h.ListPayslips)
@@ -180,7 +180,7 @@ func TestHandler_Payslips_NonMemberToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/payslips", h.ListPayslips)
@@ -206,7 +206,7 @@ func TestHandler_PayslipDetail_NoVerifyToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/payslips/:id", h.GetPayslipDetail)
@@ -235,7 +235,7 @@ func TestHandler_Expenses_Create(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.POST("/expenses", h.CreateExpense)
@@ -272,7 +272,7 @@ func TestHandler_Expenses_List(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/expenses", h.ListExpenses)
@@ -307,7 +307,7 @@ func TestHandler_Contracts_List(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/contracts", h.ListContracts)
@@ -338,7 +338,7 @@ func TestHandler_SocialInsurance_List(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	h := NewHandler(svc)
+	h := NewHandler(svc, nil)
 	wxmp := r.Group("/wxmp")
 	wxmp.Use(WXMPMemberAuth([]byte("test-secret")))
 	wxmp.GET("/social-insurance", h.GetSocialInsurance)
