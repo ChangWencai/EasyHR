@@ -66,35 +66,46 @@
 ```
 EasyHR/
 ├── cmd/                         # Go 服务入口
-├── config/                      # 配置文件
+├── config/                      # 配置文件（config.yaml）
 ├── internal/                    # 业务模块（模块化单体）
 │   ├── common/                  # 公共模块（中间件、响应封装、加密工具）
 │   ├── user/                    # 用户/企业服务
 │   ├── employee/               # 员工管理服务
-│   ├── social/                  # 社保管理服务
-│   ├── payroll/                # 工资管理服务
-│   ├── tax/                    # 个税服务
-│   ├── finance/                # 财务代理记账服务
-│   └── notification/           # 通知服务
+│   ├── socialinsurance/         # 社保管理服务
+│   ├── salary/                  # 工资管理服务
+│   ├── tax/                     # 个税服务
+│   ├── finance/                 # 财务代理记账服务
+│   ├── dashboard/               # Dashboard 服务
+│   ├── audit/                   # 审计日志服务
+│   ├── city/                    # 城市数据服务
+│   └── wxmp/                    # 微信小程序服务
 ├── pkg/                         # 可复用包（JWT、OSS、短信）
 ├── frontend/                    # H5 管理后台（Vue 3 + Element Plus）
+│   ├── src/
+│   │   ├── api/                 # API 接口封装
+│   │   ├── components/          # 公共组件
+│   │   ├── stores/              # Pinia 状态管理
+│   │   ├── views/               # 页面组件
+│   │   └── router/              # 路由配置
+│   └── README.md
 ├── miniprogram/                 # 微信小程序（员工端）
 │   ├── pages/
-│   │   ├── payslips/           # 我的工资（首页 Tab）
-│   │   ├── payslips-detail/   # 工资单详情
-│   │   ├── contracts/          # 我的合同（Tab）
-│   │   ├── social/             # 社保记录（Tab）
-│   │   ├── expense/            # 费用报销（Tab）
-│   │   ├── expense-list/       # 报销记录列表
-│   │   ├── login/              # 登录页
-│   │   └── mine/               # 我的（Tab）
-│   ├── assets/icons/           # TabBar 图标资源
-│   ├── app.js                  # 应用入口
-│   ├── app.json                # 全局配置（页面路由、TabBar、窗口样式）
-│   ├── app.wxss                # 全局样式
-│   ├── pages.json              # 页面路径配置
-│   └── sitemap.json            # SEO  sitemap
+│   │   ├── payslips/            # 我的工资（首页 Tab）
+│   │   ├── payslips-detail/    # 工资单详情
+│   │   ├── contracts/           # 我的合同（Tab）
+│   │   ├── social/              # 社保记录（Tab）
+│   │   ├── expense/             # 费用报销（Tab）
+│   │   ├── expense-list/         # 报销记录列表
+│   │   ├── login/               # 登录页
+│   │   └── mine/                # 我的（Tab）
+│   ├── assets/icons/            # TabBar 图标资源
+│   ├── app.js                   # 应用入口
+│   ├── app.json                 # 全局配置（页面路由、TabBar、窗口样式）
+│   ├── app.wxss                 # 全局样式
+│   ├── pages.json               # 页面路径配置
+│   └── sitemap.json             # SEO sitemap
 ├── miniprogram-design/          # 小程序 UI 设计稿（Pencil）
+├── web-design/                  # Web/H5 设计稿（Pencil）
 ├── migrations/                  # 数据库迁移
 ├── go.mod / go.sum
 ├── Dockerfile / docker-compose.yml
