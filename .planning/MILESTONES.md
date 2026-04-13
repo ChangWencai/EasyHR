@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.1 老板登录界面优化 (Shipped: 2026-04-13)
+
+**Phases completed:** 3 phases, 9 plans, 9 tasks
+
+**Key accomplishments:**
+
+- Plan:
+- Plan:
+- Plan:
+- Plan:
+- 1. [Rule 3 - Blocking] Fixed handler.go CreateEmployee call signature mismatch
+- LoginView.vue Tab 3 改为「注册」Tab，手机号+验证码表单，复用已有后端接口
+
+---
+
 ## v1.0 MVP — 易人事（EasyHR）
 
 **Shipped:** 2026-04-11
