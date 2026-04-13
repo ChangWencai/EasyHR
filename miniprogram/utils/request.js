@@ -1,4 +1,8 @@
-const API_BASE = 'https://api.easyhr.example.com/api/v1'
+// 小程序开发阶段：使用本机局域网 IP（如 192.168.x.x:8089），上线前改为生产域名
+// 也可通过 project.private.config.json 的 compileVars 注入
+// 微信开发者工具自带请求转发，开发者工具中可请求 http://localhost:8089
+// 真机调试需要在微信公众平台配置合法域名（或开发阶段关闭 urlCheck）
+const API_BASE = 'http://localhost:8089/api/v1'
 
 function request(options) {
   return new Promise((resolve, reject) => {

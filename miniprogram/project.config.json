@@ -14,11 +14,31 @@
       "disablePlugins": [],
       "outputPath": ""
     },
-    "bundle": false
+    "bundle": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "compileType": "miniprogram",
   "libVersion": "3.3.5",
-  "appid": "wxtemp0000001",
+  "appid": "touristappid",
   "projectname": "easyhr-employee",
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "isGameTourist": true,
+  "editorSetting": {}
 }
