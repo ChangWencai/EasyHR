@@ -39,6 +39,12 @@ func NewClient(cfg Config) (*Client, error) {
 }
 
 func (c *Client) SendCode(ctx context.Context, phone, code string) error {
+	// 开发模式：凭据为空时打印验证码，方便调试（无需真实发送）
+	if c.cfg.AccessKeyID == "" || c.cfg.AccessKeySecret == "" || c.cfg.SignName == "" {
+		fmt.Printf("[SMS DEV] 验证码: %s -> %s\n", phone, code)
+		return nil
+	}
+
 	params := map[string]string{
 		"AccessKeyId":      c.cfg.AccessKeyID,
 		"Action":           "SendSms",
