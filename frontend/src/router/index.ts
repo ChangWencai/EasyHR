@@ -36,7 +36,7 @@ const routes: RouteRecordRaw[] = [
     name: 'org-setup',
     component: () => import('@/views/onboarding/OrgSetup.vue'),
   },
-  { path: '/login', name: 'login', component: () => import('@/views/layout/PlaceholderView.vue') },
+  { path: '/login', name: 'login', component: () => import('@/views/layout/LoginView.vue') },
 ]
 
 export default createRouter({

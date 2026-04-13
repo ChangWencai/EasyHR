@@ -1,3 +1,4 @@
+<script setup lang="ts">
 // shared status maps used by employee views
 export const statusMap: Record<string, string> = {
   active: '在职',
@@ -38,3 +39,4 @@ export const offboardingStatusTagType: Record<string, string> = {
   approved: 'primary',
   completed: 'success',
 }
+</script>

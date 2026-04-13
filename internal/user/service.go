@@ -2,11 +2,13 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/crypto"
 	"github.com/wencai/easyhr/internal/common/model"
@@ -86,7 +88,7 @@ func (s *Service) Login(ctx context.Context, phone, code string) (*LoginResponse
 
 	phoneHash := crypto.HashSHA256(phone)
 	user, err := s.repo.FindByPhoneHash(phoneHash)
-	if err == redis.Nil {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		org := &model.Organization{
 			Name:   "",
 			Status: "inactive",
