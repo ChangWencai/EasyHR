@@ -186,6 +186,8 @@ function viewDetail(row: Voucher) {
 }
 
 async function handleSubmit(row: Voucher) {
+  if (submitting.value) return
+  submitting.value = true
   try {
     await financeApi.submitVoucher(row.id)
     ElMessage.success('提交成功')
@@ -193,10 +195,14 @@ async function handleSubmit(row: Voucher) {
   } catch (e: unknown) {
     const msg = (e as any)?.response?.data?.error || '提交失败'
     ElMessage.error(msg)
+  } finally {
+    submitting.value = false
   }
 }
 
 async function handleAudit(row: Voucher) {
+  if (auditing.value) return
+  auditing.value = true
   try {
     await financeApi.auditVoucher(row.id)
     ElMessage.success('审核成功')
@@ -204,10 +210,14 @@ async function handleAudit(row: Voucher) {
   } catch (e: unknown) {
     const msg = (e as any)?.response?.data?.error || '审核失败'
     ElMessage.error(msg)
+  } finally {
+    auditing.value = false
   }
 }
 
 async function handleReverse(row: Voucher) {
+  if (reversing.value) return
+  reversing.value = true
   try {
     await ElMessageBox.confirm('确定要红冲此凭证吗？', '红冲确认', { type: 'warning' })
     await financeApi.reverseVoucher(row.id)
@@ -218,6 +228,8 @@ async function handleReverse(row: Voucher) {
       const msg = (e as any)?.response?.data?.error || '红冲失败'
       ElMessage.error(msg)
     }
+  } finally {
+    reversing.value = false
   }
 }
 

@@ -251,7 +251,7 @@ onMounted(() => {
   const code = params.get('code')
   if (code) {
     // 微信回调登录（Phase 1.5 功能，占位）
-    console.log('WeChat code received:', code)
+    // TODO: 实现微信登录逻辑
   }
 })
 </script>

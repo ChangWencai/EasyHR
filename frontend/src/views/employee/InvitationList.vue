@@ -109,6 +109,7 @@ async function load(p = 1) {
 }
 
 async function handleSend() {
+  if (sending.value) return
   if (!dialogFormRef.value) return
   try {
     await dialogFormRef.value.validate()
@@ -142,13 +143,19 @@ function copyLink(url: string) {
   })
 }
 
+const cancelling = ref(false)
+
 async function handleCancel(id: number) {
+  if (cancelling.value) return
+  cancelling.value = true
   try {
     await employeeApi.cancelInvitation(id)
     ElMessage.success('已取消')
     load()
   } catch {
     ElMessage.error('取消失败')
+  } finally {
+    cancelling.value = false
   }
 }
 

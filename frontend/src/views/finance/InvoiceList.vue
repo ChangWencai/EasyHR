@@ -132,6 +132,7 @@ async function loadInvoices() {
 }
 
 async function handleCreate() {
+  if (saving.value) return
   if (!form.value.invoice_no || !form.value.type || form.value.amount === null) {
     ElMessage.warning('请填写必填项')
     return

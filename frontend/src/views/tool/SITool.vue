@@ -266,6 +266,7 @@ async function previewEnroll() {
 }
 
 async function handleEnroll() {
+  if (enrolling.value) return
   if (!enrollForm.policy_id || enrollForm.employee_ids.length === 0 || !enrollForm.start_month) {
     ElMessage.warning('请填写完整信息')
     return
@@ -315,6 +316,7 @@ const stopping = ref(false)
 const stopForm = reactive({ record_ids: [] as number[], stop_month: '' })
 
 async function handleStop() {
+  if (stopping.value) return
   if (stopForm.record_ids.length === 0 || !stopForm.stop_month) {
     ElMessage.warning('请选择记录和停缴月份')
     return

@@ -103,23 +103,34 @@ async function load(p = 1) {
   }
 }
 
+const approving = ref(false)
+const completing = ref(false)
+
 async function handleApprove(id: number) {
+  if (approving.value) return
+  approving.value = true
   try {
     await employeeApi.approveOffboarding(id)
     ElMessage.success('已批准')
     load()
   } catch {
     ElMessage.error('操作失败')
+  } finally {
+    approving.value = false
   }
 }
 
 async function handleComplete(id: number) {
+  if (completing.value) return
+  completing.value = true
   try {
     await employeeApi.completeOffboarding(id)
     ElMessage.success('离职已办理完成')
     load()
   } catch {
     ElMessage.error('操作失败')
+  } finally {
+    completing.value = false
   }
 }
 

@@ -189,6 +189,7 @@ function buildTree(accounts: any[]): TreeNode[] {
 }
 
 async function handleSubmit() {
+  if (submitting.value) return
   if (!canSubmit.value) return
   submitting.value = true
   try {

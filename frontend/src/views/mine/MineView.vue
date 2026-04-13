@@ -171,6 +171,7 @@ function openChangePasswordDialog() {
 }
 
 async function handleChangePassword() {
+  if (passwordSaving.value) return
   if (!passwordFormRef.value) return
   try {
     await passwordFormRef.value.validate()
@@ -211,6 +212,7 @@ function openNameDialog() {
 }
 
 async function handleUpdateName() {
+  if (nameSaving.value) return
   if (!nameFormRef.value) return
   try {
     await nameFormRef.value.validate()
@@ -280,6 +282,7 @@ function openEditOrgDialog() {
 }
 
 async function handleEditOrg() {
+  if (editOrgSaving.value) return
   if (!editOrgFormRef.value) return
   try {
     await editOrgFormRef.value.validate()
@@ -336,7 +339,7 @@ async function loadOrgInfo() {
     user.value = userInfo
     org.value = data.org || null
   } catch (err) {
-    console.error('loadOrgInfo 失败:', err)
+    ElMessage.error('加载企业信息失败')
   }
 }
 

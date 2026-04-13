@@ -126,6 +126,7 @@ function onCityChange() {
 }
 
 async function handleSubmit() {
+  if (saving.value) return
   if (!formRef.value) return
   try {
     await formRef.value.validate()

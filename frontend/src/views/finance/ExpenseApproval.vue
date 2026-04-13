@@ -83,8 +83,8 @@ const page = ref(1)
 const total = ref(0)
 const rejectVisible = ref(false)
 const actionLoading = ref(false)
+const rejecting = ref(false)
 const currentExpense = ref<Expense | null>(null)
-
 const rejectForm = ref({ reason: '' })
 
 function statusType(status: string) {
@@ -129,6 +129,7 @@ async function loadExpenses() {
 }
 
 async function handleApprove(row: Expense) {
+  if (actionLoading.value) return
   actionLoading.value = true
   try {
     await financeApi.approveExpense(row.id)
@@ -149,11 +150,12 @@ function showRejectDialog(row: Expense) {
 }
 
 async function confirmReject() {
+  if (rejecting.value) return
   if (!rejectForm.value.reason.trim()) {
     ElMessage.warning('请输入驳回原因')
     return
   }
-  actionLoading.value = true
+  rejecting.value = true
   try {
     await financeApi.rejectExpense(currentExpense.value!.id, rejectForm.value.reason)
     ElMessage.success('已驳回')
@@ -163,7 +165,7 @@ async function confirmReject() {
     const msg = (e as any)?.response?.data?.error || '操作失败'
     ElMessage.error(msg)
   } finally {
-    actionLoading.value = false
+    rejecting.value = false
   }
 }
 

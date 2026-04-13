@@ -140,6 +140,7 @@ async function loadAccounts() {
 }
 
 async function handleCreate() {
+  if (saving.value) return
   if (!form.value.code || !form.value.name || !form.value.category) {
     ElMessage.warning('请填写完整信息')
     return

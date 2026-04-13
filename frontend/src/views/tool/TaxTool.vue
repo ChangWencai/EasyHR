@@ -246,6 +246,7 @@ async function loadDeductions() {
 }
 
 async function handleSaveDeduction() {
+  if (savingDeduction.value) return
   if (!deductionFormRef.value) return
   try {
     await deductionFormRef.value.validate()
@@ -266,12 +267,16 @@ async function handleSaveDeduction() {
 }
 
 async function handleDeleteDeduction(id: number) {
+  const deleting = ref(false)
+  deleting.value = true
   try {
     await taxApi.deleteDeduction(id)
     ElMessage.success('已删除')
     loadDeductions()
   } catch {
     ElMessage.error('删除失败')
+  } finally {
+    deleting.value = false
   }
 }
 

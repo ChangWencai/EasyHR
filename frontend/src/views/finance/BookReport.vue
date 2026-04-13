@@ -230,7 +230,12 @@ async function loadPeriodList() {
   }
 }
 
+const closing = ref(false)
+const reverting = ref(false)
+
 async function handleClosePeriod(row: Period) {
+  if (closing.value) return
+  closing.value = true
   try {
     await ElMessageBox.confirm(`确定要对「${row.name}」进行结账吗？`, '结账确认', { type: 'warning' })
     await financeApi.closePeriod(row.id)
@@ -241,10 +246,14 @@ async function handleClosePeriod(row: Period) {
       const msg = (e as any)?.response?.data?.error || '结账失败'
       ElMessage.error(msg)
     }
+  } finally {
+    closing.value = false
   }
 }
 
 async function handleRevertPeriod(row: Period) {
+  if (reverting.value) return
+  reverting.value = true
   try {
     await ElMessageBox.confirm(`确定要对「${row.name}」进行反结账吗？此操作不可逆。`, '反结账确认', { type: 'warning' })
     await financeApi.revertPeriod(row.id)
@@ -255,6 +264,8 @@ async function handleRevertPeriod(row: Period) {
       const msg = (e as any)?.response?.data?.error || '反结账失败'
       ElMessage.error(msg)
     }
+  } finally {
+    reverting.value = false
   }
 }
 
