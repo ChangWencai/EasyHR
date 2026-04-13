@@ -1,255 +1,157 @@
-# Requirements: 易人事（EasyHR）
+# Requirements: v1.2 H5 管理后台 UI 重构
 
-**Defined:** 2026-04-06
-**Core Value:** 简单、好用、省时间 — 老板3步完成核心人事操作，无需专业知识
+**Milestone:** v1.2
+**Defined:** 2026-04-14
+**Goal:** 根据 `web-design/EasyHR-web.pen` 原型图，对 H5 管理后台进行全面 UI 重构
 
-## v1 Requirements
+---
 
-Requirements for initial release. Each maps to roadmap phases.
+## UI 重构（当前里程碑）
 
-### Authentication & Onboarding (AUTH)
+### 登录页（Login）
 
-- [ ] **AUTH-01**: 老板通过手机号+验证码一键登录/注册（免密码）
-- [ ] **AUTH-02**: 首次登录自动进入企业信息录入引导页（企业名称、统一社会信用代码、城市、联系人、联系电话）
-- [ ] **AUTH-03**: 城市选择器自动定位当前城市，支持手动修改
-- [ ] **AUTH-04**: JWT token认证，会话持久化，支持多设备登录管理
+- [ ] **UI-01**: 登录页重构为左右分栏布局
+  - 左侧：蓝紫渐变背景（#1A2D6B → #4F6EF7 → #7B9FFF）+ 品牌区（Logo + Slogan + 装饰）
+  - 右侧：白色表单卡片（440px宽），含手机号+验证码输入，获取验证码按钮（60s倒计时）
+  - 底部版权信息：© 2025 易人事 · 专为小微企业打造
+  - 风格：现代商务风，参考原型图布局比例
 
-### Employee Management (EMPL)
+### 首页/仪表盘（Dashboard）
 
-- [ ] **EMPL-01**: 老板一键创建入职邀请链接/二维码，员工在线填写基本信息
-- [x] **EMPL-02**: 支持手动录入员工信息（姓名、手机号、身份证号、岗位、入职日期）
-- [x] **EMPL-03**: 员工档案集中管理，支持按姓名/岗位/手机号快速检索
-- [x] **EMPL-04**: 支持导出员工档案Excel
-- [ ] **EMPL-05**: 员工提交离职申请后，老板在线审核，自动生成交接清单（含资产、工作内容）
-- [ ] **EMPL-06**: 离职完成后自动更新员工状态为"离职"，归档离职资料
-- [ ] **EMPL-07**: 离职操作同步触发社保停缴提醒
-- [ ] **EMPL-08**: 合同管理（V1.0降级：PDF模板生成+手动签署上传，关联至员工档案）
+- [ ] **UI-02**: 首页重构为仪表盘布局
+  - 顶部栏：页面标题「仪表盘」+ 通知图标 + 头像
+  - 第一行：4个统计卡片（在职员工/本月入职/本月离职/待处理）
+  - 第二行：左侧图表卡片（近6月工资趋势）+ 右侧待办卡片
+  - 第三行：数据表格卡片（近期工资表/员工动态等）
+  - 背景色：$bg-page，间距 16px，卡片圆角 12px
 
-### Social Insurance (SOCL)
+### 员工管理（Employee）
 
-- [ ] **SOCL-01**: 根据员工城市+岗位自动匹配社保参保基数（自建30+城市政策库）
-- [ ] **SOCL-02**: 老板勾选员工+确认参保，一键生成参保材料PDF
-- [ ] **SOCL-03**: 社保缴费到期前3天自动提醒老板（APP内消息+首页卡片）
-- [ ] **SOCL-04**: 记录缴费明细，支持查询社保缴纳状态
-- [ ] **SOCL-05**: 支持打印/导出社保缴费凭证
-- [ ] **SOCL-06**: 员工岗位/薪资变动时自动触发社保基数调整提醒
-- [ ] **SOCL-07**: 记录社保变更历史，可追溯（参保/基数调整/停缴）
+- [ ] **UI-03**: 员工管理列表重构
+  - 顶部栏：页面标题「员工管理」+ 右侧操作按钮（筛选/搜索/新增员工）
+  - 筛选栏：搜索框 + 状态下拉 + 部门筛选，卡片圆角 12px
+  - 员工表格：圆角卡片包裹，分页器，状态徽章
 
-### Payroll (PAYR)
+- [ ] **UI-04**: 员工详情页重构
+  - 顶部栏：返回按钮 + 员工姓名 + 状态徽章 + 编辑按钮
+  - 左侧面板（300px宽）：头像+基本信息卡
+  - 右侧面板：详细信息分 Tab 展示（基本信息/合同/社保/工资/操作记录）
 
-- [ ] **PAYR-01**: 支持自定义薪资结构（基本工资、绩效、补贴、扣款等）
-- [ ] **PAYR-02**: 一键核算工资，自动关联社保个人扣款和个税扣款
-- [ ] **PAYR-03**: 支持"复制上月工资表"快速核算
-- [ ] **PAYR-04**: 支持导入考勤表Excel辅助核算
-- [x] **PAYR-05**: 自动生成电子工资单，一键发送至员工手机
-- [x] **PAYR-06**: 员工在线确认签收工资单
-- [x] **PAYR-07**: 支持导出工资条Excel，方便财务对账
-- [ ] **PAYR-08**: 记录每月工资发放状态、金额、发放方式
-- [ ] **PAYR-09**: 异常发放自动提醒
+- [ ] **UI-05**: 新增员工表单重构
+  - 步骤条：1/2 员工信息 → 2/2 合同签署 → 完成
+  - 表单居中卡片（860px宽），圆角 12px，间距充足
+  - 步骤切换动画
 
-### Tax (TAX)
+### 薪资管理（Salary）
 
-- [x] **TAX-01**: 基于工资核算数据自动匹配个税专项附加扣除项（子女教育、房贷等）
-- [x] **TAX-02**: 按中国累计预扣预缴法精准计算个税（处理税率跳档）
-- [x] **TAX-03**: 个税申报截止前3天自动提醒老板
-- [x] **TAX-04**: 自动生成个税申报表（供老板手动提交至自然人电子税务局）
-- [x] **TAX-05**: 记录每月个税申报明细，支持查询申报状态
-- [x] **TAX-06**: 支持导出个税申报凭证
+- [ ] **UI-06**: 薪资管理列表页重构
+  - 顶部栏：页面标题「薪资管理」+ 新建工资表按钮
+  - 汇总行：4个金额统计卡（本月工资总额/实发总额/个税总额/社保总额）
+  - 工资表列表：月份表格卡片，含状态标签
 
-### Finance & Accounting (FINC)
+- [ ] **UI-07**: 薪资配置页重构
+  - 双栏布局（420px左栏 + 右栏自适应）
+  - 左栏：薪资项目配置列表（应发项/扣款项）
+  - 右栏：社保公积金配置/个税配置
+  - 顶部保存按钮
 
-- [ ] **FINC-01**: 手动录入会计凭证（选择科目、填写借贷金额、摘要）
-- [ ] **FINC-02**: 借贷平衡实时校验，不平衡时阻止提交（后端强制校验）
-- [ ] **FINC-03**: 支持凭证草稿保存、提交审核、审核通过后更新科目余额
-- [ ] **FINC-04**: 凭证按月度编号，支持按期间/科目/摘要搜索
-- [ ] **FINC-05**: 已审核凭证禁止修改（只能红冲）
-- [ ] **FINC-06**: 手动登记进项/销项发票（发票代码、号码、金额、税率）
-- [ ] **FINC-07**: 发票关联至凭证，月末自动汇总计算增值税进项/销项税额
-- [ ] **FINC-08**: 员工通过微信小程序提交费用报销（上传票据、填写金额/类型）
-- [ ] **FINC-09**: 老板在线审批报销（通过/驳回），审批通过后自动生成费用凭证
-- [ ] **FINC-10**: 支持报销状态追踪（待审批/已通过/已支付）
-- [ ] **FINC-11**: 基于凭证数据实时生成总账、明细账、科目余额表
-- [ ] **FINC-12**: 账簿查询支持按科目/期间筛选，支持导出Excel
-- [ ] **FINC-13**: 月末结账后自动生成资产负债表、利润表
-- [ ] **FINC-14**: 报表数据按结账时点快照存储，后续凭证修改不影响已生成报表
-- [ ] **FINC-15**: 财务报表支持多期对比分析
-- [ ] **FINC-16**: 按月度开启/关闭会计期间，结账锁定当期凭证不可修改
-- [ ] **FINC-17**: 结账前自动校验（未审核凭证、借贷平衡）
-- [ ] **FINC-18**: 支持反结账（需OWNER权限+二次确认）
-- [ ] **FINC-19**: 预置小微企业常用会计科目（简化版），支持自定义增删
-- [ ] **FINC-20**: 科目按资产/负债/权益/成本/损益五大类分层展示
-- [ ] **FINC-21**: 基于发票和凭证数据自动计算增值税（销项-进项）和企业所得税（季度预缴）
-- [ ] **FINC-22**: 生成纳税申报辅助数据，导出申报表Excel
+- [ ] **UI-08**: 薪资明细页重构
+  - 顶部栏：返回 + 「薪资明细」+ 月份导航（月份选择器）+ 打印按钮
+  - 员工信息头卡：姓名/岗位/社保基数
+  - 明细表格：工资组成/扣款/实发
+  - 底部渐变实发金额卡片
 
-### Platform & Infrastructure (PLAT)
+### 社保公积金（Social Insurance）
 
-- [ ] **PLAT-01**: 多子账号管理，支持添加子账号并分配权限（OWNER/ADMIN/MEMBER三级RBAC）
-- [ ] **PLAT-02**: 操作日志全程记录（谁在什么时间做了什么操作），可追溯
-- [ ] **PLAT-03**: 统一响应封装、错误处理、请求日志
-- [ ] **PLAT-04**: 限流/鉴权/CORS/SSL中间件
-- [ ] **PLAT-05**: 敏感字段AES-256-GCM加密存储+SHA-256哈希索引
-- [ ] **PLAT-06**: 数据库逻辑多租户隔离（org_id全链路透传，Repository层自动注入）
-- [ ] **PLAT-07**: 文件上传至阿里云OSS（合同/凭证/发票等）
+- [ ] **UI-09**: 社保管理页重构
+  - 顶部栏：页面标题「社保公积金」+ 警告横幅徽章
+  - 警告横幅：橙色背景 (#FFF7E6)，内容为缴费提醒，点击可跳转
+  - 多行布局：参保概览 + 员工参保状态列表 + 操作入口
 
-### Homepage & Navigation (HOME)
+### 考勤管理（Attendance）
 
-- [ ] **HOME-01**: 首页工作台：待办事项卡片式展示（社保缴费/个税申报/入职离职/费用报销/凭证审核）
-- [ ] **HOME-02**: 核心功能5宫格入口（员工/社保/工资/个税/财务），1步直达
-- [ ] **HOME-03**: 数据概览区（在职员工数、本月入职/离职数、社保总额、工资总额）
-- [ ] **HOME-04**: 底部5Tab导航（首页/员工/工具/财务/我的）
-- [ ] **HOME-05**: 待办事项完成后自动从列表消失
-- [ ] **HOME-06**: 首次使用新手引导
+- [ ] **UI-10**: 考勤管理页重构
+  - 顶部栏：页面标题「考勤管理」+ 员工选择器 + 月份导航 + 导出按钮
+  - 统计行：应出勤/实际出勤/迟到/早退/缺勤卡片
+  - 日历表格：月历视图，日期单元格含考勤状态色块
 
-### WeChat Mini Program (WXMP)
+### 审批管理（Approval）
 
-- [ ] **WXMP-01**: 员工微信授权登录，绑定手机号
-- [ ] **WXMP-02**: 查看工资条（按月份，含基本工资/绩效/扣款/实发工资），敏感信息需短信验证
-- [ ] **WXMP-03**: 查看合同（状态：待签署/已签署/已过期），V1.0支持查看PDF+线下签署上传
-- [ ] **WXMP-04**: 查看社保记录（参保城市、基数、各险种明细）
-- [ ] **WXMP-05**: 提交费用报销（费用类型、金额、说明、上传票据照片最多9张）
-- [ ] **WXMP-06**: 查看报销状态（待审批/已通过/已支付/已驳回）
+- [ ] **UI-11**: 审批管理页重构
+  - 顶部栏：页面标题「审批管理」+ 待处理数量徽章
+  - Tab 切换：全部 / 入职申请 / 离职申请 / 费用报销
+  - 审批卡片列表：申请人 + 申请类型 + 金额/时间 + 状态 + 操作按钮
 
-## v2 Requirements
+- [ ] **UI-12**: 审批详情页重构
+  - 顶部栏：返回 + 「审批详情」+ 状态徽章
+  - 审批信息卡片：申请人/申请时间/申请内容/附件
+  - 审批操作区：通过/驳回按钮
 
-Deferred to future release. Tracked but not in current roadmap.
+### 布局与系统（Layout & Design System）
 
-### Attendance (ATTN)
+- [ ] **UI-13**: AppLayout 侧边栏优化
+  - Logo 区：图标 + 文字，与原型图比例一致
+  - 菜单项：图标 + 文字，hover/active 态样式统一
+  - 折叠/展开：过渡动画流畅
+  - 移动端：抽屉式导航
 
-- **ATTN-01**: 对接打卡设备/手机定位打卡
-- **ATTN-02**: 考勤统计和加班申请
-- **ATTN-03**: 考勤数据自动关联工资核算
+- [ ] **UI-14**: 未覆盖页面补充设计
+  - 工具首页（ToolHome）：工具入口网格
+  - 个人中心（MineView）：账号信息/设置入口
+  - 入职邀请列表（InvitationList）：邀请状态管理
+  - 离职管理列表（OffboardingList）：离职申请管理
+  - 财务各子页面：凭证管理/发票管理/报销审批等按原型风格统一
 
-### Contract & Document (CONT)
+---
 
-- **CONT-01**: 电子签API自动签署（对接上上签/e签宝）
-- **CONT-02**: 合同到期提醒
-- **CONT-03**: 员工生日提醒
+## 未来需求
 
-### Social Insurance Advanced (SOCA)
+### 移动端优化（Deferred）
 
-- **SOCA-01**: 社保政策对接第三方数据服务商
-- **SOCA-02**: 社保在线办理对接政务接口
+- **MOB-01**: 移动端适配优化（H5 在手机上的布局调整）
+- **MOB-02**: 触摸友好的交互优化（更大的点击区域）
 
-### Tax Advanced (TAXA)
+### 动态主题（Deferred）
 
-- **TAXA-01**: 个税一键申报对接自然人电子税务局
-- **TAXA-02**: 个税更正申报功能
+- **THEME-01**: 深色模式支持
+- **THEME-02**: 主题色自定义（老板可换色）
 
-### Invoice Advanced (INVA)
+---
 
-- **INVA-01**: 发票OCR拍照识别
-- **INVA-02**: 对接税务局发票查验接口自动验真
+## 不在范围内
 
-### Analytics (ANLY)
+| 功能 | 原因 |
+|------|------|
+| 后端 API 改造 | 本次仅改 UI，不动 API |
+| 路由结构调整 | 保持现有路由不变 |
+| 性能优化 | UI 完成后单独评估 |
+| 单元测试 | UI 重构不涉及业务逻辑 |
 
-- **ANLY-01**: 人事报表自动生成（企业人事数据统计分析）
-- **ANLY-02**: 数据可视化看板
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| 考勤管理（打卡设备/手机定位） | V2.0，需对接硬件设备复杂度极高，10-50人小企业多靠信任管理 |
-| 招聘管理 | V3.0，小企业靠人脉和招聘平台，不需要内置招聘 |
-| 绩效考核/OKR | 小企业扁平化管理，绩效靠老板主观判断 |
-| 培训管理 | 10-50人企业无系统化培训需求 |
-| 组织架构/部门管理 | 10-50人组织简单，简化为岗位标签 |
-| 审批工作流引擎 | 小企业不需要复杂审批流，老板直接决定 |
-| CRM/销售管理 | 超出HR范畴，会让产品失去焦点 |
-| 即时通讯/IM | 微信已是不可替代的通讯工具 |
-| BI数据大屏 | 小企业老板不需要复杂图表 |
-| 深色模式 | 非核心，开发资源优先投入业务功能 |
-| 多语言/国际化 | 目标用户100%国内中文用户 |
-| 短信通知 | 短信成本高，V1.0用APP内消息+微信模板消息替代 |
-| OA审批（请假/出差/加班） | V1.0非核心，小企业靠口头/微信沟通 |
+---
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| PLAT-01 | Phase 1 | Pending |
-| PLAT-02 | Phase 1 | Pending |
-| PLAT-03 | Phase 1 | Pending |
-| PLAT-04 | Phase 1 | Pending |
-| PLAT-05 | Phase 1 | Pending |
-| PLAT-06 | Phase 1 | Pending |
-| PLAT-07 | Phase 1 | Pending |
-| EMPL-01 | Phase 2 | Pending |
-| EMPL-02 | Phase 2 | Complete |
-| EMPL-03 | Phase 2 | Complete |
-| EMPL-04 | Phase 2 | Complete |
-| EMPL-05 | Phase 2 | Pending |
-| EMPL-06 | Phase 2 | Pending |
-| EMPL-07 | Phase 2 | Pending |
-| EMPL-08 | Phase 2 | Pending |
-| SOCL-01 | Phase 3 | Pending |
-| SOCL-02 | Phase 3 | Pending |
-| SOCL-03 | Phase 3 | Pending |
-| SOCL-04 | Phase 3 | Pending |
-| SOCL-05 | Phase 3 | Pending |
-| SOCL-06 | Phase 3 | Pending |
-| SOCL-07 | Phase 3 | Pending |
-| TAX-01 | Phase 4 | Complete |
-| TAX-02 | Phase 4 | Complete |
-| TAX-03 | Phase 4 | Complete |
-| TAX-04 | Phase 4 | Complete |
-| TAX-05 | Phase 4 | Complete |
-| TAX-06 | Phase 4 | Complete |
-| PAYR-01 | Phase 5 | Pending |
-| PAYR-02 | Phase 5 | Pending |
-| PAYR-03 | Phase 5 | Pending |
-| PAYR-04 | Phase 5 | Pending |
-| PAYR-05 | Phase 5 | Complete |
-| PAYR-06 | Phase 5 | Complete |
-| PAYR-07 | Phase 5 | Complete |
-| PAYR-08 | Phase 5 | Pending |
-| PAYR-09 | Phase 5 | Pending |
-| FINC-01 | Phase 6 | Pending |
-| FINC-02 | Phase 6 | Pending |
-| FINC-03 | Phase 6 | Pending |
-| FINC-04 | Phase 6 | Pending |
-| FINC-05 | Phase 6 | Pending |
-| FINC-06 | Phase 6 | Pending |
-| FINC-07 | Phase 6 | Pending |
-| FINC-08 | Phase 6 | Pending |
-| FINC-09 | Phase 6 | Pending |
-| FINC-10 | Phase 6 | Pending |
-| FINC-11 | Phase 6 | Pending |
-| FINC-12 | Phase 6 | Pending |
-| FINC-13 | Phase 6 | Pending |
-| FINC-14 | Phase 6 | Pending |
-| FINC-15 | Phase 6 | Pending |
-| FINC-16 | Phase 6 | Pending |
-| FINC-17 | Phase 6 | Pending |
-| FINC-18 | Phase 6 | Pending |
-| FINC-19 | Phase 6 | Pending |
-| FINC-20 | Phase 6 | Pending |
-| FINC-21 | Phase 6 | Pending |
-| FINC-22 | Phase 6 | Pending |
-| HOME-01 | Phase 7 | Pending |
-| HOME-02 | Phase 7 | Pending |
-| HOME-03 | Phase 7 | Pending |
-| HOME-04 | Phase 7 | Pending |
-| HOME-05 | Phase 7 | Pending |
-| HOME-06 | Phase 7 | Pending |
-| WXMP-01 | Phase 8 | Pending |
-| WXMP-02 | Phase 8 | Pending |
-| WXMP-03 | Phase 8 | Pending |
-| WXMP-04 | Phase 8 | Pending |
-| WXMP-05 | Phase 8 | Pending |
-| WXMP-06 | Phase 8 | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| UI-03 | Phase 2 | Pending |
+| UI-04 | Phase 2 | Pending |
+| UI-05 | Phase 2 | Pending |
+| UI-06 | Phase 3 | Pending |
+| UI-07 | Phase 3 | Pending |
+| UI-08 | Phase 3 | Pending |
+| UI-09 | Phase 3 | Pending |
+| UI-10 | Phase 4 | Pending |
+| UI-11 | Phase 4 | Pending |
+| UI-12 | Phase 4 | Pending |
+| UI-13 | Phase 1 | Pending |
+| UI-14 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 57 total
-- Mapped to phases: 57
+- v1.2 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-06*
-*Last updated: 2026-04-06 after roadmap creation*
+*Requirements defined: 2026-04-14*
