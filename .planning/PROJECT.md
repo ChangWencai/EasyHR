@@ -40,9 +40,13 @@
 
 (None yet — ship to validate)
 
+## Validated Requirements
+
+- [x] **UI-01**: 登录页重构为左右分栏布局，蓝色渐变背景+品牌区+表单区 (Phase 01)
+- [x] **UI-13**: AppLayout 侧边栏按原型风格优化（折叠/展开/Logo/菜单） (Phase 01)
+
 ### In This Milestone (v1.2)
 
-- [ ] **UI-01**: 登录页重构为左右分栏布局，蓝色渐变背景+品牌区+表单区
 - [ ] **UI-02**: 首页重构为仪表盘布局：4统计卡片+图表+待办事项+数据表格
 - [ ] **UI-03**: 员工管理列表重构为筛选栏+表格卡片风格
 - [ ] **UI-04**: 员工详情页重构为左侧信息卡+右侧详情面板
@@ -59,7 +63,7 @@
 
 ---
 
-*Last updated: 2026-04-14 — v1.2 milestone started*
+*Last updated: 2026-04-14 — Phase 01 complete, UI-01/UI-13 validated*
 
 ### Out of Scope
 
