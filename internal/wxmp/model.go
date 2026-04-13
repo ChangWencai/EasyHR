@@ -6,7 +6,7 @@ import "context"
 
 // LoginRequest 手机号+验证码登录请求
 type LoginRequest struct {
-	Phone string `json:"phone" binding:"required,e164_phone"`
+	Phone string `json:"phone" binding:"required,len=11"`
 	Code  string `json:"code" binding:"required,len=6"`
 }
 
@@ -115,17 +115,17 @@ type ExpenseRequest struct {
 // ExpenseDTO 报销单响应
 type ExpenseDTO struct {
 	ID           uint     `json:"id"`
-	Type        string   `json:"type"`
-	Amount      string   `json:"amount"`
-	Description string   `json:"description"`
-	Status      string   `json:"status"` // pending/approved/rejected/paid
+	Type         string   `json:"type"`
+	Amount       string   `json:"amount"`
+	Description  string   `json:"description"`
+	Status       string   `json:"status"` // pending/approved/rejected/paid
 	Attachments  []string `json:"attachments"`
-	CreatedAt   string   `json:"created_at"`
-	ApprovedAt  string   `json:"approved_at,omitempty"`
-	RejectedAt  string   `json:"rejected_at,omitempty"`
+	CreatedAt    string   `json:"created_at"`
+	ApprovedAt   string   `json:"approved_at,omitempty"`
+	RejectedAt   string   `json:"rejected_at,omitempty"`
 	RejectReason string   `json:"reject_reason,omitempty"`
-	PaidAt      string   `json:"paid_at,omitempty"`
-	PaidMethod  string   `json:"paid_method,omitempty"`
+	PaidAt       string   `json:"paid_at,omitempty"`
+	PaidMethod   string   `json:"paid_method,omitempty"`
 }
 
 // ========== SMS Verification DTOs ==========

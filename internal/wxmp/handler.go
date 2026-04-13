@@ -7,16 +7,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/response"
+	"github.com/wencai/easyhr/internal/user"
 )
 
 // Handler HTTP 处理器
 type Handler struct {
-	svc *WXMPService
+	svc     *WXMPService
+	userSvc *user.Service
 }
 
 // NewHandler 创建 Handler
-func NewHandler(svc *WXMPService) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc *WXMPService, userSvc *user.Service) *Handler {
+	return &Handler{svc: svc, userSvc: userSvc}
 }
 
 // RegisterRoutes 注册所有 wxmp 路由
@@ -24,6 +26,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	// 认证路由（无需登录）
 	auth := rg.Group("/auth")
 	{
+		auth.POST("/send-code", h.SendCode)
 		auth.POST("/login", h.Login)
 		auth.POST("/wechat/bind", h.BindWechat)
 	}
@@ -77,6 +80,26 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 	response.Success(c, resp)
+}
+
+// SendCode POST /wxmp/auth/send-code
+func (h *Handler) SendCode(c *gin.Context) {
+	var req user.SendCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+	if err := h.userSvc.SendCode(c.Request.Context(), req.Phone); err != nil {
+		errMsg := err.Error()
+		// 限流等业务错误返回 429
+		if errMsg == "发送过于频繁，请稍后再试" || errMsg == "短信发送失败，请稍后再试" {
+			response.Error(c, http.StatusTooManyRequests, 10002, errMsg)
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, 90001, errMsg)
+		return
+	}
+	response.Success(c, gin.H{"message": "验证码已发送"})
 }
 
 // BindWechat POST /wxmp/auth/wechat/bind

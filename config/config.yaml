@@ -35,4 +35,4 @@ sms:
   template_code: ""
 
 crypto:
-  aes_key: ""  # 32字节 hex，从环境变量 AES_KEY 读取
+  aes_key: "easyhr_dev"  # 32字节 hex，从环境变量 AES_KEY 读取

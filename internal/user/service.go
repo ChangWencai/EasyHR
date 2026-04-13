@@ -43,6 +43,8 @@ func (s *Service) SendCode(ctx context.Context, phone string) error {
 	}
 
 	code := fmt.Sprintf("%06d", rand.Intn(1000000))
+	// 开发模式：使用固定验证码方便调试
+	code = "123456"
 	codeKey := "sms:code:" + phone
 	if err := s.rdb.Set(ctx, codeKey, code, 5*time.Minute).Err(); err != nil {
 		return fmt.Errorf("store code: %w", err)
@@ -50,7 +52,6 @@ func (s *Service) SendCode(ctx context.Context, phone string) error {
 	if err := s.rdb.Set(ctx, limitKey, "1", 60*time.Second).Err(); err != nil {
 		return fmt.Errorf("set limit: %w", err)
 	}
-
 	if err := s.sms.SendCode(ctx, phone, code); err != nil {
 		s.rdb.Del(ctx, codeKey, limitKey)
 		return fmt.Errorf("send sms: %w", err)
