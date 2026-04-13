@@ -217,12 +217,10 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
 .app-layout {
   display: flex;
   min-height: 100vh;
-  background: #f0f2f5;
+  background: var(--bg-page);
 }
 
-// ============================================================
-// 移动端顶部栏（默认隐藏）
-// ============================================================
+// === 移动端顶部栏 ===
 .mobile-header {
   display: none;
   position: sticky;
@@ -230,7 +228,7 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   z-index: 100;
   height: 56px;
   background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid var(--border);
   padding: 0 16px;
   align-items: center;
   justify-content: space-between;
@@ -240,12 +238,10 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
 .page-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
-// ============================================================
-// 侧边栏（桌面端默认显示）
-// ============================================================
+// === 侧边栏（暗色主题） ===
 .sidebar {
   width: 220px;
   min-width: 220px;
@@ -253,8 +249,7 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   position: fixed;
   left: 0;
   top: 0;
-  background: #fff;
-  border-right: 1px solid #e8e8e8;
+  background: var(--bg-sidebar);
   display: flex;
   flex-direction: column;
   transition: width 0.2s ease, min-width 0.2s ease;
@@ -267,24 +262,21 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   }
 }
 
-// ============================================================
-// Logo 区域
-// ============================================================
+// === Logo 区域 ===
 .sidebar-logo {
   height: 56px;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border-sidebar);
   flex-shrink: 0;
-  overflow: hidden;
 
   .logo-icon {
     width: 32px;
     height: 32px;
-    background: #1677ff;
-    border-radius: 8px;
+    background: var(--primary);
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -295,18 +287,17 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   .logo-text {
     font-size: 16px;
     font-weight: 700;
-    color: #1677ff;
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
   }
 }
 
-// ============================================================
-// Element Plus menu
-// ============================================================
+// === Element Plus 菜单暗色覆盖 ===
 .sidebar-el-menu {
-  border-right: none;
-  background: transparent;
+  border-right: none !important;
+  background: transparent !important;
+  transition: background 0.15s ease;
 
   &:not(.el-menu--collapse) {
     width: 100%;
@@ -314,7 +305,10 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
 
   // 子菜单激活态
   .is-active > .el-sub-menu__title {
-    color: #1677ff !important;
+    color: var(--primary) !important;
+    .el-icon {
+      color: var(--primary) !important;
+    }
   }
 
   .el-menu-item,
@@ -322,53 +316,68 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
     height: 44px;
     line-height: 44px;
     font-size: 14px;
-    color: #595959;
+    color: var(--text-sidebar) !important;
+    background: transparent !important;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    .el-icon {
+      color: var(--text-sidebar) !important;
+    }
 
     &:hover {
-      background: #f5f5f5;
-      color: #1677ff;
+      background: var(--bg-sidebar-hover) !important;
+      color: #fff !important;
     }
   }
 
   .el-menu-item.is-active {
-    background: #e6f4ff;
-    color: #1677ff;
-    border-right: 2px solid #1677ff;
+    background: var(--bg-sidebar-active) !important;
+    color: var(--text-sidebar-active) !important;
+    border-right: none !important;
+
+    .el-icon {
+      color: #fff !important;
+    }
+  }
+
+  // 子菜单箭头
+  .el-sub-menu .el-icon {
+    color: var(--text-sidebar) !important;
+  }
+
+  // 子菜单弹出面板
+  .el-menu--inline {
+    background: rgba(0, 0, 0, 0.15) !important;
   }
 }
 
-// ============================================================
-// 滚动区域
-// ============================================================
+// === 滚动区域 ===
 .sidebar-scroll {
   overflow-x: hidden !important;
   flex: 1;
 }
 
-// ============================================================
-// 折叠按钮
-// ============================================================
+// === 折叠按钮 ===
 .sidebar-footer {
   flex-shrink: 0;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-sidebar);
   padding: 8px 8px 8px 4px;
   display: flex;
   justify-content: flex-end;
 
   .collapse-btn {
-    color: #8c8c8c;
+    color: rgba(255, 255, 255, 0.5);
     padding: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
 
     &:hover {
-      color: #1677ff;
-      background: #f5f5f5;
+      color: #fff;
+      background: var(--bg-sidebar-hover);
     }
   }
 }
 
-// ============================================================
-// 主内容区
-// ============================================================
+// === 主内容区 ===
 .main-wrapper {
   flex: 1;
   margin-left: 220px;
@@ -380,21 +389,55 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   }
 }
 
-// ============================================================
-// 移动端抽屉
-// ============================================================
-.drawer-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #1677ff;
-  font-size: 16px;
-  font-weight: 700;
+// === 移动端抽屉（暗色主题） ===
+:deep(.el-drawer) {
+  background: var(--bg-sidebar) !important;
+
+  .el-drawer__header {
+    border-bottom: 1px solid var(--border-sidebar);
+    margin-bottom: 0;
+    padding: 16px 20px;
+    color: #fff;
+  }
+
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .el-menu {
+    background: transparent !important;
+    border-right: none !important;
+  }
+
+  .el-menu-item,
+  .el-sub-menu__title {
+    color: var(--text-sidebar) !important;
+
+    .el-icon {
+      color: var(--text-sidebar) !important;
+    }
+
+    &:hover {
+      background: var(--bg-sidebar-hover) !important;
+    }
+  }
+
+  .el-menu-item.is-active {
+    background: var(--bg-sidebar-active) !important;
+    color: #fff !important;
+
+    .el-icon {
+      color: #fff !important;
+    }
+  }
 }
 
-// ============================================================
-// 页面切换动画
-// ============================================================
+// === 页面切换动画 ===
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.15s ease;
@@ -404,9 +447,7 @@ const currentPageTitle = computed(() => pageTitleMap[route.path] || '易人事')
   opacity: 0;
 }
 
-// ============================================================
-// 响应式：< 768px
-// ============================================================
+// === 响应式 ===
 @media (max-width: 768px) {
   .mobile-header {
     display: flex;
