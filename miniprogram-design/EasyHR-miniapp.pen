@@ -1,0 +1,1388 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "iGIIH",
+      "x": 0,
+      "y": 0,
+      "name": "test",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "type": "frame",
+      "id": "QEad7",
+      "x": 0,
+      "y": 0,
+      "name": "01-首页(Dashboard)",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "TEZpz",
+          "x": 0,
+          "y": 0,
+          "name": "nav_bg",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 88
+        },
+        {
+          "type": "rectangle",
+          "id": "llwmm",
+          "x": 0,
+          "y": 0,
+          "name": "bg",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "VPAUu",
+          "x": 0,
+          "y": 0,
+          "name": "statusbar",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 47
+        },
+        {
+          "type": "rectangle",
+          "id": "GGe1h",
+          "x": 0,
+          "y": 47,
+          "name": "navbar",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "vCfWO",
+          "x": 16,
+          "y": 101,
+          "name": "greet_card",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "5WIYI",
+          "x": 16,
+          "y": 203,
+          "name": "salary_card",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 86,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "bVWhR",
+          "x": 199,
+          "y": 203,
+          "name": "social_card",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 86,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "text",
+          "id": "qo7NO",
+          "x": 16,
+          "y": 301,
+          "name": "ann_section_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "最新公告",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "6MUyd",
+          "x": 16,
+          "y": 324,
+          "name": "ann_card1",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 60,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "KyFIS",
+          "x": 16,
+          "y": 396,
+          "name": "ann_card2",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 60,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "text",
+          "id": "SCtT2",
+          "x": 16,
+          "y": 468,
+          "name": "quick_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "快捷入口",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "PCoWJ",
+          "x": 16,
+          "y": 496,
+          "name": "qe1",
+          "fill": "#FFFFFF",
+          "width": 82,
+          "height": 84,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "io52Z",
+          "x": 106,
+          "y": 496,
+          "name": "qe2",
+          "fill": "#FFFFFF",
+          "width": 82,
+          "height": 84,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "vFCC6",
+          "x": 196,
+          "y": 496,
+          "name": "qe3",
+          "fill": "#FFFFFF",
+          "width": 82,
+          "height": 84,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "4smNs",
+          "x": 286,
+          "y": 496,
+          "name": "qe4",
+          "fill": "#FFFFFF",
+          "width": 82,
+          "height": 84,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e50f",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 6
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "lCaA6",
+          "x": 0,
+          "y": 788,
+          "name": "tabbar",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000f",
+            "offset": {
+              "x": 0,
+              "y": -2
+            },
+            "blur": 8
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "FaMg6",
+      "x": 430,
+      "y": 0,
+      "name": "02-工资条列表",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "2m9Ix",
+          "x": 0,
+          "y": 0,
+          "name": "bg2",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "C2Cyd",
+          "x": 0,
+          "y": 0,
+          "name": "bg2",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "Rx5Ig",
+          "x": 0,
+          "y": 47,
+          "name": "nav2",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "YOUXl",
+          "x": 16,
+          "y": 103,
+          "name": "picker2",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "CXoFa",
+          "x": 16,
+          "y": 209,
+          "name": "card21",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 160,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "wr7Ty",
+          "x": 16,
+          "y": 381,
+          "name": "card22",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 64,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "id": "qG5lm",
+          "x": 0,
+          "y": 788,
+          "name": "tb2",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000f",
+            "offset": {
+              "x": 0,
+              "y": -2
+            },
+            "blur": 8
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "uBMkf",
+      "x": 860,
+      "y": 0,
+      "name": "03-工资明细",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "6uJzl",
+          "x": 0,
+          "y": 0,
+          "name": "bg3",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "xFWnM",
+          "x": 0,
+          "y": 47,
+          "name": "nav3",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "DHh2C",
+          "x": 16,
+          "y": 103,
+          "name": "info3",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 80,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "dEdzb",
+          "x": 16,
+          "y": 195,
+          "name": "income3",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 130,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "e42qh",
+          "x": 16,
+          "y": 337,
+          "name": "ded3",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 130,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "ms7Wh",
+          "x": 16,
+          "y": 479,
+          "name": "tax3",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 80,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 16,
+          "id": "aRtgo",
+          "x": 16,
+          "y": 571,
+          "name": "net3",
+          "fill": "#4F46E5",
+          "width": 358,
+          "height": 90
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "pgkmH",
+          "x": 16,
+          "y": 677,
+          "name": "share3_btn",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 44,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#4F46E5"
+          }
+        },
+        {
+          "type": "text",
+          "id": "Hk4lt",
+          "x": 16,
+          "y": 735,
+          "name": "privacy3",
+          "fill": "#CBD5E1",
+          "textGrowth": "fixed-width",
+          "width": 358,
+          "content": "本明细仅供个人查阅，请妥善保管，严禁转发或公开",
+          "textAlign": "center",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 11,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "id": "nwp1R",
+          "x": 0,
+          "y": 788,
+          "name": "tb3",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000f",
+            "offset": {
+              "x": 0,
+              "y": -2
+            },
+            "blur": 8
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "pgvEC",
+      "x": 0,
+      "y": 894,
+      "name": "04-社保公积金",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "pjbHI",
+          "x": 0,
+          "y": 0,
+          "name": "bg4",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "w4gdJ",
+          "x": 0,
+          "y": 47,
+          "name": "nav4",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "fnqAt",
+          "x": 16,
+          "y": 103,
+          "name": "user4",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "text",
+          "id": "sUOt3",
+          "x": 16,
+          "y": 205,
+          "name": "s4_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 180,
+          "content": "2026年4月缴纳状态",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "E591R",
+          "x": 16,
+          "y": 233,
+          "name": "sc4_1",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "Rz9fQ",
+          "x": 199,
+          "y": 233,
+          "name": "sc4_2",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "Ae6U8",
+          "x": 16,
+          "y": 335,
+          "name": "sc4_3",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "4ferm",
+          "x": 199,
+          "y": 335,
+          "name": "sc4_4",
+          "fill": "#FFFFFF",
+          "width": 171,
+          "height": 90,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "text",
+          "id": "hhCnz",
+          "x": 16,
+          "y": 437,
+          "name": "s4_hist_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 180,
+          "content": "缴纳明细记录",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "Y908H",
+          "x": 16,
+          "y": 463,
+          "name": "s4_hist",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 110,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "text",
+          "id": "LGHrc",
+          "x": 16,
+          "y": 589,
+          "name": "s4_link",
+          "fill": "#4F46E5",
+          "textGrowth": "fixed-width",
+          "width": 180,
+          "content": "查看历年缴纳明细  >",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "P7Gca",
+          "x": 0,
+          "y": 788,
+          "name": "tb4",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000f",
+            "offset": {
+              "x": 0,
+              "y": -2
+            },
+            "blur": 8
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "59QOV",
+      "x": 430,
+      "y": 894,
+      "name": "05-我的",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "JZEAv",
+          "x": 0,
+          "y": 0,
+          "name": "bg5",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "CUdH9",
+          "x": 0,
+          "y": 47,
+          "name": "nav5",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 12,
+          "id": "eeXwD",
+          "x": 16,
+          "y": 103,
+          "name": "user5",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 110,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#4f46e514",
+            "offset": {
+              "x": 0,
+              "y": 2
+            },
+            "blur": 8
+          }
+        },
+        {
+          "type": "text",
+          "id": "D4cGb",
+          "x": 16,
+          "y": 225,
+          "name": "s5_1_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "员工服务",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "5kluZ",
+          "x": 0,
+          "y": 249,
+          "name": "li1",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "rectangle",
+          "id": "LoBn4",
+          "x": 52,
+          "y": 305,
+          "name": "d1",
+          "fill": "#F1F5F9",
+          "width": 322,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "6JpbT",
+          "x": 0,
+          "y": 306,
+          "name": "li2",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "rectangle",
+          "id": "ogIwt",
+          "x": 52,
+          "y": 362,
+          "name": "d2",
+          "fill": "#F1F5F9",
+          "width": 322,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "4qTHk",
+          "x": 0,
+          "y": 363,
+          "name": "li3",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "rectangle",
+          "id": "ZC0v6",
+          "x": 52,
+          "y": 419,
+          "name": "d3",
+          "fill": "#F1F5F9",
+          "width": 322,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "RLcqo",
+          "x": 0,
+          "y": 420,
+          "name": "li4",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "text",
+          "id": "A3ma3",
+          "x": 16,
+          "y": 488,
+          "name": "s5_2_title",
+          "fill": "#64748B",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "其它",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "500"
+        },
+        {
+          "type": "rectangle",
+          "id": "FmL43",
+          "x": 0,
+          "y": 512,
+          "name": "li5",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "rectangle",
+          "id": "9k3Cw",
+          "x": 52,
+          "y": 568,
+          "name": "d4",
+          "fill": "#F1F5F9",
+          "width": 322,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "W764l",
+          "x": 0,
+          "y": 569,
+          "name": "li6",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "rectangle",
+          "id": "oAO66",
+          "x": 52,
+          "y": 625,
+          "name": "d5",
+          "fill": "#F1F5F9",
+          "width": 322,
+          "height": 1
+        },
+        {
+          "type": "rectangle",
+          "id": "V9nh4",
+          "x": 0,
+          "y": 626,
+          "name": "li7",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        },
+        {
+          "type": "text",
+          "id": "2rmkA",
+          "x": 0,
+          "y": 696,
+          "name": "v5",
+          "fill": "#CBD5E1",
+          "content": "当前版本 v1.0.0",
+          "textAlign": "center",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 11,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "id": "oQ8by",
+          "x": 0,
+          "y": 788,
+          "name": "tb5",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#0000000f",
+            "offset": {
+              "x": 0,
+              "y": -2
+            },
+            "blur": 8
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "rHwok",
+      "x": 860,
+      "y": 894,
+      "name": "06-报销申请",
+      "width": 390,
+      "height": 844,
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "EBsxL",
+          "x": 0,
+          "y": 0,
+          "name": "bg6",
+          "fill": "#F8FAFC",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "type": "rectangle",
+          "id": "2HNlE",
+          "x": 0,
+          "y": 47,
+          "name": "nav6",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 44
+        },
+        {
+          "type": "text",
+          "id": "LX85r",
+          "x": 16,
+          "y": 105,
+          "name": "lbl1",
+          "fill": "#0F172A",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "* 报销类型",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "D6IPd",
+          "x": 16,
+          "y": 127,
+          "name": "sel1",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 48,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#E2E8F0"
+          }
+        },
+        {
+          "type": "text",
+          "id": "RSHOJ",
+          "x": 16,
+          "y": 188,
+          "name": "lbl2",
+          "fill": "#0F172A",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "* 发票金额（元）",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "RCrFV",
+          "x": 16,
+          "y": 210,
+          "name": "inp2",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 48,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#E2E8F0"
+          }
+        },
+        {
+          "type": "text",
+          "id": "EPQck",
+          "x": 16,
+          "y": 271,
+          "name": "lbl3",
+          "fill": "#0F172A",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "* 发票日期",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "n1hGo",
+          "x": 16,
+          "y": 293,
+          "name": "sel3",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 48,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#E2E8F0"
+          }
+        },
+        {
+          "type": "text",
+          "id": "zjbQX",
+          "x": 16,
+          "y": 354,
+          "name": "lbl4",
+          "fill": "#0F172A",
+          "textGrowth": "fixed-width",
+          "width": 120,
+          "content": "费用说明",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "JsRcs",
+          "x": 16,
+          "y": 376,
+          "name": "txa1",
+          "fill": "#FFFFFF",
+          "width": 358,
+          "height": 80,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#E2E8F0"
+          }
+        },
+        {
+          "type": "text",
+          "id": "28B1n",
+          "x": 16,
+          "y": 469,
+          "name": "lbl5",
+          "fill": "#0F172A",
+          "textGrowth": "fixed-width",
+          "width": 200,
+          "content": "上传发票凭证  *（必填，最多5张）",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "SI5k4",
+          "x": 16,
+          "y": 493,
+          "name": "upl1",
+          "fill": "#FFFFFF",
+          "width": 80,
+          "height": 80,
+          "stroke": {
+            "align": "center",
+            "thickness": 1,
+            "fill": "#E2E8F0"
+          }
+        },
+        {
+          "type": "text",
+          "id": "jsuR7",
+          "x": 16,
+          "y": 581,
+          "name": "upl_hint",
+          "fill": "#CBD5E1",
+          "textGrowth": "fixed-width",
+          "width": 300,
+          "content": "单张图片大小不超过 5MB，支持 JPG/PNG",
+          "fontFamily": "Noto Sans SC",
+          "fontSize": 11,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 8,
+          "id": "MbZzk",
+          "x": 16,
+          "y": 603,
+          "name": "tip6",
+          "fill": "#EEF2FF",
+          "width": 358,
+          "height": 72
+        },
+        {
+          "type": "rectangle",
+          "cornerRadius": 24,
+          "id": "u91YN",
+          "x": 16,
+          "y": 691,
+          "name": "btn6",
+          "fill": "#4F46E5",
+          "width": 358,
+          "height": 48
+        },
+        {
+          "type": "rectangle",
+          "id": "p7FX6",
+          "x": 0,
+          "y": 788,
+          "name": "safe6",
+          "fill": "#FFFFFF",
+          "width": 390,
+          "height": 56
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "--bg": {
+      "type": "color",
+      "value": "#F8FAFC"
+    },
+    "--border": {
+      "type": "color",
+      "value": "#E2E8F0"
+    },
+    "--danger": {
+      "type": "color",
+      "value": "#EF4444"
+    },
+    "--font-primary": {
+      "type": "string",
+      "value": "Noto Sans SC"
+    },
+    "--font-secondary": {
+      "type": "string",
+      "value": "Noto Sans SC"
+    },
+    "--gap-lg": {
+      "type": "number",
+      "value": 16
+    },
+    "--gap-md": {
+      "type": "number",
+      "value": 12
+    },
+    "--gap-sm": {
+      "type": "number",
+      "value": 8
+    },
+    "--gap-xl": {
+      "type": "number",
+      "value": 24
+    },
+    "--info": {
+      "type": "color",
+      "value": "#0EA5E9"
+    },
+    "--nav-height": {
+      "type": "number",
+      "value": 44
+    },
+    "--primary": {
+      "type": "color",
+      "value": "#4F46E5"
+    },
+    "--primary-light": {
+      "type": "color",
+      "value": "#EEF2FF"
+    },
+    "--radius-card": {
+      "type": "number",
+      "value": 12
+    },
+    "--radius-pill": {
+      "type": "number",
+      "value": 999
+    },
+    "--radius-sm": {
+      "type": "number",
+      "value": 6
+    },
+    "--secondary": {
+      "type": "color",
+      "value": "#7C3AED"
+    },
+    "--shadow-card": {
+      "type": "color",
+      "value": "rgba(79,70,229,0.08)"
+    },
+    "--success": {
+      "type": "color",
+      "value": "#10B981"
+    },
+    "--surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "--surface-2": {
+      "type": "color",
+      "value": "#F1F5F9"
+    },
+    "--tabbar-height": {
+      "type": "number",
+      "value": 56
+    },
+    "--text-body": {
+      "type": "color",
+      "value": "#334155"
+    },
+    "--text-disabled": {
+      "type": "color",
+      "value": "#CBD5E1"
+    },
+    "--text-muted": {
+      "type": "color",
+      "value": "#64748B"
+    },
+    "--text-primary": {
+      "type": "color",
+      "value": "#0F172A"
+    },
+    "--warning": {
+      "type": "color",
+      "value": "#F59E0B"
+    }
+  }
+}
