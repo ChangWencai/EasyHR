@@ -1,0 +1,62 @@
+{
+  "name": "@pencil.dev/cli",
+  "version": "0.2.4",
+  "description": "CLI tool for running the Pencil AI agent manipulating .pen design files",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "bin": {
+    "pencil": "dist/index.cjs"
+  },
+  "scripts": {
+    "build": "tsdown && npm run bundle:mcp && npm run bundle:skia && npm run bundle:pen-libs",
+    "build:prod": "npm run build && node scripts/obfuscate.js",
+    "bundle:mcp": "mkdir -p dist/out && cp ../../servers/mcp/mcp-server-* dist/out/ && chmod +x dist/out/mcp-server-*",
+    "bundle:skia": "node scripts/copy-pencil-skia.mjs",
+    "bundle:pen-libs": "mkdir -p dist/out/data && cp ../../lib/pencil-editor/data/*.lib.pen dist/out/data/",
+    "dev": "npm run build && cross-env NODE_ENV=development npm run start --",
+    "start": "node dist/index.cjs",
+    "lint": "biome check",
+    "lint:ci": "biome ci",
+    "test:package": "bash scripts/test-package-docker.sh"
+  },
+  "keywords": [
+    "pencil",
+    "design",
+    "ai",
+    "cli",
+    "pen"
+  ],
+  "author": "High Agency, Inc.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.87",
+    "@inquirer/prompts": "^8.3.0",
+    "eventemitter3": "^5.0.1",
+    "semver": "^7.7.4",
+    "svgo": "^4.0.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.5",
+    "@ha/agent": "file:../../lib/agent",
+    "@ha/ipc": "file:../../lib/ipc",
+    "@ha/mcp": "file:../../lib/mcp",
+    "@ha/pencil-editor": "file:../../lib/pencil-editor",
+    "@ha/schema": "file:../../lib/schema",
+    "@ha/shared": "file:../../lib/shared",
+    "@ha/ws-server": "file:../../servers/ws",
+    "@types/node": "^20.0.0",
+    "@types/semver": "^7.7.1",
+    "@types/ws": "^8.18.1",
+    "cross-env": "^10.1.0",
+    "javascript-obfuscator": "^4.2.2",
+    "tsdown": "^0.20.1",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
