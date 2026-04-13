@@ -49,10 +49,10 @@
 | **Android 客户端（老板端）** | Kotlin + Jetpack Compose | 官方推荐、声明式 UI、与 iOS KMP 可复用逻辑 |
 | **iOS 客户端（老板端）** | Swift + SwiftUI | 原生性能、生态成熟、适配 iOS 12+ |
 | **H5 管理后台（老板端）** | Vue 3 + Element Plus | PC 端管理后台、复杂数据表格、批量操作 |
-| **微信小程序（员工端）** | 原生小程序 / Taro 3 | 免下载即用、员工查看工资条/合同/社保、推送触达率高 |
-| **后端框架** | Go 1.22+ + Gin/Fiber | 高性能、编译为单二进制、部署简单、并发模型优秀 |
-| **数据库** | PostgreSQL 15+ | ACID 事务保障、JSONB 灵活存储、行级安全控制 |
-| **ORM** | Ent / GORM | 类型安全、自动迁移、Go 生态主流 ORM |
+| **微信小程序（员工端）** | 原生微信小程序 + WeUI | 员工查看工资条/合同/社保/报销、推送触达率高、原生开发性能最优 |
+| **后端框架** | Go 1.23+ + Gin v1.12.0 | 高性能、编译为单二进制、部署简单、并发模型优秀、中国Go生态成熟 |
+| **数据库** | PostgreSQL 16+ | ACID 事务保障、JSONB 灵活存储、中国时区支持、行级安全控制 |
+| **ORM** | GORM v1.31.1 | Go生态最成熟、自动迁移、中文文档完善、Auto Migration适合快速迭代 |
 | **缓存** | Redis 7+ | 会话管理、验证码存储、热点数据缓存、分布式锁 |
 | **对象存储** | 阿里云 OSS | 合同/凭证文件存储、CDN 加速、生命周期管理 |
 | **消息队列** | Redis Stream（轻量起步） | V1.0 消息通知解耦，V2.0 可替换为 RabbitMQ |
@@ -61,55 +61,80 @@
 | **监控** | Prometheus + Grafana + Sentry | 性能监控、错误追踪、告警通知 |
 | **CI/CD** | GitHub Actions | 构建、测试、部署自动化 |
 
-### 1.3 后端架构模式
-
-采用**模块化单体（Modular Monolith）**架构：
+### 1.3 项目目录结构
 
 ```
-backend/
-├── cmd/
-│   └── server/
-│       └── main.go              # 入口
-├── internal/
-│   ├── common/                  # 公共模块
-│   │   ├── middleware/           # 中间件（鉴权、限流、日志、CORS）
-│   │   ├── response/            # 统一响应封装
-│   │   ├── crypto/              # 加密工具
-│   │   └── util/                # 工具类
+EasyHR/
+├── cmd/                         # Go 服务入口
+├── config/                      # 配置文件
+├── internal/                    # 业务模块（模块化单体）
+│   ├── common/                  # 公共模块（中间件、响应封装、加密工具）
 │   ├── user/                    # 用户/企业服务
-│   │   ├── handler.go           # HTTP Handler
-│   │   ├── service.go           # 业务逻辑
-│   │   ├── repository.go        # 数据访问
-│   │   └── model.go             # 数据模型
-│   ├── employee/                # 员工管理服务
+│   ├── employee/               # 员工管理服务
 │   ├── social/                  # 社保管理服务
-│   ├── payroll/                 # 工资管理服务
-│   ├── tax/                     # 个税服务
-│   ├── finance/                 # 财务代理记账服务
-│   │   ├── handler.go           # HTTP Handler
-│   │   ├── service.go           # 业务逻辑
-│   │   ├── repository.go        # 数据访问
-│   │   ├── model.go             # 数据模型
-│   │   └── voucher.go           # 凭证生成引擎
-│   └── notification/            # 通知服务
-├── pkg/                         # 可复用包
-│   ├── jwt/                     # JWT 工具
-│   ├── oss/                     # OSS 客户端
-│   └── sms/                     # 短信客户端
-├── config/
-│   └── config.yaml              # 配置文件
+│   ├── payroll/                # 工资管理服务
+│   ├── tax/                    # 个税服务
+│   ├── finance/                # 财务代理记账服务
+│   └── notification/           # 通知服务
+├── pkg/                         # 可复用包（JWT、OSS、短信）
+├── frontend/                    # H5 管理后台（Vue 3 + Element Plus）
+├── miniprogram/                 # 微信小程序（员工端）
+│   ├── pages/
+│   │   ├── payslips/           # 我的工资（首页 Tab）
+│   │   ├── payslips-detail/   # 工资单详情
+│   │   ├── contracts/          # 我的合同（Tab）
+│   │   ├── social/             # 社保记录（Tab）
+│   │   ├── expense/            # 费用报销（Tab）
+│   │   ├── expense-list/       # 报销记录列表
+│   │   ├── login/              # 登录页
+│   │   └── mine/               # 我的（Tab）
+│   ├── assets/icons/           # TabBar 图标资源
+│   ├── app.js                  # 应用入口
+│   ├── app.json                # 全局配置（页面路由、TabBar、窗口样式）
+│   ├── app.wxss                # 全局样式
+│   ├── pages.json              # 页面路径配置
+│   └── sitemap.json            # SEO  sitemap
+├── miniprogram-design/          # 小程序 UI 设计稿（Pencil）
 ├── migrations/                  # 数据库迁移
-├── go.mod
-└── go.sum
+├── go.mod / go.sum
+├── Dockerfile / docker-compose.yml
+└── CLAUDE.md
 ```
 
-**架构决策理由**：
-- V1.0 用户量小，模块化单体降低运维复杂度
-- 按业务边界划分模块（handler/service/repository 三层），后续可按需拆分为微服务
-- 共享同一数据库，通过 `org_id` 实现逻辑多租户
-- Go 编译为单二进制，Docker 镜像小（~20MB），部署极简
+### 1.4 微信小程序（员工端）实现详情
 
-### 1.4 数据库设计原则
+已在 `miniprogram/` 目录下实现员工端小程序，采用**原生微信小程序框架 + WeUI 组件库**，无需跨端框架额外依赖。
+
+**已实现页面（共 8 个）**：
+
+| 页面 | 文件路径 | 功能描述 |
+|------|----------|----------|
+| 我的工资（首页） | `pages/payslips/payslips` | Tab 首页，展示工资单列表 |
+| 工资单详情 | `pages/payslips-detail/payslips-detail` | 单条工资单明细查看 |
+| 我的合同 | `pages/contracts/contracts` | 劳动合同查看 |
+| 社保记录 | `pages/social/social` | 社保缴纳记录查询 |
+| 费用报销 | `pages/expense/expense` | 费用报销单提交 |
+| 报销记录 | `pages/expense-list/expense-list` | 报销历史记录 |
+| 我的 | `pages/mine/mine` | 个人中心 |
+| 登录 | `pages/login/login` | 微信授权登录 |
+
+**TabBar 配置**（底部导航，共 5 个 Tab）：
+
+| Tab | 页面 | 图标 |
+|-----|------|------|
+| 我的工资 | payslips | salary.png / salary-active.png |
+| 我的合同 | contracts | contract.png / contract-active.png |
+| 社保记录 | social | social.png / social-active.png |
+| 费用报销 | expense | expense.png / expense-active.png |
+| 我的 | mine | mine.png / mine-active.png |
+
+**技术特点**：
+- 全局导航栏主题色：`#1677FF`（蓝色）
+- 全局样式版本：v2（微信小程序基础库 v2 样式）
+- 网络请求：原生 `wx.request` 封装
+- 无需引入额外网络库，保持包体积最小
+
+### 1.5 数据库设计原则
 
 1. **行级安全（RLS）**：PostgreSQL 原生支持，确保每个企业只能访问自己的数据
 2. **软删除**：所有业务表使用 `deleted_at` 字段，支持数据恢复与合规审计；涉及唯一约束的表使用部分唯一索引（`WHERE deleted_at IS NULL`）避免软删除后冲突
