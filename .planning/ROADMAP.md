@@ -40,6 +40,8 @@
 <summary>📋 v1.2 H5 管理后台 UI 重构 — ACTIVE</summary>
 
 - [ ] **Phase 1**: 登录页 + 布局基础 — 登录页左右分栏 + AppLayout 侧边栏
+  - [x] 01-01-PLAN.md — 登录页左右分栏 + CSS 设计 Token 体系
+  - [x] 01-02-PLAN.md — AppLayout 暗色侧边栏 + 移动端抽屉
 - [ ] **Phase 2**: 首页仪表盘 + 员工管理 — 仪表盘 + 员工列表 + 详情 + 新增表单
 - [ ] **Phase 3**: 薪资管理 + 社保管理 — 薪资列表 + 配置 + 明细 + 社保管理
 - [ ] **Phase 4**: 考勤 + 审批 + 补充页面 — 考勤 + 审批 + 详情 + 补充页面
@@ -52,4 +54,4 @@
 
 **v1.0 MVP + v1.1 已完整交付，包含：** Go 后端（认证/员工/社保/个税/工资/财务）+ Vue 3 H5 管理后台（登录/注册/首页/员工/社保/工资/个税/财务）+ 微信小程序员工端
 
-_Last updated: 2026-04-14 — v1.2 roadmap created_
+_Last updated: 2026-04-14 — Phase 1 plans created_
