@@ -10,35 +10,22 @@
 
 **简单、好用、省时间** — 老板打开APP第一时间知道要做什么，3步完成核心人事操作，无需专业知识。
 
-## Current Milestone: v1.2 H5 管理后台 UI 重构
+## Current Milestone: v1.3 产品功能全面优化（基于 PRD 1.1）
 
-**Goal:** 根据 `web-design/EasyHR-web.pen` 原型图，对 H5 管理后台进行全面 UI 重构，统一视觉风格。
+**Goal:** 根据 PRD 1.1 对现有产品进行功能优化和补全，新增待办中心、考勤管理、完善薪资/社保/员工管理模块，仅 H5 管理后台。
 
 **Target features:**
-- 登录页：左右分栏，蓝色渐变背景+品牌区+表单区（完全重新设计）
-- 首页/仪表盘：4统计卡片+图表+待办事项+表格（按原型重构）
-- 员工管理列表：筛选栏+员工表格（风格对齐）
-- 员工详情页：左侧信息卡+右侧详情面板（重新设计）
-- 新增员工表单：3步骤条引导+表单（重新设计）
-- 薪资管理：汇总行+工资表（重新设计）
-- 薪资配置：双栏配置表单（重新设计）
-- 薪资明细：月份导航+员工明细+实发卡片（重新设计）
-- 社保管理：警告横幅+多行布局（重新设计）
-- 考勤管理：统计行+日历表格（重新设计）
-- 审批管理：Tab切换+审批列表（重新设计）
-- 审批详情：状态徽章+详情卡（重新设计）
-- 原型未覆盖页面（工具首页、个人中心等）按相同风格补充设计
+- 待办中心：事项汇总、快捷办事、限时任务、完成率环形图
+- 考勤管理：打卡设置（3种模式）、今日打卡、审批流（7种假类型）、出勤月报
+- 薪资管理：数据看板、调薪/普调、个税上传、绩效系数、发工资条
+- 社保公积金：数据看板、增减员优化、缴费渠道、欠缴状态管理
+- 员工管理：数据看板、组织架构可视化、员工信息登记、办离职优化、花名册增强
 
-**Design System:**
-- 主色调：商务蓝 #4F6EF7 渐变背景，品牌色统一
-- 卡片圆角：$radius-lg = 12px
-- 布局：侧边栏固定220px，内容区留白充足
-- 组件：复用 Element Plus，统一设计 token
-- 字体：Inter / 系统无衬线字体
+**Scope:** 仅 H5 管理后台（Vue 3），后端 API 配合新增
 
 ## Active Requirements
 
-(None yet — ship to validate)
+(None yet — will be defined in step 9)
 
 ## Validated Requirements
 
@@ -128,4 +115,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-06 after initialization*
+*Last updated: 2026-04-17 — v1.3 milestone started*

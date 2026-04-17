@@ -1,44 +1,42 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 1 plans created
-last_updated: "2026-04-13T16:28:34.952Z"
-last_activity: 2026-04-13
+milestone: v1.3
+milestone_name: 产品功能全面优化（基于 PRD 1.1）
+status: defining_requirements
+stopped_at: Defining requirements
+last_updated: "2026-04-17T00:00:00.000Z"
+last_activity: 2026-04-17
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-14)
+See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 01 — login-layout
+**Current focus:** Defining v1.3 requirements
 
 ## Current Position
 
-Phase: 01
-Plan: Not started
-Status: Executing Phase 01
-Last activity: 2026-04-13
-
-Progress: [░░░░░░░░░░] 0% (0/4 phases, 0/8 plans)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-17 — Milestone v1.3 started
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 29
+- Total plans completed: 31
 - Average duration: ~15 min/plan
-- Total execution time: ~7 hours
+- Total execution time: ~8 hours
 
 **By Phase:**
 | Phase | Plans | Total | Avg/Plan |
@@ -52,22 +50,14 @@ Progress: [░░░░░░░░░░] 0% (0/4 phases, 0/8 plans)
 | Phase 7 | 2 | 2 | ~18 min |
 | Phase 8 | 2 | 2 | ~15 min |
 | Phase 9 | 0 | 3 | - |
-| 01 | 2 | - | - |
+| v1.1 Phase 01 | 4 | - | - |
+| v1.1 Phase 01a | 1 | - | - |
+| v1.2 Phase 01 | 2 | - | - |
 
 **Recent Trend:**
 
 - Last 4 plans: all PASS
 - Trend: steady
-
-| Phase 02 P01 | 10min | 2 tasks | 9 files |
-| Phase 03 P01 | 23 min | 2 tasks | 10 files |
-| Phase 04 P01 | 12 | 2 tasks | 8 files |
-| Phase 04 P02 | 12min | 2 tasks | 10 files |
-| Phase 05-salary P01 | 1h | 2 tasks | 12 files |
-| Phase 05-salary P02 | 0 | 2 tasks | 3 files |
-| Phase 05-salary P02 | 1200 | 2 tasks | 3 files |
-| Phase 08 P01 | ~15min | 2 tasks | 8 files |
-| Phase 08 P02 | ~15min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -94,37 +84,24 @@ Progress: [░░░░░░░░░░] 0% (0/4 phases, 0/8 plans)
 - [Phase 04]: GetMyTaxRecords returns error stub, needs Phase 5 user-employee mapping
 - [v1.2]: H5 UI 重构遵循 web-design/EasyHR-web.pen 原型图设计
 - [v1.2]: 主色调商务蓝 #4F6EF7，卡片圆角 12px，侧边栏固定 220px
+- [v1.3]: 仅 H5 管理后台实现新功能，后端 API 配合新增
+- [v1.3]: 基于 PRD 1.1 的 5 大模块功能优化
 
 ### Roadmap Evolution
 
 - v1.0: 后端核心 API + 原生 APP MVP
 - v1.1: H5 管理后台基础框架（路由/布局/登录/员工管理）
 - v1.2: H5 管理后台 UI 重构（全面对齐原型图）
-
-### Phase 1 Deliverables (v1.1)
-
-- 40 Go files, 7 test packages all PASS
-- Complete auth flow: SMS code login → auto-register → onboarding → token refresh → logout
-- RBAC middleware with OWNER/ADMIN/MEMBER roles
-- Multi-tenant isolation via GORM TenantScope
-- Audit logging via GORM callback
-- City list API (37 cities)
-- JWT/SMS/OSS pkg libraries
-- Docker dev environment (PostgreSQL 16 + Redis 7)
-
-### Phase 1 Plans (v1.2)
-
-- 01-01: 登录页左右分栏 + CSS 设计 Token 体系
-- 01-02: AppLayout 暗色侧边栏 + 移动端抽屉
+- v1.3: 产品功能全面优化（待办/考勤/薪资/社保/员工管理）
 
 ### Blockers/Concerns
 
-- v1.2 仅改 UI，不动后端 API
-- v1.2 保持现有路由结构不变
-- 考勤打卡设备对接/手机定位打卡 属于 V2.0 范围
+- v1.2 UI 重构部分完成（Phase 01 已完成），后续 UI 可与 v1.3 功能并行
+- 考勤打卡定位/硬件对接仍属于 V2.0 范围
+- 部分薪资算法（病假系数等）需要与法规规则对齐
 
 ## Session Continuity
 
-Last session: 2026-04-14T00:00:00.000Z
-Stopped at: Phase 1 plans created
-Next step: /gsd-execute-phase 01-login-layout
+Last session: 2026-04-17T00:00:00.000Z
+Stopped at: Defining requirements
+Next step: Complete requirements definition, then create roadmap
