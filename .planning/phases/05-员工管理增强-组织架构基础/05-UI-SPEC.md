@@ -59,13 +59,13 @@ Legacy values (existing code, new code MUST NOT introduce):
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 (Regular) | 1.5 |
-| Heading | 16px | 600 (SemiBold) | 1.2 |
+| Heading | 16px | 700 (Bold) | 1.2 |
 | Display | 22px | 700 (Bold) | 1.2 |
 | Stat Value | 24px | 700 (Bold) | 1.2 |
 
 Role mapping:
 - **Body (14px/400)**: 正文文字、标签文字、辅助描述、表单项标签、ECharts 节点 label。涵盖原 13px label 和 14px body 两种用途。
-- **Heading (16px/600)**: 区块标题、小标题、复合数值（本月入/离职）、表单分组标题。涵盖原 15px section-title 和 16px overview-value.small 两种用途。
+- **Heading (16px/700)**: 区块标题、小标题、复合数值（本月入/离职）、表单分组标题。涵盖原 15px section-title 和 16px overview-value.small 两种用途。
 - **Display (22px/700)**: 页面大标题。用于 .page-title 场景。
 - **Stat Value (24px/700)**: 数据看板核心数字（在职人数、新入职、离职、离职率）。用于 .overview-value 场景。
 
@@ -74,10 +74,11 @@ Element Plus defaults (not declared, inherited from component library):
 
 Legacy values (existing code, new code MUST NOT introduce):
 - 13px font-size (.page-subtitle, .shortcut-label) -- 遗留值，新组件使用 14px/400
-- 15px font-size (.section-title) -- 遗留值，新组件使用 16px/600
-- 500 font-weight (.todo-title) -- 遗留值，新组件使用 400 或 600，不使用中间字重
+- 15px font-size (.section-title) -- 遗留值，新组件使用 16px/700
+- 500 font-weight (.todo-title) -- 遗留值，新组件使用 400 或 700，不使用中间字重
+- 600 font-weight (SemiBold) -- 遗留值，新代码必须使用 700 (Bold) 替代，字重集仅允许 {400, 700}
 
-**Source:** 从 HomeView.vue 提取实际使用值，按 checker 要求合并为 4 个字号 + 2 个字重。
+**Source:** 从 HomeView.vue 提取实际使用值，按 checker 要求合并为 4 个字号 + 2 个字重 {400, 700}。
 
 ---
 
@@ -243,7 +244,7 @@ Accent reserved for:
 | Animation | false (D-03 最多3层，无需动画) |
 | Node label | { name }, 14px/400, #1A1A1A |
 | Node type indicator | 部门: 蓝色圆形背景; 岗位: 橙色方形背景; 员工: 灰色人形图标 |
-| Search highlight | itemStyle.color: #1677FF, label.color: #1677FF, label.fontWeight: 600 |
+| Search highlight | itemStyle.color: #1677FF, label.color: #1677FF, label.fontWeight: 700 |
 | Initial zoom | fit to container height (roam + zoom) |
 
 ---
