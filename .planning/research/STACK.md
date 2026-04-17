@@ -1,221 +1,231 @@
-# Technology Stack
+# Stack Research -- v1.3 新功能技术栈补充
 
-**Project:** EasyHR (小微企业人事管理系统)
-**Researched:** 2026-04-06
-**Mode:** Ecosystem (Stack dimension)
+**Domain:** 人事管理系统 v1.3 -- 考勤管理、审批流引擎、薪资增强、组织架构可视化、数据看板
+**Researched:** 2026-04-17
+**Confidence:** HIGH
+**Scope:** 仅覆盖 v1.3 新功能所需的栈补充，不重复已有技术
 
-## Recommended Stack
+## 现有栈确认（不需变更）
 
-### Backend Core (Go)
+以下技术已在 v1.2 验证可用，v1.3 继续使用，无需重新评估：
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Go | 1.23+ | 编程语言 | 高性能、编译为单二进制、并发模型优秀、中国Go生态成熟 | HIGH |
-| Gin | v1.12.0 | HTTP框架 | 中国最流行的Go Web框架、社区活跃、中间件生态丰富、性能优秀。对比Echo(v5.1.0)路由语法更直观，对比Fiber(v3.1.0)不依赖fasthttp因此标准库兼容性更好 | HIGH |
-| GORM | v1.31.1 | ORM | Go生态最成熟的ORM、支持PostgreSQL全部特性（JSONB、事务、迁移）、中文文档完善、Auto Migration适合快速迭代。Ent(v0.14.6)代码生成更类型安全但学习曲线陡峭，不适合小团队快速迭代 | HIGH |
-| PostgreSQL | 16+ | 主数据库 | ACID事务保障、JSONB支持灵活存储（社保政策库）、优秀的中国时区支持、Row Level Security可增强多租户隔离 | HIGH |
-| go-redis | v9.18.0 | Redis客户端 | 官方推荐客户端、支持Redis 7全部特性、连接池管理成熟、集群模式支持完善 | HIGH |
+- Go 1.25+ / Gin / GORM / PostgreSQL / go-redis / Viper / Zap / asynq / gocron
+- Vue 3 / Element Plus / Vite / TypeScript / Pinia / Axios / dayjs / ECharts（已安装但未充分使用）
+- shopspring/decimal v1.4.0（已在 go.mod 中，薪资精确计算）
 
-### Backend Infrastructure
+---
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Viper | v1.21.0 | 配置管理 | Go生态事实标准的配置库、支持多格式(YAML/TOML/ENV)、环境变量覆盖适合Docker部署 | HIGH |
-| Zap | v1.27.1 | 结构化日志 | Uber出品、性能极高（比标准库快10x+）、结构化日志便于问题排查、支持日志分级 | HIGH |
-| golang-jwt | v5.3.1 | JWT认证 | golang-jwt官方维护（原dgrijalva已不维护）、v5 API简洁安全、支持RS256/HS256 | HIGH |
-| go-playground/validator | v10.30.2 | 参数校验 | Gin生态标配、struct tag声明式校验、内置丰富验证规则（手机号、身份证可自定义）、中文错误消息支持 | HIGH |
-| golang-migrate | v4.19.1 | 数据库迁移 | Go生态主流迁移工具、支持CLI和代码两种使用方式、PostgreSQL原生支持、迁移文件版本化管理 | HIGH |
+## v1.3 新增后端依赖
 
-### Backend Business Libraries
+### 审批流引擎
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| excelize | v2.10.1 | Excel读写 | Go生态最强大的Excel库、支持xlsx全部特性、样式/图表/公式、工资条导出和考勤导入必备 | HIGH |
-| go-pdf/fpdf | v0.9.0 | PDF生成 | 纯Go实现、无CGO依赖、适合生成合同PDF模板、轻量够用。如需复杂排版可后期引入wkhtmltopdf | MEDIUM |
-| resty | v2.17.2 | HTTP客户端 | 简洁的RESTful API、重试/超时/中间件支持完善、比标准库代码量少50%+、用于调用微信API和短信服务 | HIGH |
-| silenceper/wechat | v2.1.12 | 微信SDK | 覆盖小程序登录/公众号/微信支付、持续维护（2026-02更新）、API设计清晰 | MEDIUM |
-| gopay | v1.5.117 | 支付SDK | 支持微信支付/支付宝、极其活跃的维护（2026-04更新）、微信小程序支付必备 | HIGH |
-| asynq | v0.26.0 | 异步任务队列 | 基于Redis的可靠任务队列、支持定时任务/重试/优先级、比直接用cron更可靠、适合工资核算/社保提醒等异步场景 | HIGH |
-| gocron | v2.19.1 | 定时任务 | 比robfig/cron（已停更4年+）更活跃、支持分布式锁、单机/分布式灵活切换、适合社保到期提醒等定时场景 | HIGH |
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| qmuntal/stateless | v1.8.0 | 有限状态机（FSM） | 审批流核心引擎。支持层级状态（SubstateOf）-- 可将"待审批"分为"待经理审批""待老板审批"子状态；支持守卫条件（Guard）-- 可校验审批人权限；支持 Entry/Exit 动作 -- 审批状态变更时自动触发通知。比 looplab/fsm 更适合：后者不支持层级状态，无法表达"请假审批中"包含"待经理审批"的嵌套关系。比 Temporal/Cadence 更轻量：小微企业的审批流是同步状态转换，不需要分布式工作流引擎的运维负担 | HIGH |
 
-### Backend Security & Compliance
+**集成方式：** 封装为 `internal/approval/` 模块，FSM 实例与 GORM 模型绑定。每次审批操作时从 DB 加载当前状态，通过 FSM 执行转换，持久化新状态。不引入额外基础设施。
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| crypto (标准库) | - | AES-256-GCM加密 | 标准库crypto/aes+crypto/cipher、无需第三方依赖、满足个人信息保护法加密要求 | HIGH |
-| crypto/sha256 (标准库) | - | 哈希索引 | 敏感字段（身份证号）用SHA-256生成哈希索引、标准库直接使用 | HIGH |
-| casbin | 最新 | RBAC权限 | Go生态最成熟的权限框架、支持OWNER/ADMIN/MEMBER三级RBAC、策略热加载、与Gin集成成熟 | HIGH |
+**为什么不用其他方案：**
 
-### Backend Data & Storage
+| 排除方案 | 原因 |
+|----------|------|
+| looplab/fsm | 不支持层级状态（SubstateOf），审批流需要表达"审批中"包含多个子阶段的嵌套关系；event/callback 风格在复杂审批场景下不如声明式 API 清晰 |
+| Temporal/Cadence | 分布式工作流引擎，需要独立 Server 集群，运维复杂度远超小微企业需求。审批流是秒级同步操作，不需要持久化工作流 |
+| 自研状态机 | 审批流状态转换逻辑复杂（7种假类型 x 多级审批），自研容易遗漏边界条件。qmuntal/stateless 的声明式 API 和层级状态是核心价值 |
+| go-workflow / Watermill | 面向事件驱动架构，审批流是同步状态转换，用消息流是杀鸡用牛刀 |
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Aliyun OSS SDK | v3.0.2 | 文件存储 | 阿里云官方维护、合同/工资条/凭证文件存储、签名URL直传减少服务端压力 | HIGH |
-| testify | v1.11.1 | 测试断言 | Go测试生态标配、assert/mock/suite三件套、提高测试可读性 | HIGH |
+### 薪资算法增强
 
-### Frontend - H5管理后台 (Vue 3)
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| shopspring/decimal | v1.4.0 (已安装) | 高精度十进制运算 | **已在 go.mod 中**，无需新增。个税累进计算、绩效系数乘法、社保公积金扣减全部使用 decimal 而非 float64，避免 0.1+0.2!=0.3 精度问题。v1.3 将深度使用此库 | HIGH |
+| excelize | v2.10.1 (已安装) | 个税批量上传解析 | **已在 go.mod 中**。个税上传功能需要解析 Excel 文件中的员工个税数据，excelize 已支持。无需新增 | HIGH |
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Vue | 3.5.32 | 前端框架 | 项目已确定、Composition API成熟稳定、中国前端生态首选 | HIGH |
-| Element Plus | 2.13.6 | UI组件库 | 项目已确定、Vue 3生态最成熟的组件库、表单/表格/对话框开箱即用、后台管理标配 | HIGH |
-| Vite | 8.0.3 | 构建工具 | Vue官方推荐、开发体验极快（HMR <100ms）、Rollup打包优化 | HIGH |
-| TypeScript | 6.0.2 | 类型安全 | Vue 3 + TS是最佳实践、减少运行时错误、IDE支持完善 | HIGH |
-| Pinia | 3.0.4 | 状态管理 | Vue官方推荐、比Vuex更轻量、TS支持更好、Composition API风格 | HIGH |
-| Vue Router | 5.0.4 | 路由管理 | Vue官方路由、支持路由守卫（权限控制）、懒加载优化首屏 | HIGH |
-| @vueuse/core | 14.2.1 | 组合式工具 | Vue版lodash、100+实用composable（useLocalStorage/useDebounce等）、减少手写样板代码 | HIGH |
-| Axios | 1.14.0 | HTTP客户端 | 拦截器机制适合统一token管理/错误处理、请求取消/重试、中国前端标配 | HIGH |
-| dayjs | 1.11.20 | 日期处理 | 极轻量（2KB vs moment 67KB）、链式API与moment兼容、中文locale支持、薪资月份计算必备 | HIGH |
-| ECharts | 6.0.0 | 图表 | 百度出品、中国数据可视化标准、Vue集成方案成熟、后续报表功能需要 | HIGH |
-| xlsx (SheetJS) | 0.18.5 | Excel导入导出 | 浏览器端Excel处理、支持工资表导入/导出、中文兼容性好 | MEDIUM |
+**关键决策：不引入个税计算库**
 
-### Frontend - H5 Dev Tools
+没有找到成熟的中国个税 Go 计算库（搜索了 GitHub、npm、Web）。原因合理：中国个税政策每年可能微调（专项附加扣除标准、起征点），任何开源库都可能滞后。因此：
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| ESLint | 10.2.0 | 代码检查 | Vue + TS项目标配、配合eslint-plugin-vue | HIGH |
-| Prettier | 3.8.1 | 代码格式化 | 团队统一代码风格、保存时自动格式化 | HIGH |
-| Sass | 1.99.0 | CSS预处理器 | Element Plus官方推荐、变量/mixin系统完善 | HIGH |
-| unplugin-auto-import | 21.0.0 | 自动导入 | Vue/Vue Router/Pinia API自动导入、减少样板import语句 | HIGH |
-| unplugin-vue-components | 32.0.0 | 组件自动导入 | Element Plus组件按需自动导入、减少打包体积 | HIGH |
+- **策略：自建 `internal/tax/calculator.go` 模块**，基于七级超额累进税率表硬编码
+- 税率表和速算扣除数作为 JSON 配置文件（`configs/tax_brackets.json`），随政策更新修改配置而非代码
+- 专项附加扣除项作为可配置的枚举（子女教育、住房贷款、赡养老人等）
+- 累计预扣预缴算法用 shopspring/decimal 保证精度
 
-### Mobile - Android (Kotlin)
+### 考勤管理
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Kotlin | 2.x | 编程语言 | 项目已确定、Google官方推荐、与Java完全互操作、协程支持异步 | HIGH |
-| Jetpack Compose | 最新稳定版 | UI框架 | Android现代UI框架、声明式UI开发效率高、Material 3支持完善 | HIGH |
-| Material 3 | 最新 | 设计系统 | Google最新设计规范、Composable组件丰富、暗色模式支持 | HIGH |
-| Ktor | 最新 | HTTP客户端 | Kotlin Multiplatform原生HTTP库、协程友好、比Retrofit更轻量现代 | MEDIUM |
-| Coil | 最新 | 图片加载 | Kotlin Coroutines原生、Compose集成优秀、比Glide更现代 | HIGH |
-| DataStore | 最新 | 本地存储 | SharedPreferences替代品、协程/Flow支持、类型安全 | HIGH |
-| Hilt | 最新 | 依赖注入 | Google官方推荐、基于Dagger2简化版、编译时检查 | HIGH |
+**不需要新增后端库。** 考勤管理的核心技术挑战是业务逻辑而非技术栈：
 
-### Mobile - iOS (Swift)
+- **打卡时间计算：** dayjs（前端）+ Go time 包（后端），均为标准库级别
+- **排班模式（固定班次/排班制/自由工时）：** 纯业务规则，用 Go struct + GORM 模型表达
+- **出勤月报统计：** PostgreSQL 聚合查询 + excelize 导出（已安装）
+- **打卡实况 WebSocket 推送：** 不做。v1.3 考勤是管理后台操作，不是实时打卡。今日打卡实况用定时刷新（5秒轮询）即可，50人规模下完全够用
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Swift | 5.9+ | 编程语言 | 项目已确定、性能优秀、安全性高 | HIGH |
-| SwiftUI | 最新 | UI框架 | 声明式UI、与Jetpack Compose对称开发、iOS 14+支持覆盖目标用户 | HIGH |
-| Alamofire | 最新 | HTTP客户端 | Swift生态最成熟的网络库、拦截器/重试/认证管理完善 | HIGH |
-| Kingfisher | 最新 | 图片加载 | Swift生态图片加载标准、缓存管理优秀、SwiftUI支持 | HIGH |
-| SwiftData | 最新 | 本地持久化 | Apple最新数据持久化框架、替代Core Data、Swift原生API | MEDIUM |
+---
 
-### WeChat Mini Program (员工端)
+## v1.3 新增前端依赖
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| 原生微信小程序 | 基础库3.x+ | 开发框架 | **不用Taro/uni-app**。理由：员工端功能简单（查看工资条/合同/社保记录、提交报销），原生开发性能最优、API兼容性最好、无需跨端框架增加复杂度 | HIGH |
-| WeUI | 最新 | UI组件库 | 微信官方设计规范、小程序原生组件体验、员工端无需定制UI | HIGH |
-| wx.request | - | 网络请求 | 小程序原生API够用、简单封装即可，无需引入额外网络库 | HIGH |
-| miniprogram-ci | 最新 | CI/CD上传 | 微信官方CI工具、自动化上传代码到微信后台 | HIGH |
+### 组织架构可视化
 
-### Infrastructure & Deployment
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| ECharts Tree Chart | 6.0.0 (已安装) | 组织架构树形图 | **ECharts 内置 tree 系列类型**，支持垂直/水平方向、节点自定义渲染、折叠展开。不需要额外安装任何包。ECharts 是项目已有依赖，tree 图是其 20+ 内置图表类型之一。中国开发者社区大量使用 ECharts tree 做组织架构图的实战案例（掘金、阿里云开发者社区均有教程） | HIGH |
 
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Docker | 27+ | 容器化 | 单二进制+Docker部署、开发环境一致性、阿里云ECS上运行 | HIGH |
-| Aliyun ECS | - | 服务器 | 项目已确定、国内访问延迟低、按量付费成本可控 | HIGH |
-| Aliyun OSS | - | 对象存储 | 项目已确定、合同/工资条/凭证文件存储、CDN加速 | HIGH |
-| Aliyun SMS | - | 短信服务 | 国内短信到达率最高、验证码发送、支持短信签名和模板 | HIGH |
-| Nginx | 1.26+ | 反向代理 | SSL终结、静态资源服务、负载均衡（后续扩容）、Go服务前置 | HIGH |
+**为什么不用专门的 org-chart 组件：**
+
+| 排除方案 | 原因 |
+|----------|------|
+| vue3-tree-org (v4.2.2) | 最后更新约 3 年前，与 Vue 3.5.x 兼容性未经验证；无正式 GitHub releases；功能与 ECharts tree 重叠，增加一个维护停滞的依赖不值得 |
+| vue3-org-chart | 维护者少，npm 下载量低，社区验证不足 |
+| D3.js 组织架构图 | 引入整个 D3.js（500KB+）只为树形图是严重过度；ECharts 已满足需求 |
+| 自研 SVG 树组件 | ECharts tree 支持节点自定义渲染（rich text）、折叠展开、缩放拖拽，自研没有优势 |
+
+### 数据看板图表增强
+
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| vue-echarts | v8.0.1 | ECharts Vue 3 封装组件 | v1.3 需要大量图表（薪资看板、社保看板、考勤统计、待办完成率环形图）。vue-echarts 提供声明式 Vue 组件写法（`<v-chart :option="chartOption">`），比直接操作 ECharts 实例代码量减少 60%+。v8.0.1 要求 echarts ^6.0.0 + vue ^3.3.0，与现有栈完全匹配。支持按需引入图表类型，减小打包体积 | HIGH |
+
+**为什么需要 vue-echarts 而非直接用 ECharts：**
+
+v1.3 有 5 个数据看板页面，每个页面有 2-4 个图表。直接用 ECharts 需要手动管理实例生命周期（init、resize、dispose），每个图表组件约 40 行样板代码。vue-echarts 封装后只需 `<v-chart :option="option" />` 一行，自动处理 resize/dispose。10+ 个图表节省约 400 行代码。
+
+### 待办中心环形进度图
+
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| ECharts Pie/Bar (已安装) + vue-echarts | 见上 | 待办完成率环形图 | ECharts pie 系列的 `radius: ['60%', '80%']` 配置即为环形图（donut chart），无需任何额外库。vue-echarts 提供更好的 Vue 组件封装 | HIGH |
+
+### 前端工具补充
+
+| Library | Version | Purpose | Why | Confidence |
+|---------|---------|---------|-----|------------|
+| @vueuse/core | v14.2.x (待安装) | 组合式工具函数 | v1.3 大量使用 `useIntervalFn`（考勤实况定时刷新）、`useLocalStorage`（看板布局偏好）、`useDebounceFn`（搜索防抖）。虽然 CLAUDE.md 已规划但 package.json 尚未安装 | HIGH |
+
+---
+
+## 安装命令
+
+```bash
+# 后端 -- 仅新增一个依赖
+cd /Users/wencai/github/EasyHR
+go get github.com/qmuntal/stateless@v1.8.0
+
+# 前端 -- 新增两个依赖
+cd /Users/wencai/github/EasyHR/frontend
+npm install vue-echarts@8.0.1
+npm install @vueuse/core@14.2.1
+```
+
+**注意：** vue-echarts 要求 echarts 作为 peer dependency。项目 CLAUDE.md 规划了 echarts 6.0.0 但 package.json 尚未安装。需要同时安装：
+
+```bash
+npm install echarts@6.0.0 vue-echarts@8.0.1 @vueuse/core@14.2.1
+```
+
+---
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| HTTP框架 | Gin | Echo v5 | Echo也不错但中国Gin生态更大、中文资源更多；Gin中间件更丰富 |
-| HTTP框架 | Gin | Fiber v3 | Fiber依赖fasthttp而非标准net/http，标准库兼容性差，第三方中间件生态不如Gin |
-| HTTP框架 | Gin | go-zero v1.10 | go-zero是微服务框架，对模块化单体过重，自带代码生成不适合定制化需求 |
-| ORM | GORM | Ent | Ent代码生成方式学习曲线陡峭、对快速迭代不友好、小团队GORM更高效 |
-| ORM | GORM | sqlx | sqlx手写SQL维护成本高、GORM的Auto Migration在V1.0快速迭代阶段更高效 |
-| 状态管理 | Pinia | Vuex 5 | Vuex已进入维护模式、Pinia是Vue官方推荐的未来方案 |
-| 小程序框架 | 原生 | Taro | 员工端功能极简（5-6个页面），跨端框架增加构建复杂度和调试成本，不值得 |
-| 小程序框架 | 原生 | uni-app | 同上，uni-app更适合需要同时覆盖多端（H5/多端小程序/App）的场景 |
-| 定时任务 | gocron | robfig/cron | robfig/cron自2021年起停更，gocron活跃维护且功能更丰富（分布式锁、web UI） |
-| 日志 | Zap | logrus | logrus已进入维护模式、性能远不如Zap |
-| PDF生成 | go-pdf/fpdf | wkhtmltopdf | wkhtmltopdf需要CGO+外部二进制依赖，Docker镜像增大200MB+，fpdf纯Go够用 |
-| 缓存 | go-redis直接使用 | eko/gocache | gocache提供抽象层但增加复杂度，go-redis直接操作足够清晰 |
-| 异步队列 | asynq | RabbitMQ/Kafka | V1.0不需要消息中间件的复杂度，asynq基于Redis足够可靠，运维成本低 |
+### 审批流引擎
 
-## Go Module Dependencies (go.mod 核心依赖)
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| qmuntal/stateless | looplab/fsm | 如果审批流极简（只有 Draft -> Approved/Rejected 两步），looplab/fsm 更轻量。但 v1.3 有 7 种假类型 + 多级审批，stateless 的层级状态更合适 |
+| qmuntal/stateless | Temporal | 如果未来（V3.0+）需要跨服务分布式审批流（如对接外部电子签 API），考虑迁移到 Temporal |
+| qmuntal/stateless | 自研 DB 状态字段 | 如果只有 1-2 种审批类型，直接用 status 字段 + switch 就够了。但 7 种假类型 + 撤回/催办/转交，FSM 的声明式配置比散落的 if/else 更可维护 |
 
-```go
-require (
-    github.com/gin-gonic/gin v1.12.0
-    gorm.io/gorm v1.31.1
-    gorm.io/driver/postgres v1.5.0+
-    github.com/redis/go-redis/v9 v9.18.0
-    github.com/spf13/viper v1.21.0
-    go.uber.org/zap v1.27.1
-    github.com/golang-jwt/jwt/v5 v5.3.1
-    github.com/go-playground/validator/v10 v10.30.2
-    github.com/casbin/casbin/v2 v2.100+
-    github.com/xuri/excelize/v2 v2.10.1
-    github.com/go-pdf/fpdf v0.9.0
-    github.com/go-resty/resty/v2 v2.17.2
-    github.com/silenceper/wechat/v2 v2.1.12
-    github.com/go-pay/gopay v1.5.117
-    github.com/hibiken/asynq v0.26.0
-    github.com/go-co-op/gocron/v2 v2.19.1
-    github.com/aliyun/aliyun-oss-go-sdk v3.0.2
-    github.com/golang-migrate/migrate/v4 v4.19.1
-    github.com/stretchr/testify v1.11.1
-    github.com/swaggo/swag v2.0.0-rc5
-    github.com/swaggo/gin-swagger v1.6+
-)
+### 组织架构可视化
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| ECharts tree | vue3-tree-org | 如果需要拖拽节点重构组织架构（ECharts tree 不支持节点拖拽重排）。但 v1.3 PRD 未要求拖拽重排，只需要可视化展示 |
+| ECharts tree | D3.js tree | 如果需要极度定制化的节点渲染（如节点内嵌入头像、进度条、按钮等复杂 HTML）。ECharts tree 支持 rich text 但不支持嵌入 HTML。v1.3 只需展示姓名+职位，ECharts 足够 |
+
+---
+
+## What NOT to Use
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Temporal/Cadence | 需要独立 Server 集群、学习曲线陡峭、运维成本高。小微企业的审批流是同步状态转换，不需要分布式工作流引擎 | qmuntal/stateless + PostgreSQL |
+| D3.js（全量引入） | 打包体积 500KB+，只为树形图引入整个库严重浪费。ECharts 已满足所有图表需求 | ECharts 6.0 内置 tree/pie/bar |
+| vue3-tree-org | 3 年未更新、无正式 release、与 Vue 3.5.x 兼容性未经验证 | ECharts tree 系列（已安装） |
+| float64 做薪资计算 | 浮点精度丢失（0.1 + 0.2 = 0.30000000000000004），薪资场景不可接受 | shopspring/decimal（已安装） |
+| WebSocket 实时推送 | v1.3 考勤管理后台只需定时刷新（5秒轮询），50 人规模下完全够用。WebSocket 增加连接管理复杂度 | HTTP 轮询 + asynq 后台任务 |
+| 自研个税计算库 | 中国个税政策每年微调，硬编码在代码中不可维护 | 配置文件（JSON）+ 通用计算引擎 |
+| RXjs / Observable | v1.3 的异步场景简单（定时刷新、表单提交），Vue 3 Composition API + async/await 完全够用 | async/await + Vue 3 reactive |
+
+---
+
+## Version Compatibility
+
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| vue-echarts@8.0.1 | echarts@^6.0.0, vue@^3.3.0 | 项目 vue@3.5.x 满足；echarts 6.0 需要安装 |
+| qmuntal/stateless@v1.8.0 | Go 1.21+ | 项目 Go 1.25 满足 |
+| @vueuse/core@14.2.x | vue@^3.5.0 | 项目 vue@3.5.x 满足 |
+| ECharts 6.0 tree | vue-echarts@8.0+ | tree 系列是 ECharts 内置类型，无需额外引入 |
+
+---
+
+## 后端模块结构建议
+
+```
+internal/
+  approval/          # 新增 -- 审批流引擎
+    engine.go        # FSM 初始化和配置
+    types.go         # 审批状态、事件类型定义
+    service.go       # 审批业务逻辑
+    handlers.go      # Gin HTTP handlers
+  attendance/        # 新增 -- 考勤管理
+    model.go         # 打卡记录、排班模型
+    service.go       # 考勤业务逻辑
+    calculator.go    # 工时计算
+    report.go        # 月报生成
+    handlers.go      # Gin HTTP handlers
+  todo/              # 新增 -- 待办中心
+    model.go         # 待办事项模型
+    service.go       # 待办聚合逻辑
+    handlers.go      # Gin HTTP handlers
+  salary/            # 增强 -- 薪资模块扩展
+    dashboard.go     # 数据看板查询
+    adjustment.go    # 调薪/普调逻辑
+    tax_upload.go    # 个税上传解析
+    performance.go   # 绩效系数计算
+    slip.go          # 工资条发送
 ```
 
-## Frontend Dependencies (package.json 核心依赖)
+---
 
-```json
-{
-  "dependencies": {
-    "vue": "3.5.x",
-    "vue-router": "5.0.x",
-    "pinia": "3.0.x",
-    "element-plus": "2.13.x",
-    "@vueuse/core": "14.2.x",
-    "axios": "1.14.x",
-    "dayjs": "1.11.x",
-    "echarts": "6.0.x",
-    "xlsx": "0.18.x",
-    "qrcode": "1.5.x",
-    "nprogress": "0.2.x"
-  },
-  "devDependencies": {
-    "vite": "8.0.x",
-    "typescript": "6.0.x",
-    "eslint": "10.2.x",
-    "prettier": "3.8.x",
-    "sass": "1.99.x",
-    "unplugin-auto-import": "21.x",
-    "unplugin-vue-components": "32.x",
-    "@types/node": "25.5.x",
-    "@vitejs/plugin-vue": "latest"
-  }
-}
+## 前端目录结构建议
+
+```
+frontend/src/
+  views/
+    attendance/      # 新增 -- 考勤管理页面
+    approval/        # 新增 -- 审批管理页面
+    todo/            # 新增 -- 待办中心页面
+  components/
+    charts/          # 新增 -- 图表封装组件
+      DonutChart.vue      # 环形进度图（待办完成率）
+      BarChart.vue        # 柱状图（薪资分布、考勤统计）
+      LineChart.vue       # 折线图（趋势图）
+      OrgTreeChart.vue    # 组织架构树形图
+      StatCard.vue        # 统计卡片组件（通用）
 ```
 
-## API Documentation
-
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| swag (swaggo) | v2.0.0-rc5 | API文档生成 | Go注释生成OpenAPI 2.0文档、与Gin集成(gin-swagger)、自动同步代码变更 | MEDIUM |
-| OpenAPI/Swagger UI | - | API文档展示 | 前后端协作标准、支持在线测试API、微信小程序开发对照接口 | HIGH |
-
-注意：swag v2.0还在RC阶段。如生产环境需要稳定性，可使用v1.16稳定版或考虑用Stoplight/Tina等工具手写OpenAPI spec。
-
-## Key Version Notes
-
-1. **Vue Router 5.x** 和 **Pinia 3.x** 是2025-2026的重大版本升级，API有变化但都是向前兼容的改进
-2. **Vite 8.x** 是2026年的最新大版本，构建性能进一步提升
-3. **ECharts 6.x** 相比5.x更轻量、按需加载更友好
-4. **swag v2.0** 仍在RC阶段，生产环境建议关注稳定性或使用v1.x
-5. **robfig/cron** 已停止维护4年+，必须使用 gocron 替代
+---
 
 ## Sources
 
-- GitHub Release API (gin v1.12.0, echo v5.1.0, fiber v3.1.0, gorm v1.31.1, ent v0.14.6, go-redis v9.18.0, viper v1.21.0, zap v1.27.1, jwt v5.3.1, validator v10.30.2, excelize v2.10.1, resty v2.17.2, silenceper/wechat v2.1.12, gopay v1.5.117, asynq v0.26.0, gocron v2.19.1, golang-migrate v4.19.1, testify v1.11.1) -- 2026-04-06
-- npm Registry (vue 3.5.32, element-plus 2.13.6, pinia 3.0.4, vue-router 5.0.4, vite 8.0.3, axios 1.14.0, typescript 6.0.2, @vueuse/core 14.2.1) -- 2026-04-06
-- robfig/cron GitHub (最后提交 2021-01-06, 确认停更) -- 2026-04-06
+- [qmuntal/stateless GitHub](https://github.com/qmuntal/stateless) -- v1.8.0, 2026-02-10 发布，支持层级状态、守卫条件、Entry/Exit 动作 -- HIGH
+- [vue-echarts npm](https://www.npmjs.com/package/vue-echarts) -- v8.0.1, 要求 echarts ^6.0.0 + vue ^3.3.0 -- HIGH
+- [shopspring/decimal GitHub](https://github.com/shopspring/decimal) -- v1.4.0, 已在 go.mod 中，高精度十进制运算 -- HIGH
+- [ECharts Tree 官方文档](https://echarts.apache.org/en/option.html#series-tree) -- 内置 tree 系列类型，支持垂直/水平/径向布局 -- HIGH
+- [掘金：ECharts Tree 组织结构图实战](https://juejin.cn/post/7041048687933390884) -- 中国开发者使用 ECharts tree 做组织架构图的实践案例 -- MEDIUM
+- [阿里云开发者社区：Vue3 使用 ECharts 树图](https://developer.aliyun.com/article/1600528) -- Vue3 + ECharts tree 组件化封装 -- MEDIUM
+- [Medium：Simple Workflow Engine in Go Using Stateless](https://medium.com/@jhberges/simple-workflow-engine-in-go-using-stateless-9db4464b93ec) -- 用 stateless 构建工作流引擎的实践 -- MEDIUM
+- [vue3-tree-org npm](https://www.npmjs.com/package/vue3-tree-org) -- v4.2.2，约 3 年前发布，维护状态存疑 -- LOW（排除依据）
+
+---
+*Stack research for: EasyHR v1.3 新功能*
+*Researched: 2026-04-17*

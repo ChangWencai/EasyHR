@@ -1,726 +1,768 @@
-# Architecture Patterns
+# Architecture Patterns -- v1.3 New Features Integration
 
-**Domain:** 小微企业人事管理系统（EasyHR / 易人事）
-**Researched:** 2026-04-06
+**Domain:** EasyHR v1.3 功能增强 -- 待办中心、考勤管理、薪资增强、社保增强、员工管理增强
+**Researched:** 2026-04-17
 **Confidence:** HIGH
 
-## Recommended Architecture
+## Executive Summary
 
-**Modular Monolith** -- 单进程、单数据库、按业务边界划分模块的 Go 应用。
+v1.3 在已有模块化单体架构上新增 5 大功能模块/增强。核心挑战不在于新建独立模块，而在于**跨模块数据聚合**（待办中心）和**跨模块联动**（考勤->薪资、离职->社保停缴）的深度集成。现有架构以 adapter 接口模式解决跨模块依赖（salary -> tax/si/employee 通过 adapter），v1.3 需延续此模式并扩展。
+
+关键架构决策：考勤管理作为全新 `internal/attendance` 模块，待办中心作为全新 `internal/todo` 模块，薪资/社保/员工增强在现有模块内扩展。
+
+## Recommended Architecture for v1.3
 
 ```
-                    +---------------------------------------------+
-                    |            Clients (多端)                    |
-                    | Android(Kotlin) iOS(Swift) H5(Vue3) MiniProg |
-                    +------+------------------+-------------------+
-                           |                  |
-                    HTTPS / REST API (JSON)   |
-                           |                  |
-                    +------v------------------v-------------------+
-                    |              API Gateway Layer              |
-                    | Middleware: Auth / RateLimit / CORS / Audit |
-                    +------+-------------------------------------+
-                           |
-          +----------------+----------------+
-          |                |                |
-   +------v------+  +------v------+  +------v------+
-   | user module |  |employee mod |  | social mod  |  ...
-   | Handler     |  | Handler     |  | Handler     |
-   | Service     |  | Service     |  | Service     |
-   | Repository  |  | Repository  |  | Repository  |
-   +------+------+  +------+------+  +------+------+
-          |                |                |
-          +--------+-------+--------+-------+
-                   |                |
-            +------v------+  +------v------+
-            | PostgreSQL  |  |   Redis     |
-            | (shared DB) |  | (cache/sess)|
-            +-------------+  +-------------+
+                          +-----------------------------------+
+                          |         Clients (H5 only)         |
+                          +----------------+------------------+
+                                           |
+                                  HTTPS / REST API
+                                           |
+                          +----------------v------------------+
+                          |         API Gateway Layer          |
+                          | Auth / RateLimit / CORS / Tenant   |
+                          +----------------+------------------+
+                                           |
+        +------------------+----------------+------------------+------------------+
+        |                  |                |                  |                  |
+  +-----v------+   +------v------+  +------v------+   +------v------+   +------v------+
+  |  todo mod  |   | attendance  |  | salary mod  |   |  social mod |   | employee mod |
+  | (待办中心)  |   | (考勤管理)  |  | (薪资增强)  |   | (社保增强)  |   | (员工增强)   |
+  | Handler    |   | Handler     |  | Handler     |   | Handler     |   | Handler      |
+  | Service    |   | Service     |  | Service     |   | Service     |   | Service      |
+  | Repository |   | Repository  |  | Repository  |   | Repository  |   | Repository   |
+  +-----+------+   +------+------+  +------+------+   +------+------+   +------+------+
+        |                  |                |                  |                  |
+        +------------------+----------------+------------------+------------------+
+                                           |
+                                  +--------v--------+
+                                  |   PostgreSQL    |
+                                  |   (shared DB)   |
+                                  +--------+--------+
+                                           |
+                                  +--------v--------+
+                                  |     Redis       |
+                                  | (cache/queue)   |
+                                  +-----------------+
 ```
 
-### Why Modular Monolith (Not Microservices)
+## New vs Modified Components
 
-| Factor | Modular Monolith | Microservices |
-|--------|-----------------|---------------|
-| 运维复杂度 | 单二进制部署 | 6+ 服务需要 K8s/服务网格 |
-| 团队规模 | 1-3 人可维护 | 每服务至少 2 人 |
-| 数据一致性 | 单库事务，强一致 | 分布式事务，最终一致 |
-| 开发速度 | 模块间直接调用 | 需要定义 API/Proto |
-| V1.0 用户量 | <1000 在线 | 大材小用 |
-| 未来拆分 | 按模块边界拆分即可 | 已经拆好 |
+### 1. 待办中心 -- 全新 `internal/todo` 模块
 
-**关键决策：模块边界即未来微服务边界。** 模块间通过明确的接口通信，禁止直接跨模块访问 Repository。
+**职责：** 聚合多个模块的待办事项，提供统一查询、搜索、限时任务追踪、完成率统计。
 
----
+**需要创建的文件：**
 
-## Component Boundaries
+| 文件 | 职责 |
+|------|------|
+| `internal/todo/model.go` | TodoItem 数据模型（通用待办事项表）|
+| `internal/todo/dto.go` | 请求/响应 DTO |
+| `internal/todo/repository.go` | 数据访问层 |
+| `internal/todo/service.go` | 业务逻辑（聚合、搜索、限时任务计算）|
+| `internal/todo/handler.go` | HTTP 端点 |
+| `internal/todo/scheduler.go` | 限时任务生成定时任务 |
 
-### Module Dependency Graph
+**新增数据模型：**
+
+```go
+// TodoItem 通用待办事项（聚合多个模块来源）
+type TodoItem struct {
+    model.BaseModel
+    Source      string     `gorm:"column:source;type:varchar(30);not null;index;comment:来源模块"` // contract/tax/si/employee/attendance/approval
+    SourceID    int64      `gorm:"column:source_id;index;comment:关联来源记录ID"`
+    Title       string     `gorm:"column:title;type:varchar(200);not null;comment:待办标题"`
+    Initiator   string     `gorm:"column:initiator;type:varchar(50);comment:发起人"`
+    Status      string     `gorm:"column:status;type:varchar(20);not null;default:pending;comment:pending/completed/terminated"`
+    Priority    int        `gorm:"column:priority;default:0;comment:优先级（0普通/1置顶）"`
+    IsTimed     bool       `gorm:"column:is_timed;default:false;comment:是否限时任务"`
+    DueDate     *time.Time `gorm:"column:due_date;type:date;comment:截止日期"`
+    CompletedAt *time.Time `gorm:"column:completed_at;comment:完成时间"`
+    ModuleRoute string     `gorm:"column:module_route;type:varchar(100);comment:跳转路由路径"`
+}
+
+// TimedTaskRule 限时任务规则（系统预置）
+type TimedTaskRule struct {
+    model.BaseModel
+    TaskType    string `gorm:"column:task_type;type:varchar(50);not null;uniqueIndex;comment:任务类型"`
+    Name        string `gorm:"column:name;type:varchar(100);not null;comment:任务名称"`
+    CronExpr    string `gorm:"column:cron_expr;type:varchar(50);comment:Cron表达式（生成周期）"`
+    StartOffset int    `gorm:"column:start_offset;comment:开始偏移天数"`
+    DueOffset   int    `gorm:"column:due_offset;comment:截止偏移天数"`
+    IsEnabled   bool   `gorm:"column:is_enabled;default:true;comment:是否启用"`
+}
+```
+
+**与现有模块的集成点：**
+
+待办中心作为聚合层，不直接写入数据，而是通过以下方式收集待办：
+
+1. **各模块主动推送** -- 现有模块在产生待办事项时调用 `todo.Service.CreateItem()`
+2. **定时扫描** -- `todo.Scheduler` 定期扫描各模块数据生成限时任务
+
+**需要修改的现有文件：**
+
+| 文件 | 修改内容 |
+|------|---------|
+| `cmd/server/main.go` | 注册 todo 模块路由、定时任务、AutoMigrate |
+| `internal/socialinsurance/service.go` | 在 `CreateStopReminder` / `CheckPaymentDueReminders` 中同步创建 TodoItem |
+| `internal/tax/service.go` | 在 `CheckDeclarationReminders` 中同步创建 TodoItem |
+| `internal/employee/contract_service.go` | 合同到期前创建 TodoItem |
+| `internal/employee/offboarding_service.go` | 离职审批创建 TodoItem |
+| `internal/dashboard/service.go` | 可选：待办卡片改为从 todo 模块读取 |
+
+**关键架构决策：** 待办中心不替代各模块的 reminder 系统（社保 `Reminder` 表、个税 `TaxReminder` 表保留），而是作为**聚合展示层**统一读取。限时任务（如"3月社保缴费"）由 `todo` 模块的定时任务生成。
+
+**数据流：**
+
+```
+各业务模块业务操作
+    |
+    v
+todo.Service.CreateItem()  -- 创建待办记录
+    |
+    v
+todo_items 表
+    |
+    v
+GET /api/v1/todo  -- 前端查询（搜索/筛选/分页）
+```
+
+### 2. 考勤管理 -- 全新 `internal/attendance` 模块
+
+**职责：** 打卡规则引擎（3种排班模式）、审批流引擎（多类型审批）、出勤月报统计。
+
+**需要创建的文件：**
+
+| 文件 | 职责 |
+|------|------|
+| `internal/attendance/model.go` | AttendanceRule, Shift, Schedule, ClockRecord, Approval, AttendanceMonthly 数据模型 |
+| `internal/attendance/dto.go` | 请求/响应 DTO |
+| `internal/attendance/repository.go` | 数据访问层 |
+| `internal/attendance/rule_engine.go` | 打卡规则引擎（3种模式计算）|
+| `internal/attendance/approval_service.go` | 审批流服务 |
+| `internal/attendance/service.go` | 核心业务逻辑 |
+| `internal/attendance/handler.go` | HTTP 端点 |
+| `internal/attendance/adapter.go` | 跨模块接口定义 |
+
+**新增数据模型：**
+
+```go
+// AttendanceRule 打卡规则（每企业一条）
+type AttendanceRule struct {
+    model.BaseModel
+    Mode         string  `gorm:"column:mode;type:varchar(20);not null;comment:模式（fixed/scheduled/free）"`
+    WorkDays     string  `gorm:"column:work_days;type:varchar(50);comment:上班日（JSON数组，如[1,2,3,4,5]）"`
+    WorkStart    string  `gorm:"column:work_start;type:varchar(5);comment:上班时间（HH:mm）"`
+    WorkEnd      string  `gorm:"column:work_end;type:varchar(5);comment:下班时间（HH:mm）"`
+    Location     string  `gorm:"column:location;type:varchar(200);comment:打卡位置"`
+    ClockMethod  string  `gorm:"column:clock_method;type:varchar(20);default:click;comment:打卡方式（click/photo）"`
+    Holidays     datatypes.JSON `gorm:"column:holidays;type:jsonb;comment:特殊日期（不用打卡的日期）"`
+}
+
+// Shift 班次（排班模式使用）
+type Shift struct {
+    model.BaseModel
+    Name      string `gorm:"column:name;type:varchar(50);not null;comment:班次名称"`
+    WorkStart string `gorm:"column:work_start;type:varchar(5);not null;comment:上班时间"`
+    WorkEnd   string `gorm:"column:work_end;type:varchar(5);not null;comment:下班时间"`
+}
+
+// Schedule 排班记录（排班模式下每个员工每天的班次）
+type Schedule struct {
+    model.BaseModel
+    EmployeeID int64      `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    ShiftID    *int64     `gorm:"column:shift_id;comment:班次ID（null=休息）"`
+    Date       time.Time  `gorm:"column:date;type:date;not null;comment:日期"`
+}
+
+// ClockRecord 打卡记录
+type ClockRecord struct {
+    model.BaseModel
+    EmployeeID int64      `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    ClockTime  time.Time  `gorm:"column:clock_time;not null;comment:打卡时间"`
+    ClockType  string     `gorm:"column:clock_type;type:varchar(10);not null;comment:in/out"`
+    PhotoURL   string     `gorm:"column:photo_url;type:varchar(500);comment:打卡照片"`
+}
+
+// Approval 审批记录（请假/加班/补卡/调班/出差/外出）
+type Approval struct {
+    model.BaseModel
+    EmployeeID     int64          `gorm:"column:employee_id;not null;index;comment:申请员工ID"`
+    ApprovalType   string         `gorm:"column:approval_type;type:varchar(20);not null;index;comment:类型"`
+    StartTime      time.Time      `gorm:"column:start_time;not null;comment:开始时间"`
+    EndTime        time.Time      `gorm:"column:end_time;not null;comment:结束时间"`
+    Duration       float64        `gorm:"column:duration;comment:时长（小时）"`
+    Reason         string         `gorm:"column:reason;type:varchar(500);comment:事由"`
+    LeaveType      string         `gorm:"column:leave_type;type:varchar(20);comment:请假类型（事假/病假/调休/年假/婚假/产假/陪产假）"`
+    Status         string         `gorm:"column:status;type:varchar(20);not null;default:pending;comment:pending/approved/rejected"`
+    ApproverID     *int64         `gorm:"column:approver_id;comment:审批人ID"`
+    ApprovedAt     *time.Time     `gorm:"column:approved_at;comment:审批时间"`
+    AttachmentURLs datatypes.JSON `gorm:"column:attachment_urls;type:jsonb;comment:附件URL列表"`
+}
+
+// AttendanceMonthly 出勤月报（每员工每月汇总）
+type AttendanceMonthly struct {
+    model.BaseModel
+    EmployeeID      int64   `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    Year            int     `gorm:"column:year;not null;comment:年份"`
+    Month           int     `gorm:"column:month;not null;comment:月份"`
+    RequiredDays    float64 `gorm:"column:required_days;comment:应出勤天数"`
+    ActualDays      float64 `gorm:"column:actual_days;comment:实际出勤天数"`
+    OvertimeWeekday float64 `gorm:"column:overtime_weekday;comment:工作日加班（小时）"`
+    OvertimeWeekend float64 `gorm:"column:overtime_weekend;comment:双休日加班（小时）"`
+    OvertimeHoliday float64 `gorm:"column:overtime_holiday;comment:节假日加班（小时）"`
+    AbsentDays      float64 `gorm:"column:absent_days;comment:缺勤天数"`
+}
+```
+
+**与现有模块的集成点：**
+
+| 集成点 | 方向 | 说明 |
+|--------|------|------|
+| attendance -> salary | 审批通过的请假数据流入薪资计算 | `SIDeductionProvider` 模式，attendance 提供 `AttendanceProvider` 接口 |
+| attendance -> salary | 出勤天数影响基本工资计算 | `RequiredDays` / `ActualDays` 影响日薪计算 |
+| attendance -> salary | 加班时长计算加班费 | `OvertimeWeekday/Weekend/Holiday` 三档费率 |
+| employee -> attendance | 员工列表用于排班和打卡 | `EmployeeProvider` 复用现有接口 |
+| attendance -> todo | 审批待办推送到待办中心 | 审批创建时推送 TodoItem |
+
+**关键架构决策 -- 考勤与薪资的关联：**
+
+PRD 定义的薪资算法依赖考勤数据：
+- `计薪天数 = 实际出勤天数 + 法定节假日天数 + 带薪假天数`
+- `病假工资 = 基本工资 * 病假系数`
+- `加班费 = (基本工资 / 应出勤 / 8小时) * 加班时长 * 费率`
+
+建议通过 adapter 接口解耦：
+
+```go
+// attendance/adapter.go -- 考勤模块对外接口
+type AttendanceProvider interface {
+    GetMonthlyAttendance(orgID, employeeID int64, year, month int) (*MonthlyAttendance, error)
+    GetApprovedLeaves(orgID, employeeID int64, year, month int) ([]LeaveRecord, error)
+    GetApprovedOvertime(orgID, employeeID int64, year, month int) ([]OvertimeRecord, error)
+}
+
+type LeaveRecord struct {
+    LeaveType string
+    Duration  float64 // 小时
+    StartTime time.Time
+    EndTime   time.Time
+}
+
+type OvertimeRecord struct {
+    OvertimeType string // weekday/weekend/holiday
+    Duration     float64 // 小时
+}
+```
+
+salary 模块在 `CalculatePayroll` 时通过此接口获取考勤数据，替代现有的 Excel 导入方式。
+
+### 3. 薪资管理增强 -- 扩展 `internal/salary` 模块
+
+**需要新增的文件：**
+
+| 文件 | 职责 |
+|------|------|
+| `internal/salary/salary_adjustment.go` | 调薪/普调模型和逻辑 |
+| `internal/salary/salary_adjustment_dto.go` | 调薪请求/响应 DTO |
+| `internal/salary/salary_adjustment_handler.go` | 调薪 API 端点 |
+| `internal/salary/performance.go` | 绩效系数模型和逻辑 |
+| `internal/salary/dashboard_service.go` | 薪资数据看板 |
+| `internal/salary/dashboard_handler.go` | 看板 API 端点 |
+| `internal/salary/tax_upload.go` | 个税上传解析逻辑 |
+
+**新增数据模型：**
+
+```go
+// SalaryAdjustment 调薪记录
+type SalaryAdjustment struct {
+    model.BaseModel
+    EmployeeID    int64   `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    DepartmentID  *int64  `gorm:"column:department_id;index;comment:部门ID（普调时使用）"`
+    Type          string  `gorm:"column:type;type:varchar(20);not null;comment:individual/mass"`
+    EffectiveDate string  `gorm:"column:effective_date;type:varchar(7);not null;comment:生效月份（YYYY-MM）"`
+    // 调整项（JSON 存储各薪资项调整值）
+    Adjustments   datatypes.JSON `gorm:"column:adjustments;type:jsonb;comment:调整项明细"`
+    Status        string  `gorm:"column:status;type:varchar(20);not null;default:pending;comment:pending/active/expired"`
+}
+
+// PerformanceCoefficient 绩效系数
+type PerformanceCoefficient struct {
+    model.BaseModel
+    EmployeeID int64    `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    Year       int      `gorm:"column:year;not null;comment:年份"`
+    Month      int      `gorm:"column:month;not null;comment:月份"`
+    Coefficient float64 `gorm:"column:coefficient;type:decimal(5,4);not null;default:1.0;comment:绩效系数（0.0-1.0）"`
+}
+```
+
+**需要修改的现有文件：**
+
+| 文件 | 修改内容 |
+|------|---------|
+| `internal/salary/calculator.go` | 新增病假工资计算、绩效系数计算、加班费计算函数 |
+| `internal/salary/service.go` | `CalculatePayroll` 方法增强：集成考勤数据、绩效系数、调薪生效期 |
+| `internal/salary/handler.go` | 新增调薪/普调/绩效系数/看板/个税上传/工资条推送增强端点 |
+| `internal/salary/model.go` | `PayrollRecord` 增加 `gp_fund_deduction`（公积金扣除）字段 |
+| `internal/salary/adapter.go` | 新增 `AttendanceProvider` 接口 |
+| `internal/salary/dto.go` | 新增调薪/看板相关 DTO |
+
+**薪资计算增强数据流：**
+
+```
+salary.Service.CalculatePayroll(orgID, year, month)
+    |
+    |-- 1. 获取在职员工列表（现有 EmployeeProvider）
+    |-- 2. 获取员工薪资项（现有 repo）
+    |-- 3. 获取调薪记录（新增，按生效期取最新）
+    |-- 4. 获取绩效系数（新增）
+    |-- 5. 获取考勤月报（新增 AttendanceProvider）
+    |       |-- 出勤天数 -> 计薪天数计算
+    |       |-- 病假时长 -> 病假工资计算
+    |       |-- 加班时长 -> 加班费计算
+    |-- 6. 计算基本工资 = 基本工资/应出勤*计薪天数 + 病假工资
+    |-- 7. 计算绩效工资 = 绩效工资*绩效系数
+    |-- 8. 获取社保扣款（现有 SIProvider）
+    |-- 9. 计算个税（现有 TaxProvider）
+    |-- 10. 汇总 = 税前 - 社保 - 公积金 - 个税 - 其他扣款 = 实发
+    |-- 11. 写入 PayrollRecord + PayrollItem
+```
+
+### 4. 社保公积金增强 -- 扩展 `internal/socialinsurance` 模块
+
+**需要修改/新增的文件：**
+
+| 文件 | 职责 |
+|------|------|
+| `internal/socialinsurance/model.go` | `SocialInsuranceRecord` 增加缴费状态字段 |
+| `internal/socialinsurance/payment_service.go` | 缴费渠道管理、欠缴状态更新逻辑 |
+| `internal/socialinsurance/dashboard_service.go` | 社保数据看板 |
+| `internal/socialinsurance/dashboard_handler.go` | 看板 API 端点 |
+| `internal/socialinsurance/dto.go` | 新增缴费/看板 DTO |
+
+**现有模型变更：**
+
+`SocialInsuranceRecord` 状态从 3 种扩展为 5 种：
+
+```go
+// 现有
+SIStatusPending = "pending"  // 待参保
+SIStatusActive  = "active"   // 参保中
+SIStatusStopped = "stopped"  // 停缴
+
+// 新增
+SIStatusArrears    = "arrears"    // 欠缴 -- 上月有应缴未缴，当月25日后
+SIStatusTransferred = "transferred" // 已转出 -- 完成减员转出
+```
+
+增加缴费相关字段：
+
+```go
+// SocialInsuranceRecord 新增字段
+PaymentStatus  string  `gorm:"column:payment_status;type:varchar(20);default:unpaid;comment:缴费状态（unpaid/paid）"`
+PaymentMonth   string  `gorm:"column:payment_month;type:varchar(7);comment:最近缴费月份"`
+LastPaidAt      *time.Time `gorm:"column:last_paid_at;comment:最近缴费时间"`
+```
+
+**需要修改的现有文件：**
+
+| 文件 | 修改内容 |
+|------|---------|
+| `internal/socialinsurance/model.go` | 增加 `PaymentStatus`, `PaymentMonth`, `LastPaidAt` 字段，新增状态常量 |
+| `internal/socialinsurance/service.go` | 增加缴费渠道方法、欠缴检测逻辑、增减员优化 |
+| `internal/socialinsurance/handler.go` | 新增缴费/看板端点 |
+| `internal/socialinsurance/scheduler.go` | 增加欠缴状态自动更新定时任务 |
+| `internal/socialinsurance/employee_adapter.go` | 增加按部门查询员工的方法 |
+
+**社保状态机变更：**
+
+```
+现有：
+pending -> active -> stopped
+
+增强：
+pending -> active -> stopped (停缴)
+                 -> arrears (欠缴) -> active (补缴后)
+                 -> transferred (已转出)
+
+active 正常流转:
+active + 当月15日前未缴 -> active (待缴，提示)
+active + 上月欠缴 + 当月25日后 -> arrears
+active + 离职减员完成 -> transferred
+```
+
+### 5. 员工管理增强 -- 扩展 `internal/employee` 模块
+
+**需要新增的文件：**
+
+| 文件 | 职责 |
+|------|------|
+| `internal/employee/department_model.go` | 部门/组织架构模型 |
+| `internal/employee/department_repository.go` | 部门数据访问 |
+| `internal/employee/department_service.go` | 组织架构业务逻辑 |
+| `internal/employee/department_handler.go` | 组织架构 API |
+| `internal/employee/registration_model.go` | 员工信息登记模型 |
+| `internal/employee/registration_service.go` | 员工信息登记逻辑 |
+| `internal/employee/registration_handler.go` | 信息登记 API |
+| `internal/employee/dashboard_service.go` | 员工数据看板 |
+| `internal/employee/dashboard_handler.go` | 看板 API |
+
+**新增数据模型：**
+
+```go
+// Department 部门
+type Department struct {
+    model.BaseModel
+    Name     string  `gorm:"column:name;type:varchar(100);not null;comment:部门名称"`
+    ParentID *int64  `gorm:"column:parent_id;index;comment:上级部门ID（null=顶级）"`
+    SortOrder int    `gorm:"column:sort_order;default:0;comment:排序"`
+}
+
+// EmployeeRegistration 员工信息登记
+type EmployeeRegistration struct {
+    model.BaseModel
+    EmployeeID        int64          `gorm:"column:employee_id;not null;index;comment:员工ID"`
+    Status            string         `gorm:"column:status;type:varchar(20);not null;default:draft;comment:draft/submitted"`
+    PhoneEncrypted    string         `gorm:"column:phone_encrypted;type:varchar(200);comment:加密手机号"`
+    PhoneHash         string         `gorm:"column:phone_hash;type:varchar(64);index;comment:手机号哈希"`
+    Address           string         `gorm:"column:address;type:varchar(500);comment:居住地址"`
+    IDCardFrontURL    string         `gorm:"column:id_card_front_url;type:varchar(500);comment:身份证正面"`
+    IDCardBackURL     string         `gorm:"column:id_card_back_url;type:varchar(500);comment:身份证背面"`
+    BankCardFrontURL  string         `gorm:"column:bank_card_front_url;type:varchar(500);comment:银行卡正面"`
+    BankCardBackURL   string         `gorm:"column:bank_card_back_url;type:varchar(500);comment:银行卡背面"`
+    EducationCertURLs datatypes.JSON `gorm:"column:education_cert_urls;type:jsonb;comment:学历证书URL列表"`
+    EmergencyContact  string         `gorm:"column:emergency_contact;type:varchar(50);comment:紧急联系人"`
+    EmergencyRelation string         `gorm:"column:emergency_relation;type:varchar(20);comment:紧急联系人关系"`
+    EmergencyPhoneEnc string         `gorm:"column:emergency_phone_enc;type:varchar(200);comment:加密紧急联系人电话"`
+    EmergencyPhoneHsh string         `gorm:"column:emergency_phone_hsh;type:varchar(64);comment:紧急联系人电话哈希"`
+}
+```
+
+**需要修改的现有文件：**
+
+| 文件 | 修改内容 |
+|------|---------|
+| `internal/employee/model.go` | `Employee` 增加 `DepartmentID` 字段 |
+| `internal/employee/dto.go` | 增加 `DepartmentID` 相关参数 |
+| `internal/employee/repository.go` | 增加按部门筛选查询 |
+| `internal/employee/offboarding_service.go` | 离职联动增强：完成离职后触发社保减员提醒 |
+| `cmd/server/main.go` | 注册新路由、AutoMigrate 新模型 |
+
+**员工模型变更：**
+
+```go
+// Employee 新增字段
+DepartmentID *int64 `gorm:"column:department_id;index;comment:所属部门ID" json:"department_id"`
+```
+
+## Component Boundaries Summary
+
+### v1.3 完整模块依赖图
 
 ```
                     +-----------+
-                    |   user    |  用户/组织/权限
-                    | (user/org)|
+                    |   user    |
                     +-----+-----+
                           |
                +----------+----------+
                |                     |
         +------v------+       +------v------+
-        |  employee   |       |notification |
-        | (员工管理)   |       | (通知/消息)  |
-        +------+------+       +-------------+
-               |
-       +-------+-------+
-       |       |       |
-  +----v--+ +--v---+ +-v--------+
-  |social | |payroll| |  tax     |
-  |(社保) | |(工资) | | (个税)   |
-  +----+--+ +--+---+ +----+-----+
-       |       |           |
-       +-------+-----------+
+        |  employee   |       |    todo     | <-- NEW
+        |  (增强)      |       |  (待办中心)  |
+        +------+------+       +------+------+
+               |                     |
+       +-------+-------+            |
+       |       |       |            |
+  +----v--+ +--v---+ +-v--------+  |
+  |social | |salary| |attendance|  |
+  |(增强)  | |(增强) | | (NEW)    |  |
+  +----+--+ +--+---+ +----+-----+  |
+       |       |           |        |
+       +-------+-----------+--------+
                |
         +------v------+
         |   finance   |
-        | (财务/记账)  |
         +-------------+
 ```
 
-### Component Definitions
+### 跨模块依赖接口清单
 
-| Component | Responsibility | Owns Tables | Communicates With |
-|-----------|---------------|-------------|-------------------|
-| **user** | 认证、用户管理、组织管理、RBAC 权限 | users, organizations | 所有模块（提供当前用户/组织上下文） |
-| **employee** | 员工入职、离职、档案、合同、银行账户 | employees, contracts, employee_bank_accounts, resignation_checklists, attachments | user (获取组织信息), social (离职触发社保停缴), payroll (薪资结构) |
-| **social** | 社保参保、停缴、变更、政策匹配、缴费提醒 | social_insurance, social_history, social_policies | employee (获取员工信息), payroll (提供社保扣款数据), notification (到期提醒) |
-| **payroll** | 工资表创建、核算、发放、工资单推送 | salary_tables, salary_records, salary_payments | employee (员工列表), social (社保扣款), tax (个税扣款), finance (发放生成凭证) |
-| **tax** | 个税计算、专项附加扣除、申报提醒、增值税/企业所得税 | tax_records, special_deductions, special_deduction_details | employee (员工信息), payroll (工资数据), notification (申报提醒) |
-| **finance** | 会计科目、凭证、账簿、发票、费用报销、会计期间、报表 | accounting_accounts, accounting_vouchers, voucher_entries, accounting_periods, invoices, expense_claims | payroll (工资发放凭证), social (社保缴费凭证), tax (税费凭证), employee (报销人信息) |
-| **notification** | 站内消息、短信、微信推送 | notifications, notification_templates | 所有模块（接收通知事件） |
-| **common** | 中间件、加密、统一响应、工具函数 | audit_logs | 所有模块（横切关注点） |
+| 接口 | 定义位置 | 实现位置 | 调用方 |
+|------|---------|---------|--------|
+| `EmployeeProvider` | `salary/adapter.go` | `salary/employee_adapter.go` | salary |
+| `TaxProvider` | `salary/adapter.go` | `salary/tax_adapter.go` | salary |
+| `SIDeductionProvider` | `salary/adapter.go` | `salary/si_adapter.go` | salary |
+| `BaseAdjustmentProvider` | `salary/adapter.go` | `socialinsurance/service.go` | salary |
+| `SocialInsuranceEventHandler` | `employee/offboarding_service.go` | `socialinsurance/service.go` | employee |
+| `EmployeeQuerier` | `socialinsurance/employee_adapter.go` | `socialinsurance/employee_adapter.go` | socialinsurance |
+| **`AttendanceProvider`** (NEW) | `salary/adapter.go` | `attendance/adapter_impl.go` | salary |
+| **`TodoCreator`** (NEW) | `todo/adapter.go` | `todo/service.go` | 各业务模块 |
+| **`DepartmentProvider`** (NEW) | `salary/adapter.go` | `employee/department_service.go` | salary (普调按部门) |
 
-### Module Communication Rules
+## Data Flow for Key v1.3 Scenarios
 
-**严格分层通信，禁止跨层访问：**
-
-```
-Module A Handler  --> Module A Service  --> Module A Repository
-                                          |
-                              Module B Service (通过接口调用)
-                                          |
-                                    Module B Repository
-```
-
-**规则：**
-
-1. **Handler 只调用本模块 Service** -- Handler 不直接调用其他模块的 Service 或 Repository
-2. **Service 可调用其他模块 Service（通过接口）** -- 跨模块调用走 Service 层接口，不直接访问 Repository
-3. **Repository 只操作本模块表** -- 禁止跨模块 JOIN（除特定读场景外）
-4. **事件通知走 notification 模块** -- 模块间异步通知通过 notification.Service 统一调度
-
-**跨模块调用示例：**
-
-```go
-// payroll/service.go -- 工资核算时需要社保数据
-type PayrollService struct {
-    socialService   SocialServiceInterface  // 接口，不是具体实现
-    taxService      TaxServiceInterface
-    employeeService EmployeeServiceInterface
-}
-
-func (s *PayrollService) CalculateSalary(ctx context.Context, tableID int64) error {
-    // 通过接口调用 social 模块
-    socialRecords, err := s.socialService.GetByEmployeeIDs(ctx, employeeIDs)
-    // ...
-}
-```
-
-**模块间事件通知模式：**
-
-```go
-// 定义事件接口（common 层）
-type Event struct {
-    Type    string
-    OrgID   int64
-    Payload json.RawMessage
-}
-
-type EventBus interface {
-    Publish(ctx context.Context, event Event) error
-    Subscribe(eventType string, handler EventHandler)
-}
-
-// 发布端：employee 模块
-func (s *EmployeeService) Resign(ctx context.Context, id int64) error {
-    // ... 业务逻辑
-    s.eventBus.Publish(ctx, Event{
-        Type:    "employee.resigned",
-        OrgID:   orgID,
-        Payload: payload,
-    })
-}
-
-// 订阅端：social 模块
-eventBus.Subscribe("employee.resigned", func(ctx context.Context, e Event) {
-    // 触发社保停缴提醒
-})
-```
-
-V1.0 EventBus 使用**进程内同步调用**（直接函数调用），不引入消息队列。好处是简单可靠，坏处是耦合略高。当 V2.0 需要拆分微服务时，替换为 Redis Stream 或 RabbitMQ 实现。
-
----
-
-## Data Flow
-
-### 1. 核心入职流程
+### 场景 1：待办中心 -- 限时任务生成
 
 ```
-老板 APP             Handler              Service              Repository          外部服务
-   |                    |                    |                    |                    |
-   |-- POST /employees->|                    |                    |                    |
-   |                    |-- CreateEmployee()->|                    |                    |
-   |                    |                    |-- 生成邀请码         |                    |
-   |                    |                    |-- Insert(employee)-->|                    |
-   |                    |                    |                    |<-- id ----         |
-   |                    |                    |-- 创建合同草稿       |                    |
-   |                    |                    |-- Insert(contract)-->|                    |
-   |                    |                    |-- 发送通知---------->|--------------------|-->短信/推送
-   |                    |                    |-- 发布事件(resigned) |                    |
-   |<-- 200 OK ---------|                    |                    |                    |
+gocron 定时任务 (每日 08:00)
+    |
+    v
+todo.Scheduler.CheckTimedTasks()
+    |
+    |-- 扫描 TimedTaskRule 配置
+    |-- 检查是否满足生成条件（如每月1日生成社保缴费任务）
+    |-- 查询各模块数据确认是否需要生成
+    |       |-- socialinsurance: 查询 active 记录 -> 社保缴费任务
+    |       |-- tax: 查询当月申报状态 -> 个税申报任务
+    |       |-- employee/contract: 查询到期合同 -> 合同续签任务
+    |-- todo.Repository.BatchCreate(todoItems)
 ```
 
-### 2. 工资核算流程（跨模块数据聚合）
+### 场景 2：考勤 -> 薪资联动
 
 ```
-payroll.Service.CalculateSalary(orgID, period)
-     |
-     |-- 1. employee.Service.ListActive(orgID)         --> 获取在职员工列表
-     |-- 2. social.Service.GetDeductions(orgID, emps)  --> 获取社保扣款数据
-     |-- 3. tax.Service.Calculate(orgID, emps, period) --> 计算个税
-     |-- 4. 汇总: 基本工资 + 绩效 + 奖金 - 社保 - 个税 - 其他扣款 = 实发
-     |-- 5. payroll.Repository.BatchInsert(records)    --> 批量写入工资明细
-     |-- 6. notification.Service.Notify payslip        --> 推送工资单
+attendance.ApprovalService.Approve(approvalID)
+    |
+    |-- 更新 Approval 状态 = approved
+    |-- 如果是请假审批:
+    |       |-- 记录请假时长到 AttendanceMonthly
+    |-- 如果是加班审批:
+    |       |-- 记录加班时长到 AttendanceMonthly
+    |-- 触发异步任务: 更新月报统计
+
+salary.Service.CalculatePayroll(orgID, year, month)
+    |
+    |-- attendanceProvider.GetMonthlyAttendance()
+    |       |-- 获取 actualDays, requiredDays, overtime
+    |-- attendanceProvider.GetApprovedLeaves()
+    |       |-- 获取病假/事假/带薪假明细
+    |-- 计算基本工资 (含病假系数)
+    |-- 计算加班费 (三档费率)
+    |-- 计算绩效工资 * 绩效系数
+    |-- ... (其余现有逻辑)
 ```
 
-### 3. 费用报销审批到自动凭证（跨模块联动）
+### 场景 3：离职联动（增强）
 
 ```
-employee(MiniProg)      expense_claim         finance
-      |                     |                    |
-      |-- 提交报销单-------->|                    |
-      |                     |-- 状态=PENDING     |
-      |                     |                    |
-boss(APP)                   |                    |
-      |-- 审批通过---------->|                    |
-      |                     |-- 更新状态=APPROVED|
-      |                     |-- 触发联动事件----->|
-      |                     |                    |-- 生成费用凭证
-      |                     |                    |-- 凭证：借 管理费用
-      |                     |                    |-- 凭证：贷 银行存款/现金
-      |                     |                    |-- 更新 expense_claim.voucher_id
+employee.OffboardingService.CompleteOffboarding()
+    |
+    |-- 更新 Offboarding 状态 = completed
+    |-- 更新 Employee 状态 = resigned
+    |
+    |-- siHandler.OnEmployeeResigned()  (现有)
+    |       |-- socialinsurance: 创建停缴提醒
+    |       |-- todo: 创建"社保减员"待办
+    |
+    |-- todoCreator.CreateItem("离职交接", ...)  (新增)
+    |
+    |-- attendance: 标记员工排班为无效 (新增)
 ```
 
-### 4. 多租户数据隔离流
+### 场景 4：调薪生效期到薪资计算
 
 ```
-HTTP Request
-     |
-     v
-Auth Middleware
-     |-- JWT 解析 --> user_id, org_id, role
-     |-- 注入到 Context: ctx = context.WithValue(ctx, "org_id", orgID)
-     |
-     v
-Handler
-     |-- 从 Context 获取 orgID
-     |-- 传递给 Service
-     |
-     v
-Service
-     |-- 业务逻辑（orgID 作为参数传递）
-     |
-     v
-Repository
-     |-- WHERE org_id = ? （所有查询自动追加租户条件）
-     |-- 使用 Scope/Hook 自动注入 org_id
+salary.SalaryAdjustmentService.CreateAdjustment()
+    |
+    |-- 创建 SalaryAdjustment 记录
+    |-- 设置 effective_date
+    |-- 可选: todoCreator.CreateItem("调薪生效提醒")
+
+salary.Service.CalculatePayroll(orgID, year, month)
+    |
+    |-- 查询当月生效的调薪记录
+    |-- 合并调薪数据到薪资项:
+    |       |-- 基本工资: 取调薪后的值
+    |       |-- 补贴/奖金/年终奖: 取调薪中的值
+    |       |-- 扣款: 取调薪中的值
+    |-- 正常核算流程
 ```
 
-**关键设计：org_id 透传链路。** 从中间件解析 JWT 获取 org_id，通过 Context 传递到 Handler -> Service -> Repository 每一层。Repository 层使用 Scope（GORM）或 Hook（Ent）自动追加 `WHERE org_id = ?` 条件，防止越权访问。
+## Build Order for v1.3
 
----
+基于模块依赖关系和功能耦合度，建议以下构建顺序：
 
-## Patterns to Follow
+### Phase A: 员工管理增强（部门 + 信息登记 + 看板）
 
-### Pattern 1: Module Interface Contract（模块接口契约）
+**先行的原因：**
+- 部门是薪资普调和社保查询的基础维度
+- 信息登记是员工数据的补充，不影响其他模块
+- 看板为独立查询，无写依赖
 
-**What:** 每个模块对外暴露 Service 接口（interface），内部实现（struct）不导出。
+**依赖关系：** 仅依赖现有 employee 模块，不依赖其他新模块。
 
-**When:** 所有模块间调用。
+### Phase B: 考勤管理（打卡规则 + 审批流 + 月报）
 
-**Example:**
+**第二步的原因：**
+- 考勤是薪资计算增强的上游数据源
+- 审批流产生的请假/加班数据直接影响薪资
+- 打卡规则引擎独立性强，可独立开发
 
-```go
-// social/service.go -- 定义接口
-type SocialService interface {
-    GetByEmployeeIDs(ctx context.Context, employeeIDs []int64) ([]SocialInsurance, error)
-    GetDeductions(ctx context.Context, orgID int64, period string) ([]Deduction, error)
-    SuspendByEmployee(ctx context.Context, employeeID int64) error
-}
+**依赖关系：** 依赖 employee（员工列表）、Phase A（部门）。
 
-// social/service_impl.go -- 内部实现
-type socialService struct {
-    repo repository.SocialRepository
-}
+### Phase C: 薪资增强（调薪/普调 + 绩效系数 + 个税上传 + 看板 + 加班费/病假）
 
-func NewSocialService(repo repository.SocialRepository) SocialService {
-    return &socialService{repo: repo}
-}
-```
+**第三步的原因：**
+- 需要考勤模块提供出勤数据
+- 需要部门模型支持普调
+- 是 v1.3 最复杂的跨模块聚合点
 
-**好处：** 可测试（mock 接口）、可替换（换实现不影响调用方）、为未来拆微服务预留。
+**依赖关系：** 依赖 Phase A（部门）、Phase B（考勤数据）。
 
-### Pattern 2: Transaction Script（事务脚本）
+### Phase D: 社保增强（缴费状态 + 增减员优化 + 看板）
 
-**What:** 复杂业务操作封装在 Service 层的单个方法中，使用数据库事务保障一致性。
+**可与 Phase C 并行的原因：**
+- 社保状态管理相对独立
+- 与薪资的集成点（社保扣款）已存在
+- 增减员优化是现有功能的增强
 
-**When:** 跨表写操作（如入职 = 创建员工 + 创建合同 + 创建社保记录）。
+**依赖关系：** 依赖 employee（增减员联动）。
 
-**Example:**
+### Phase E: 待办中心（事项聚合 + 限时任务 + 完成率）
 
-```go
-func (s *employeeService) Onboard(ctx context.Context, req OnboardRequest) (*Employee, error) {
-    tx, err := s.db.BeginTx(ctx, nil)
-    if err != nil {
-        return nil, err
-    }
-    defer tx.Rollback()
+**最后构建的原因：**
+- 待办中心是聚合展示层，需要各模块先实现待办生成逻辑
+- 限时任务规则依赖社保/个税/合同模块的数据
+- 各模块先完成核心功能，再接入待办推送
 
-    // 1. 创建员工
-    emp, err := s.repo.CreateWithTx(tx, employee)
-    // 2. 创建合同
-    contract, err := s.contractRepo.CreateWithTx(tx, contract)
-    // 3. 初始化社保记录（如需）
-    if req.NeedSocial {
-        _, err = s.socialRepo.CreateWithTx(tx, socialRecord)
-    }
-
-    if err := tx.Commit(); err != nil {
-        return nil, err
-    }
-    return emp, nil
-}
-```
-
-### Pattern 3: Encrypted Field（加密字段双列模式）
-
-**What:** 敏感字段存储两列：加密值（用于展示）+ 哈希值（用于查找）。
-
-**When:** 手机号、身份证号、银行账号等 PII 数据。
-
-**Example:**
-
-```go
-// common/crypto/field.go
-type EncryptedField struct {
-    Encrypted string // AES-256-GCM 加密值，用于展示时解密
-    Hash      string // SHA-256 哈希值，用于 WHERE 精确查找
-}
-
-func EncryptField(plaintext string, key []byte) (*EncryptedField, error) {
-    encrypted, err := aes256gcm.Encrypt(plaintext, key)
-    hash := sha256.Sum256([]byte(plaintext))
-    return &EncryptedField{
-        Encrypted: encrypted,
-        Hash:      hex.EncodeToString(hash[:]),
-    }, err
-}
-
-// Repository 层查找
-func (r *employeeRepo) FindByPhone(ctx context.Context, phone string) (*Employee, error) {
-    hash := crypto.HashSHA256(phone)
-    return r.db.Where("phone_hash = ? AND org_id = ?", hash, getOrgID(ctx)).First(&Employee{}).Error
-}
-```
-
-### Pattern 4: Soft Delete with Partial Unique Index
-
-**What:** 软删除通过 `deleted_at` 字段实现，唯一约束使用 `WHERE deleted_at IS NULL` 条件。
-
-**When:** 所有业务实体（员工、合同、工资表等）。
-
-**Example:**
-
-```sql
--- 唯一约束排除已软删除记录
-CREATE UNIQUE INDEX idx_employees_org_invite
-    ON employees(org_id, invite_code)
-    WHERE deleted_at IS NULL;
-
-CREATE UNIQUE INDEX idx_org_credit_code
-    ON organizations(credit_code)
-    WHERE deleted_at IS NULL;
-```
-
-```go
-// Repository 层统一 Scope
-func NotDeleted(db *gorm.DB) *gorm.DB {
-    return db.Where("deleted_at IS NULL")
-}
-
-func (r *employeeRepo) List(ctx context.Context, orgID int64) ([]Employee, error) {
-    var employees []Employee
-    err := r.db.Scopes(NotDeleted).
-        Where("org_id = ?", orgID).
-        Find(&employees).Error
-    return employees, err
-}
-```
-
-### Pattern 5: Tenant-Scoped Query（租户隔离 Scope）
-
-**What:** Repository 层所有查询自动追加 `org_id` 条件。
-
-**When:** 所有业务模块的数据访问。
-
-**Example:**
-
-```go
-func TenantScope(orgID int64) func(db *gorm.DB) *gorm.DB {
-    return func(db *gorm.DB) *gorm.DB {
-        return db.Where("org_id = ?", orgID)
-    }
-}
-
-// 使用
-db.Scopes(TenantScope(orgID), NotDeleted).Find(&employees)
-```
-
-### Pattern 6: Audit Log Middleware（审计日志中间件）
-
-**What:** 通过 Gin 中间件自动记录所有写操作的审计日志。
-
-**When:** 所有 POST/PUT/DELETE 请求。
-
-```go
-func AuditLog(logger *AuditLogger) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        if c.Request.Method == "GET" {
-            c.Next()
-            return
-        }
-        start := time.Now()
-        c.Next()
-        logger.Record(AuditEntry{
-            UserID:    GetUserID(c),
-            OrgID:     GetOrgID(c),
-            Module:    getModuleFromPath(c.Request.URL.Path),
-            Action:    c.Request.Method,
-            TargetID:  c.Param("id"),
-            Detail:    fmt.Sprintf("status=%d duration=%v", c.Writer.Status(), time.Since(start)),
-            IPAddress: c.ClientIP(),
-        })
-    }
-}
-```
-
-### Pattern 7: Domain Event for Cross-Module Triggers
-
-**What:** 模块间通过事件解耦，避免循环依赖。
-
-**When:** 一个模块的业务操作需要触发其他模块的副作用。
-
-**V1.0 事件清单：**
-
-| 事件 | 发布模块 | 订阅模块 | 触发动作 |
-|------|---------|---------|---------|
-| `employee.onboarded` | employee | social | 提醒办理社保参保 |
-| `employee.resigned` | employee | social | 触发社保停缴提醒 |
-| `employee.resigned` | employee | notification | 通知老板完成交接 |
-| `payroll.confirmed` | payroll | finance | 生成工资发放凭证 |
-| `payroll.confirmed` | payroll | notification | 推送工资单给员工 |
-| `social.payment_confirmed` | social | finance | 生成社保缴费凭证 |
-| `social.due_soon` | social | notification | 社保到期提醒 |
-| `tax.calculated` | tax | payroll | 返回个税扣款数据 |
-| `tax.due_soon` | tax | notification | 个税申报提醒 |
-| `expense.approved` | finance | finance | 自动生成费用凭证 |
-| `period.closed` | finance | finance | 生成财务报表快照 |
-
----
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Shared Repository Access（跨模块直接访问 Repository）
-
-**What:** 模块 A 直接 import 模块 B 的 Repository。
-**Why bad:** 破坏模块边界，耦合数据模型，拆分时无法独立。
-**Instead:** 通过模块 B 的 Service 接口调用。如果需要跨模块读数据且性能敏感，可在 Service 层提供专门的查询方法。
-
-### Anti-Pattern 2: God Service（巨型 Service）
-
-**What:** 一个 Service 文件超过 800 行，包含所有业务逻辑。
-**Why bad:** 难以维护和测试，违反单一职责。
-**Instead:** 按子领域拆分 Service 文件。例如 payroll 模块拆分为 `salary_service.go`（工资表管理）、`payslip_service.go`（工资单生成/推送）、`payment_service.go`（发放记录管理）。
-
-### Anti-Pattern 3: Business Logic in Handler
-
-**What:** Handler 层包含业务判断逻辑（if/else、状态转换）。
-**Why bad:** 无法复用，无法单元测试。
-**Instead:** Handler 只做参数解析/校验 + 调用 Service + 返回响应。
-
-### Anti-Pattern 4: Distributed Transaction Prematurely
-
-**What:** 在 V1.0 引入分布式事务（Saga、TCC 等）。
-**Why bad:** 单库事务足够，分布式事务增加 10x 复杂度。
-**Instead:** V1.0 使用 PostgreSQL 本地事务。跨模块写操作在同一事务中完成。
-
-### Anti-Pattern 5: org_id in JWT Only, Not Verified at DB Level
-
-**What:** 只依赖中间件从 JWT 解析 org_id，不在数据库查询层强制校验。
-**Why bad:** 任何一个遗漏 org_id 过滤的查询就是数据泄露。
-**Instead:** Repository 层使用 TenantScope 自动注入，同时考虑 PostgreSQL RLS（Row Level Security）作为防御层。
-
-### Anti-Pattern 6: Over-Abstracted Event System
-
-**What:** V1.0 就引入 Kafka/RabbitMQ 做事件驱动。
-**Why bad:** 运维成本激增，对 <1000 用户无意义。
-**Instead:** V1.0 使用进程内同步事件分发（函数调用），接口抽象好，V2.0 按需替换。
-
----
-
-## Scalability Considerations
-
-| Concern | At 100 users (V1.0) | At 10K users (V2.0) | At 100K+ users (V3.0) |
-|---------|---------------------|---------------------|----------------------|
-| **部署** | 单 ECS 实例 + Docker | 多实例 + 负载均衡 | K8s + HPA 自动伸缩 |
-| **数据库** | 单 RDS PostgreSQL | 读写分离 + 连接池优化 | 分库（按模块拆）+ 读写分离 |
-| **缓存** | Redis 单实例 | Redis Sentinel | Redis Cluster |
-| **文件存储** | 阿里云 OSS | OSS + CDN | OSS + CDN + 图片处理 |
-| **多租户** | 逻辑隔离（org_id） | 逻辑隔离 + RLS | 评估 Schema 隔离 |
-| **模块通信** | 进程内函数调用 | Redis Stream | 消息队列（RabbitMQ/Kafka） |
-| **搜索** | SQL LIKE | PostgreSQL Full-Text | Elasticsearch |
-| **监控** | 日志 + Sentry | Prometheus + Grafana | 全链路 APM |
-
----
-
-## Build Order (Recommended Implementation Sequence)
-
-基于模块依赖关系和业务优先级，建议以下构建顺序：
-
-### Phase 0: Foundation (Week 1-2)
-
-```
-搭建基础框架，所有后续模块的基石。
-```
-
-| 组件 | 内容 | 原因 |
-|------|------|------|
-| 项目脚手架 | cmd/server/main.go, internal/common/, pkg/ | 所有模块的容器 |
-| common/middleware | Auth(JWT), RateLimit, CORS, AuditLog, TenantScope | 横切关注点，每个 API 都需要 |
-| common/response | 统一响应格式 (success/error/meta) | API 契约 |
-| common/crypto | AES-256-GCM 加解密, SHA-256 哈希, 脱敏 | 敏感数据保护 |
-| pkg/jwt | JWT 生成/验证/刷新 | 认证基础 |
-| pkg/sms | 阿里云短信客户端 | 登录验证码 |
-| pkg/oss | 阿里云 OSS 客户端 | 文件上传/下载 |
-| PostgreSQL | 初始迁移、连接池、GORM/Ent 配置 | 数据层 |
-| Redis | 连接配置、Session 存储 | 缓存层 |
-| CI/CD | GitHub Actions 构建流水线 | 自动化 |
-
-**交付物：** 可运行的空项目框架 + 健康检查 API。
-
-### Phase 1: User & Organization Module (Week 2-3)
-
-```
-user 模块是所有模块的依赖基础，必须最先完成。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 用户注册/登录 | 手机号验证码登录、JWT 签发 | pkg/sms, pkg/jwt, Redis |
-| 企业信息管理 | 企业创建、信息编辑、行业/城市选择 | PostgreSQL |
-| RBAC 权限 | OWNER/ADMIN/MEMBER 三级权限中间件 | common/middleware |
-| Token 管理 | Access/Refresh Token 轮换、Redis 黑名单 | Redis |
-| 审计日志 | 所有写操作自动记录 | common/middleware |
-
-**交付物：** 用户可通过手机号登录、创建/管理企业、分配角色。
-
-**依赖关系：** 无外部模块依赖（仅依赖 common/pkg）。
-
-### Phase 2: Employee Module (Week 3-5)
-
-```
-员工管理是核心实体，social/payroll/tax 都依赖员工数据。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 员工入职 | 创建员工档案、生成邀请码 | user (org上下文) |
-| 员工信息编辑 | 个人信息、岗位、薪资结构 | common/crypto (加密) |
-| 合同管理 | 合同创建、PDF 模板生成、签署状态 | pkg/oss (文件存储) |
-| 员工离职 | 离职审批、交接清单生成 | notification (提醒) |
-| 员工搜索 | 按姓名/岗位搜索、导出 Excel | PostgreSQL (索引优化) |
-
-**交付物：** 老板可完成员工入职到离职的全生命周期管理。
-
-**依赖关系：** 依赖 user 模块（组织信息、权限校验）。
-
-### Phase 3: Social Insurance Module (Week 5-7)
-
-```
-社保管理依赖员工数据，也是工资核算的上游（提供社保扣款数据）。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 社保政策库 | 30+ 城市基数/比例管理、政策匹配 | PostgreSQL |
-| 参保/停缴 | 员工社保登记、变更、停缴 | employee (员工信息) |
-| 社保核算 | 自动计算企业和个人缴费金额 | employee (岗位/薪资) |
-| 缴费提醒 | 到期前自动提醒 | notification |
-| 参保材料 | 生成 PDF 参保/停缴材料 | pkg/oss |
-
-**交付物：** 老板可为员工办理社保参保/停缴，自动计算缴费金额。
-
-**依赖关系：** 依赖 employee（员工信息、离职事件）。
-
-### Phase 4: Payroll Module (Week 7-9)
-
-```
-工资核算需要聚合员工、社保、个税三个模块的数据。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 薪资结构 | 自定义薪资项目（基本/绩效/奖金/补贴/扣款） | employee |
-| 工资表 | 创建月度工资表、复制上月、一键核算 | employee, social, tax |
-| 工资核算引擎 | 应发 = 基本+绩效+奖金+补贴-扣款-社保-个税 | social (社保扣款), tax (个税) |
-| 工资单推送 | 生成电子工资单、推送至员工 | notification, pkg/oss |
-| 工资发放 | 记录发放状态/金额/方式 | finance (凭证联动) |
-| Excel 导入导出 | 考勤表导入、工资表导出 | - |
-
-**交付物：** 老板可一键核算工资，生成工资单推送给员工。
-
-**依赖关系：** 依赖 employee + social + tax，是最复杂的跨模块聚合点。
-
-### Phase 5: Tax Module (Week 6-8, 可与 Payroll 并行开发)
-
-```
-个税模块与工资模块紧密耦合，但核心计算逻辑独立。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 个税计算引擎 | 累计预扣法计算、税率表匹配 | employee |
-| 专项附加扣除 | 六项扣除登记/管理 | employee |
-| 申报提醒 | 月度申报截止提醒 | notification |
-| 申报表生成 | 生成个税申报表 PDF | pkg/oss |
-| 税务计算 | 增值税/企业所得税计算 | finance (发票数据) |
-
-**交付物：** 基于工资数据自动计算个税，生成申报辅助材料。
-
-**依赖关系：** 依赖 employee。与 payroll 双向依赖（payroll 需要个税扣款数据，tax 需要应发工资数据）。
-
-**注意：** payroll 和 tax 的循环依赖通过接口注入解决 -- payroll 引用 tax.Service 接口，tax 引用 payroll.Service 接口。
-
-### Phase 6: Finance Module (Week 9-12)
-
-```
-财务模块是最复杂的模块，依赖前面所有模块的数据。
-```
-
-| 组件 | 内容 | 依赖 |
-|------|------|------|
-| 会计科目 | 预置科目体系 + 自定义增删 | - |
-| 凭证管理 | 手动录入、借贷平衡校验、审核 | - |
-| 费用报销 | 员工提交 -> 老板审批 -> 自动凭证 | employee, notification |
-| 发票管理 | 进项/销项登记、月末汇总 | - |
-| 账簿查询 | 总账/明细账/余额表实时生成 | - |
-| 财务报表 | 资产负债表/利润表 | - |
-| 会计期间 | 月度结账/反结账、期间锁定 | - |
-| 税务管理 | 增值税/企业所得税申报辅助 | tax |
-
-**交付物：** 完整的小微企业财务记账系统，从凭证录入到报表生成。
-
-**依赖关系：** 依赖 employee（报销人）、payroll（工资凭证）、social（社保凭证）、tax（税费凭证）。
-
-### Phase 7: Notification Module (贯穿开发)
-
-```
-通知模块是横切模块，随各业务模块逐步接入。
-```
-
-| 阶段 | 接入的通知类型 |
-|------|--------------|
-| Phase 1 | 验证码短信 |
-| Phase 2 | 入职邀请通知、合同签署提醒 |
-| Phase 3 | 社保到期提醒、参保变更通知 |
-| Phase 4 | 工资单推送、发放状态通知 |
-| Phase 5 | 个税申报提醒 |
-| Phase 6 | 报销审批通知、结账提醒 |
+**依赖关系：** 依赖所有其他模块（读取/聚合）。
 
 ### Build Order Visualization
 
 ```
-Week:  1   2   3   4   5   6   7   8   9   10  11  12
-       +---+---+---+---+---+---+---+---+---+---+---+---+
-P0:    |█████████|                                   Foundation
-P1:        |███████|                                 User/Org
-P2:            |█████████|                           Employee
-P3:                    |█████████|                   Social
-P4:                            |█████████|           Payroll
-P5:                        |█████████|               Tax (parallel)
-P6:                                    |█████████████| Finance
-P7:    |==================================================| Notification
-       +---+---+---+---+---+---+---+---+---+---+---+---+
+Week:  1   2   3   4   5   6   7   8
+       +---+---+---+---+---+---+---+---+
+A:     |█████████████|                   员工增强（部门+登记+看板）
+B:         |████████████████|            考勤管理（规则+审批+月报）
+C:                 |█████████████████|   薪资增强（调薪+绩效+看板）
+D:                 |████████████|        社保增强（状态+增减员+看板）
+E:                         |█████████████| 待办中心
+       +---+---+---+---+---+---+---+---+
 ```
 
----
+## API Routes Addition
 
-## Critical Architecture Decisions
+### 待办中心
 
-### Decision 1: GORM vs Ent
+```
+GET    /api/v1/todo                    -- 查询待办列表（分页/搜索/筛选）
+GET    /api/v1/todo/timed              -- 查询限时任务
+GET    /api/v1/todo/completion-rate    -- 完成率统计（环形图数据）
+PUT    /api/v1/todo/:id/complete       -- 标记完成
+PUT    /api/v1/todo/:id/terminate      -- 终止任务
+PUT    /api/v1/todo/:id/pin            -- 置顶/取消置顶
+GET    /api/v1/todo/export             -- 导出待办 Excel
+```
 
-**推荐：GORM v2**
+### 考勤管理
 
-理由：
-- 生态成熟，中文文档丰富（对国内团队友好）
-- Scope 机制天然适合多租户过滤
-- 软删除内建支持
-- Hook 机制便于审计日志
-- Ent 学习曲线较陡，团队可能不熟悉
+```
+GET    /api/v1/attendance/rule         -- 查询打卡规则
+PUT    /api/v1/attendance/rule         -- 设置打卡规则
+POST   /api/v1/attendance/shifts       -- 创建班次（排班模式）
+GET    /api/v1/attendance/shifts       -- 班次列表
+PUT    /api/v1/attendance/schedule     -- 设置排班
+GET    /api/v1/attendance/today        -- 今日打卡实况
+POST   /api/v1/attendance/clock        -- 打卡（员工端）
+GET    /api/v1/attendance/approvals    -- 审批列表
+POST   /api/v1/attendance/approvals    -- 创建审批申请
+PUT    /api/v1/attendance/approvals/:id/approve  -- 审批通过
+PUT    /api/v1/attendance/approvals/:id/reject   -- 审批驳回
+GET    /api/v1/attendance/monthly     -- 出勤月报
+PUT    /api/v1/attendance/monthly/:id -- 手动修改月报数据
+GET    /api/v1/attendance/export       -- 导出考勤 Excel
+```
 
-**但需注意：** GORM 的性能陷阱（Preload N+1 问题），在工资核算等批量场景需手写 SQL。
+### 薪资增强
 
-### Decision 2: Web Framework -- Gin vs Fiber
+```
+POST   /api/v1/salary/adjustment       -- 创建调薪（单人）
+POST   /api/v1/salary/mass-adjustment  -- 普调（按部门）
+GET    /api/v1/salary/adjustments      -- 调薪记录列表
+PUT    /api/v1/salary/performance      -- 设置绩效系数
+GET    /api/v1/salary/dashboard        -- 薪资数据看板
+POST   /api/v1/salary/tax-upload       -- 个税上传解析
+POST   /api/v1/salary/slip/send-all    -- 全员发工资条（当月）
+POST   /api/v1/salary/slip/send        -- 选定员工发工资条（已有，增强月份选择）
+```
 
-**推荐：Gin**
+### 社保增强
 
-理由：
-- 社区最大、中间件生态最丰富
-- 性能足够（V1.0 不需要 Fiber 的 fasthttp 优势）
-- 项目中已有 Gin 的代码示例
+```
+GET    /api/v1/social-insurance/dashboard           -- 社保数据看板
+PUT    /api/v1/social-insurance/records/:id/pay      -- 标记缴费
+POST   /api/v1/social-insurance/batch-pay            -- 批量标记缴费
+GET    /api/v1/social-insurance/arrears               -- 欠缴列表
+PUT    /api/v1/social-insurance/enroll/:id            -- 增员增强（支持起始月份限制）
+PUT    /api/v1/social-insurance/stop/:id              -- 减员增强（转出日期联动）
+```
 
-### Decision 3: EventBus V1.0 -- Process-Internal vs Redis Stream
+### 员工管理增强
 
-**推荐：进程内同步调用（V1.0）**
+```
+GET    /api/v1/departments                        -- 部门列表（树形）
+POST   /api/v1/departments                        -- 创建部门
+PUT    /api/v1/departments/:id                     -- 编辑部门
+DELETE /api/v1/departments/:id                     -- 删除部门
+GET    /api/v1/employees/org-chart                 -- 组织架构可视化
+POST   /api/v1/employees/:id/registration          -- 创建信息登记
+PUT    /api/v1/employees/:id/registration           -- 更新信息登记
+POST   /api/v1/employees/:id/registration/invite    -- 邀请员工填写
+GET    /api/v1/employees/dashboard                  -- 员工数据看板
+GET    /api/v1/employees/roster                     -- 花名册（增强版）
+```
 
-理由：
-- <1000 用户不需要消息队列的异步/解耦能力
-- 避免引入额外基础设施依赖
-- 通过接口抽象，V2.0 可无缝替换为 Redis Stream
+## Scalability Considerations
 
-### Decision 4: Single DB vs Multi-Schema
+| Concern | 当前影响 | 优化方案 |
+|---------|---------|---------|
+| 待办聚合查询 | 跨 6+ 模块扫描 | 各模块写入 todo_items 统一表，定时预聚合 |
+| 考勤打卡并发 | 每日早晚高峰 50 人同时打卡 | Redis 缓存 + 批量写入 |
+| 月报统计 | 全员月度聚合 | 定时任务预计算 attendance_monthly 表 |
+| 薪资核算批量 | 50 人一次性计算含考勤/社保/个税 | 并行计算 (errgroup)，复用现有模式 |
+| 审批流并发 | 多人同时提交审批 | PostgreSQL 行锁，乐观并发控制 |
 
-**推荐：单库共享（V1.0）**
+## Database Migration Impact
 
-理由：
-- 跨模块事务简单（工资核算需要同时写工资表、社保记录、个税记录）
-- 单库运维成本最低
-- 通过 org_id 逻辑隔离足够安全
+### 新增表
 
----
+| 表名 | 所属模块 | 预估行数 |
+|------|---------|---------|
+| `todo_items` | todo | 中（每月 10-50 条/企业）|
+| `timed_task_rules` | todo | 小（10-20 条全局预置）|
+| `attendance_rules` | attendance | 小（每企业 1 条）|
+| `shifts` | attendance | 小（每企业 3-5 条）|
+| `schedules` | attendance | 中（50人*30天=1500条/月）|
+| `clock_records` | attendance | 中（50人*2次*22天=2200条/月）|
+| `approvals` | attendance | 中（每月 20-100 条）|
+| `attendance_monthly` | attendance | 中（50 条/月）|
+| `salary_adjustments` | salary | 小（每月 5-20 条）|
+| `performance_coefficients` | salary | 中（50 条/月）|
+| `departments` | employee | 小（每企业 5-20 条）|
+| `employee_registrations` | employee | 小（每员工 1 条）|
+
+### 变更表
+
+| 表名 | 变更内容 |
+|------|---------|
+| `employees` | 新增 `department_id` 字段 |
+| `social_insurance_records` | 新增 `payment_status`, `payment_month`, `last_paid_at` 字段；状态枚举扩展 |
 
 ## Sources
 
-- tech-architecture.md -- 项目完整技术架构文档（1374 行，HIGH confidence）
-- .planning/PROJECT.md -- 项目需求定义（HIGH confidence）
-- Go 社区模块化单体最佳实践（threedots.tech, gobeyond.dev）-- 基于训练数据（MEDIUM confidence，外部搜索受限未能验证）
-- GORM v2 官方文档 -- 基于训练数据（MEDIUM confidence）
-- Gin 框架官方文档 -- 基于训练数据（MEDIUM confidence）
+- `/Users/wencai/github/EasyHR/cmd/server/main.go` -- 依赖注入和路由注册 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/employee/model.go` -- 员工数据模型 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/salary/model.go` -- 薪资数据模型 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/salary/calculator.go` -- 薪资计算逻辑 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/salary/adapter.go` -- 跨模块接口定义 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/socialinsurance/model.go` -- 社保数据模型 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/socialinsurance/service.go` -- 社保业务逻辑 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/dashboard/service.go` -- 现有待办聚合逻辑 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/dashboard/repository.go` -- 跨模块查询模式 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/employee/offboarding_service.go` -- 离职联动模式 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/common/middleware/tenant.go` -- 多租户模式 (HIGH)
+- `/Users/wencai/github/EasyHR/internal/common/model/base.go` -- 基础模型模式 (HIGH)
+- `/Users/wencai/github/EasyHR/prd1.1.md` -- PRD 需求定义 (HIGH)
+- `/Users/wencai/github/EasyHR/.planning/research/ARCHITECTURE.md` -- 已有架构文档 (HIGH)
