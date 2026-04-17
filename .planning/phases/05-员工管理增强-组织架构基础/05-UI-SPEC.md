@@ -34,20 +34,23 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, inline badge spacing |
-| sm | 8px | Compact element spacing, header actions gap |
-| md | 16px | Default element spacing, section margin-bottom, pagination top margin |
-| lg | 20px | Section padding, page-level padding |
-| xl | 24px | Page padding (home-view), major layout gaps |
-| 2xl | 32px | Loading padding, drawer padding |
-| 3xl | 48px | Major section breaks |
+| sm | 8px | Compact element spacing, grid gaps, header actions gap |
+| md | 16px | Default element spacing, section margin-bottom, section padding, pagination top margin |
+| lg | 24px | Page-level padding, major layout gaps |
+| xl | 32px | Loading padding, drawer padding, major section breaks |
+| 2xl | 48px | Largest spacing, shortcut-icon container size |
 
 Exceptions:
-- shortcut-icon 48x48px -- 图标容器固定尺寸
-- todo-card padding 14px 16px -- 沿用 HomeView 现有卡片内边距
-- overview-item padding 14px 12px -- 沿用 HomeView 数据概览内边距
-- drawer 宽度 480px -- 员工详情抽屉固定宽度
+- drawer 宽度 480px -- 员工详情抽屉固定宽度（非 spacing，为固定布局尺寸）
+- shortcut-icon 48x48px -- 图标容器固定尺寸（非 spacing，为固定布局尺寸）
 
-**Source:** 从 HomeView.vue 和 EmployeeList.vue 现有样式提取。全部为 4 的倍数。
+Legacy values (existing code, new code MUST NOT introduce):
+- 12px grid gap (.todo-grid, .overview-grid) -- 遗留值，新组件使用 8px 或 16px
+- 14px 16px padding (.todo-card) -- 遗留值，新组件使用 16px 四边统一
+- 14px 12px padding (.overview-item) -- 遗留值，新组件使用 16px 四边统一
+- 20px section padding/margin (.section, .home-view) -- 遗留值，新组件使用 16px 或 24px
+
+**Source:** 从 HomeView.vue 和 EmployeeList.vue 现有样式提取。标准集全部为 4 的倍数。遗留值仅在现有组件中保留，新组件严格使用标准集。
 
 ---
 
@@ -55,20 +58,26 @@ Exceptions:
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 14px | 500 (Medium) | 1.5 (默认) |
-| Label | 13px | 400 (Regular) | 1.5 |
-| Heading | 15px | 600 (SemiBold) | 1.2 |
+| Body | 14px | 400 (Regular) | 1.5 |
+| Heading | 16px | 600 (SemiBold) | 1.2 |
 | Display | 22px | 700 (Bold) | 1.2 |
 | Stat Value | 24px | 700 (Bold) | 1.2 |
-| Stat Value Small | 16px | 700 (Bold) | 1.2 |
 
-**Source:**
-- Body 14px/500: HomeView .todo-title, EmployeeList 表格默认
-- Label 13px/400: HomeView .shortcut-label, .page-subtitle
-- Heading 15px/600: HomeView .section-title
-- Display 22px/700: HomeView .page-title
-- Stat Value 24px/700: HomeView .overview-value（数据看板核心数字）
-- Stat Value Small 16px/700: HomeView .overview-value.small（本月入/离职复合数字）
+Role mapping:
+- **Body (14px/400)**: 正文文字、标签文字、辅助描述、表单项标签、ECharts 节点 label。涵盖原 13px label 和 14px body 两种用途。
+- **Heading (16px/600)**: 区块标题、小标题、复合数值（本月入/离职）、表单分组标题。涵盖原 15px section-title 和 16px overview-value.small 两种用途。
+- **Display (22px/700)**: 页面大标题。用于 .page-title 场景。
+- **Stat Value (24px/700)**: 数据看板核心数字（在职人数、新入职、离职、离职率）。用于 .overview-value 场景。
+
+Element Plus defaults (not declared, inherited from component library):
+- 12px: .overview-label, .todo-deadline -- Element Plus 辅助文字默认尺寸，不作为独立排版角色
+
+Legacy values (existing code, new code MUST NOT introduce):
+- 13px font-size (.page-subtitle, .shortcut-label) -- 遗留值，新组件使用 14px/400
+- 15px font-size (.section-title) -- 遗留值，新组件使用 16px/600
+- 500 font-weight (.todo-title) -- 遗留值，新组件使用 400 或 600，不使用中间字重
+
+**Source:** 从 HomeView.vue 提取实际使用值，按 checker 要求合并为 4 个字号 + 2 个字重。
 
 ---
 
@@ -208,7 +217,7 @@ Accent reserved for:
 
 | Component | Element Plus Base | Notes |
 |-----------|-------------------|-------|
-| EmployeeDashboard.vue | el-card, el-empty, el-icon | 4 张纯数字卡片，复用 HomeView .overview-item 样式 |
+| EmployeeDashboard.vue | el-card, el-empty, el-icon | 4 张纯数字卡片，复用 HomeView .overview-item 布局（padding 改为 16px） |
 | OrgChart.vue | el-input (搜索), v-chart (ECharts) | 需安装 echarts + vue-echarts |
 | EmployeeDrawer.vue | el-drawer, el-descriptions, el-image | 右侧 480px 抽屉展示员工完整信息 |
 | RegistrationList.vue | el-card, el-table, el-tag, el-popconfirm | 信息登记管理列表 |
@@ -232,9 +241,9 @@ Accent reserved for:
 | Layout | 正交布局 (orthogonal), 从左到右 (LR) |
 | Roam | true (支持缩放平移) |
 | Animation | false (D-03 最多3层，无需动画) |
-| Node label | { name }, 14px, #1A1A1A |
+| Node label | { name }, 14px/400, #1A1A1A |
 | Node type indicator | 部门: 蓝色圆形背景; 岗位: 橙色方形背景; 员工: 灰色人形图标 |
-| Search highlight | itemStyle.color: #1677FF, label.color: #1677FF, label.fontWeight: bold |
+| Search highlight | itemStyle.color: #1677FF, label.color: #1677FF, label.fontWeight: 600 |
 | Initial zoom | fit to container height (roam + zoom) |
 
 ---
@@ -260,7 +269,7 @@ Accent reserved for:
 +---------------------------------------------------+
 ```
 
-卡片样式：复用 HomeView .overview-item（居中、#FAFAFA 背景、8px 圆角），数值使用 24px/700 主蓝色，标签使用 12px #8C8C8C。
+卡片样式：复用 HomeView .overview-item 布局，padding 16px 四边统一（不沿用遗留的 14px 12px），#FAFAFA 背景，8px 圆角。数值使用 24px/700 主蓝色，标签使用 Element Plus 默认 12px #8C8C8C。
 
 ### 组织架构页 (OrgChart.vue)
 
