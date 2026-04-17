@@ -82,12 +82,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. 管理员可创建员工信息登记表并转发给员工填写，提交后自动更新员工档案
   4. 管理员可审批离职申请，通过后一键跳转社保减员，减员完成自动更新离职状态
   5. 花名册展示完整信息（状态/岗位薪资/在职年限/合同到期/手机号），支持搜索和 Excel 导出
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01: 员工数据看板（4张纯数字卡片 + 离职率计算）
+- [ ] 05-02: 组织架构可视化（Department 模块 + ECharts tree）
+- [ ] 05-03: 员工信息登记（Registration Token + H5 填写页 + 转发）
+- [ ] 05-04: 办离职优化（驳回 + 行内审批 + 去减员跳转）
+- [ ] 05-05: 花名册增强（多列聚合 + Drawer 详情 + Excel 导出增强）
 
 **UI hint**: yes
 
@@ -177,12 +179,11 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. 员工管理增强 + 组织架构基础 | v1.3 | 0/? | Not started | - |
+| 5. 员工管理增强 + 组织架构基础 | v1.3 | 0/5 | Planning | - |
 | 6. 考勤管理 | v1.3 | 0/? | Not started | - |
 | 7. 薪资管理增强 | v1.3 | 0/? | Not started | - |
 | 8. 社保公积金增强 | v1.3 | 0/? | Not started | - |
 | 9. 待办中心 | v1.3 | 0/? | Not started | - |
 
 ---
-
 _v1.0 + v1.1 + v1.2 已完整交付。v1.3 roadmap created: 2026-04-17_
