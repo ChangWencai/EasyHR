@@ -245,12 +245,116 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (待 roadmap 创建后填充) | | |
+| EMP-01 | Phase 5 | Pending |
+| EMP-02 | Phase 5 | Pending |
+| EMP-03 | Phase 5 | Pending |
+| EMP-04 | Phase 5 | Pending |
+| EMP-05 | Phase 5 | Pending |
+| EMP-06 | Phase 5 | Pending |
+| EMP-07 | Phase 5 | Pending |
+| EMP-08 | Phase 5 | Pending |
+| EMP-09 | Phase 5 | Pending |
+| EMP-10 | Phase 5 | Pending |
+| EMP-11 | Phase 5 | Pending |
+| EMP-12 | Phase 5 | Pending |
+| EMP-13 | Phase 5 | Pending |
+| EMP-14 | Phase 5 | Pending |
+| EMP-15 | Phase 5 | Pending |
+| EMP-16 | Phase 5 | Pending |
+| ATT-01 | Phase 6 | Pending |
+| ATT-02 | Phase 6 | Pending |
+| ATT-03 | Phase 6 | Pending |
+| ATT-04 | Phase 6 | Pending |
+| ATT-05 | Phase 6 | Pending |
+| ATT-06 | Phase 6 | Pending |
+| ATT-07 | Phase 6 | Pending |
+| ATT-08 | Phase 6 | Pending |
+| ATT-09 | Phase 6 | Pending |
+| ATT-10 | Phase 6 | Pending |
+| ATT-11 | Phase 6 | Pending |
+| ATT-12 | Phase 6 | Pending |
+| ATT-13 | Phase 6 | Pending |
+| ATT-14 | Phase 6 | Pending |
+| ATT-15 | Phase 6 | Pending |
+| ATT-16 | Phase 6 | Pending |
+| ATT-17 | Phase 6 | Pending |
+| ATT-18 | Phase 6 | Pending |
+| ATT-19 | Phase 6 | Pending |
+| ATT-20 | Phase 6 | Pending |
+| ATT-21 | Phase 6 | Pending |
+| SAL-01 | Phase 7 | Pending |
+| SAL-02 | Phase 7 | Pending |
+| SAL-03 | Phase 7 | Pending |
+| SAL-04 | Phase 7 | Pending |
+| SAL-05 | Phase 7 | Pending |
+| SAL-06 | Phase 7 | Pending |
+| SAL-07 | Phase 7 | Pending |
+| SAL-08 | Phase 7 | Pending |
+| SAL-09 | Phase 7 | Pending |
+| SAL-10 | Phase 7 | Pending |
+| SAL-11 | Phase 7 | Pending |
+| SAL-12 | Phase 7 | Pending |
+| SAL-13 | Phase 7 | Pending |
+| SAL-14 | Phase 7 | Pending |
+| SAL-15 | Phase 7 | Pending |
+| SAL-16 | Phase 7 | Pending |
+| SAL-17 | Phase 7 | Pending |
+| SAL-18 | Phase 7 | Pending |
+| SAL-19 | Phase 7 | Pending |
+| SI-01 | Phase 8 | Pending |
+| SI-02 | Phase 8 | Pending |
+| SI-03 | Phase 8 | Pending |
+| SI-04 | Phase 8 | Pending |
+| SI-05 | Phase 8 | Pending |
+| SI-06 | Phase 8 | Pending |
+| SI-07 | Phase 8 | Pending |
+| SI-08 | Phase 8 | Pending |
+| SI-09 | Phase 8 | Pending |
+| SI-10 | Phase 8 | Pending |
+| SI-11 | Phase 8 | Pending |
+| SI-12 | Phase 8 | Pending |
+| SI-13 | Phase 8 | Pending |
+| SI-14 | Phase 8 | Pending |
+| SI-15 | Phase 8 | Pending |
+| SI-16 | Phase 8 | Pending |
+| SI-17 | Phase 8 | Pending |
+| SI-18 | Phase 8 | Pending |
+| SI-19 | Phase 8 | Pending |
+| SI-20 | Phase 8 | Pending |
+| SI-21 | Phase 8 | Pending |
+| TODO-01 | Phase 9 | Pending |
+| TODO-02 | Phase 9 | Pending |
+| TODO-03 | Phase 9 | Pending |
+| TODO-04 | Phase 9 | Pending |
+| TODO-05 | Phase 9 | Pending |
+| TODO-06 | Phase 9 | Pending |
+| TODO-07 | Phase 9 | Pending |
+| TODO-08 | Phase 9 | Pending |
+| TODO-09 | Phase 9 | Pending |
+| TODO-10 | Phase 9 | Pending |
+| TODO-11 | Phase 9 | Pending |
+| TODO-12 | Phase 9 | Pending |
+| TODO-13 | Phase 9 | Pending |
+| TODO-14 | Phase 9 | Pending |
+| TODO-15 | Phase 9 | Pending |
+| TODO-16 | Phase 9 | Pending |
+| TODO-17 | Phase 9 | Pending |
+| TODO-18 | Phase 9 | Pending |
+| TODO-19 | Phase 9 | Pending |
+| TODO-20 | Phase 9 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 80 total
-- Mapped to phases: 0 (待 roadmap)
-- Unmapped: 80
+- v1.3 requirements: 97 total
+- Mapped to phases: 97
+- Unmapped: 0
+
+**Phase Distribution:**
+- Phase 5 (员工管理增强): EMP-01~EMP-16 (16 requirements)
+- Phase 6 (考勤管理): ATT-01~ATT-21 (21 requirements)
+- Phase 7 (薪资管理增强): SAL-01~SAL-19 (19 requirements)
+- Phase 8 (社保公积金增强): SI-01~SI-21 (21 requirements)
+- Phase 9 (待办中心): TODO-01~TODO-20 (20 requirements)
 
 ---
 *Requirements defined: 2026-04-17*
+*Traceability updated: 2026-04-17 -- roadmap created*
