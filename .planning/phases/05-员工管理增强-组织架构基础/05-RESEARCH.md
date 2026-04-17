@@ -535,20 +535,23 @@ func (r *Repository) ListRoster(orgID int64, params SearchParams, page, pageSize
 
 ## Open Questions
 
-1. **阿里云 SMS 签名和模板审核**
+1. **阿里云 SMS 签名和模板审核** (RESOLVED)
    - What we know: 阿里云 SMS 需要签名+模板审核才能使用，审核时间 2 小时到 2 天
    - What's unclear: 签名是否已注册、模板内容是否需要法务审核
    - Recommendation: Wave 0 即提交签名和模板申请，同时以二维码+链接复制为降级方案
+   - Resolution: Plan 05-03 user_setup 已声明阿里云 SMS 配置需求。D-07 已锁定同时支持二维码+链接复制作为降级方案，SMS 审核期间不影响核心功能。执行时由 Plan 05-03 Task 1 在 pkg/sms/client.go 中新增 SendTemplateMessage 方法，TestMode 降级为空操作。
 
-2. **花名册"岗位薪资"数据来源**
+2. **花名册"岗位薪资"数据来源** (RESOLVED)
    - What we know: salary_items 有 employee_id + amount + effective_month
    - What's unclear: "岗位薪资"是取基本工资单项还是所有 income 项之和
    - Recommendation: 取最近的 effective_month 中 template_item 对应"基本工资"的 amount（最简单理解），Claude's Discretion 范围内决定
+   - Resolution: 按 Recommendation 方案执行。Plan 05-05 Task 1 在 GetSalaryAmounts 方法中取 salary_items 最近 effective_month 中 template_item 对应"基本工资"的 amount。此决策属于 Claude's Discretion 范围。
 
-3. **社保减员页面跳转参数传递方式**
+3. **社保减员页面跳转参数传递方式** (RESOLVED)
    - What we know: D-09 要求"去减员"按钮跳转社保减员页面
    - What's unclear: 社保减员页面是否已存在，接口是否支持预填 employee_id
    - Recommendation: router.push({ path: '/tool/socialinsurance', query: { action: 'reduce', employee_id, employee_name } })
+   - Resolution: 按 Recommendation 方案执行。Plan 05-04 Task 2 使用 router.push 携带 query 参数跳转。减员完成后自动更新离职状态（EMP-12）通过 Plan 05-04 Task 1 确认 SocialInsuranceEventHandler.OnEmployeeResigned 回调或新增 CompleteOffboardingFromSI 方法实现。
 
 ## Environment Availability
 

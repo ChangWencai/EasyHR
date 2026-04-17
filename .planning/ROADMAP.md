@@ -85,7 +85,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 05-01: 员工数据看板（4张纯数字卡片 + 离职率计算）
+- [ ] 05-01: 员工数据看板（4张纯数字卡片 + 离职率计算）+ Phase 5 全部前端路由注册
 - [ ] 05-02: 组织架构可视化（Department 模块 + ECharts tree）
 - [ ] 05-03: 员工信息登记（Registration Token + H5 填写页 + 转发）
 - [ ] 05-04: 办离职优化（驳回 + 行内审批 + 去减员跳转）
