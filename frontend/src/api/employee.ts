@@ -55,6 +55,13 @@ export interface OffboardingListResponse {
   total: number
 }
 
+export interface EmployeeDashboard {
+  active_count: number
+  joined_this_month: number
+  left_this_month: number
+  turnover_rate: number
+}
+
 export const employeeApi = {
   list: (params: { page: number; page_size?: number; search?: string }) =>
     request.get<EmployeeListResponse>('/employees', { params }),
@@ -87,4 +94,7 @@ export const employeeApi = {
 
   exportExcel: () =>
     request.get('/employees/export', { responseType: 'blob' }),
+
+  getDashboard: () =>
+    request.get<EmployeeDashboard>('/dashboard/employee-dashboard'),
 }

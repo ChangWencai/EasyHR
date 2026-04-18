@@ -12,6 +12,21 @@ const routes: RouteRecordRaw[] = [
 
       // 员工管理
       {
+        path: '/employee/dashboard',
+        name: 'employee-dashboard',
+        component: () => import('@/views/employee/EmployeeDashboard.vue'),
+      },
+      {
+        path: '/employee/org-chart',
+        name: 'employee-org-chart',
+        component: () => import('@/views/employee/OrgChart.vue'),
+      },
+      {
+        path: '/employee/registrations',
+        name: 'employee-registrations',
+        component: () => import('@/views/employee/RegistrationList.vue'),
+      },
+      {
         path: '/employee',
         name: 'employee',
         component: () => import('@/views/employee/EmployeeList.vue'),
@@ -119,6 +134,11 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/views/layout/LoginView.vue'),
   },
+  {
+    path: '/register/:token',
+    name: 'register',
+    component: () => import('@/views/employee/RegisterPage.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -130,8 +150,8 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
-  // /login 和 /onboarding/org-setup 不做守卫检查
-  if (to.path === '/login' || to.path === '/onboarding/org-setup') {
+  // /login, /onboarding/org-setup 和 /register 不做守卫检查
+  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register')) {
     return
   }
 
