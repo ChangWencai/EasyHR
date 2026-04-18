@@ -57,6 +57,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	authGroup.GET("/social-insurance/monthly-records", h.GetMonthlyRecords)
 	authGroup.GET("/social-insurance/monthly-records/:id", h.GetMonthlyRecordDetail)
 	authGroup.POST("/social-insurance/confirm-payment", middleware.RequireRole("owner", "admin"), h.ConfirmPayment)
+
+	// 导出（OWNER/ADMIN）
+	authGroup.GET("/social-insurance/records/export", middleware.RequireRole("owner", "admin"), h.ExportSIRecords)
 }
 
 // CreatePolicy 创建社保政策
@@ -609,4 +612,46 @@ func (h *Handler) ConfirmPayment(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "缴费已确认"})
+}
+
+// ExportSIRecords 导出参保记录 Excel（SI-21，per D-SI-13）
+func (h *Handler) ExportSIRecords(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+
+	var params RecordListQueryParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		logger.SugarLogger.Debugw("ExportSIRecords: 参数错误", "error", err.Error())
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	// 判断是否为全量导出（含明细）
+	includeDetails := c.Query("export") == "full"
+
+	if includeDetails {
+		params.Page = 1
+		params.PageSize = 9999
+	} else {
+		if params.Page == 0 {
+			params.Page = 1
+		}
+		if params.PageSize == 0 {
+			params.PageSize = 100
+		}
+	}
+
+	logger.SugarLogger.Debugw("ExportSIRecords: 导出", "org_id", orgID, "include_details", includeDetails)
+
+	records, _, err := h.svc.repo.ListRecords(orgID, params.Status, params.EmployeeName, params.Page, params.PageSize)
+	if err != nil {
+		logger.SugarLogger.Debugw("ExportSIRecords: 查询失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 30308, "查询参保记录失败")
+		return
+	}
+
+	if err := ExportSIRecordsWithDetails(c, records, includeDetails); err != nil {
+		logger.SugarLogger.Debugw("ExportSIRecords: 导出失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 30309, "导出失败")
+		return
+	}
 }
