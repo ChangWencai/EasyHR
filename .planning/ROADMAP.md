@@ -106,10 +106,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 06-01: 打卡规则设置（AttendanceRule/Shift/Schedule 模型 + 规则引擎 + 3-Tab 页面）
-- [ ] 06-02: 今日打卡实况（ClockRecord 模型 + 打卡实况聚合 API + 假勤统计）
-- [ ] 06-03: 考勤审批流（Approval 模型 + qmuntal/stateless 状态机 + 11种审批类型）
-- [ ] 06-04: 出勤月报（AttendanceMonthly 预计算 + Excel 导出 + 双视图展示）
+- [x] 06-01: 打卡规则设置（AttendanceRule/Shift/Schedule 模型 + 规则引擎 + 3-Tab 页面）
+- [x] 06-02: 今日打卡实况（ClockRecord 模型 + 打卡实况聚合 API + 假勤统计）
+- [x] 06-03: 考勤审批流（Approval 模型 + qmuntal/stateless 状态机 + 11种审批类型）
+- [x] 06-04: 出勤月报（AttendanceMonthly 预计算 + Excel 导出 + 双视图展示）
 
 **UI hint**: yes
 
@@ -180,7 +180,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 5. 员工管理增强 + 组织架构基础 | v1.3 | 5/5 | Complete | 2026-04-18 |
-| 6. 考勤管理 | v1.3 | 0/? | Not started | - |
+| 6. 考勤管理 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 7. 薪资管理增强 | v1.3 | 0/? | Not started | - |
 | 8. 社保公积金增强 | v1.3 | 0/? | Not started | - |
 | 9. 待办中心 | v1.3 | 0/? | Not started | - |
