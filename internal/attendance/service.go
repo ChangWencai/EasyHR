@@ -336,7 +336,7 @@ func (s *AttendanceService) CreateClockRecord(ctx context.Context, orgID, userID
 	return resp, nil
 }
 
-// GetLeaveStats 获取员工假勤统计数据
+// GetLeaveStats 获取员工假勤统计数据（从 Approval 表聚合 per ATT-07）
 func (s *AttendanceService) GetLeaveStats(ctx context.Context, orgID int64, employeeID int64, yearMonth string) (*LeaveStatsResponse, error) {
 	// 获取员工姓名
 	emps, _ := s.repo.ListEmployeesByIDs(orgID, []int64{employeeID})
@@ -345,15 +345,62 @@ func (s *AttendanceService) GetLeaveStats(ctx context.Context, orgID int64, empl
 		empName = emps[0].Name
 	}
 
-	// 获取手动修正数据
+	// 从 Approval 表聚合假勤数据
+	approvals, err := s.repo.ListApprovalsByEmployeeMonth(orgID, employeeID, yearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取假勤数据失败: %w", err)
+	}
+
+	var leaveDays, pendingDays, approvedDays float64
+	var businessDays, outsideDays float64
+	var makeupCount, shiftSwapCount int
+	var overtimeHours float64
+
+	for _, a := range approvals {
+		hours := a.Duration
+		days := hours / 8.0 // 按每天8小时折算
+
+		switch a.ApprovalType {
+		case ApprovalTypePersonalLeave, ApprovalTypeSickLeave, ApprovalTypePTO,
+			ApprovalTypeAnnualLeave, ApprovalTypeMarriageLeave,
+			ApprovalTypeMaternityLeave, ApprovalTypePaternityLeave:
+			leaveDays += days
+			if a.Status == ApprovalStatusApproved {
+				approvedDays += days
+			} else if a.Status == ApprovalStatusPending {
+				pendingDays += days
+			}
+		case ApprovalTypeBusinessTrip:
+			businessDays += days
+		case ApprovalTypeOutside:
+			outsideDays += days
+		case ApprovalTypeMakeup:
+			makeupCount++
+		case ApprovalTypeShiftSwap:
+			shiftSwapCount++
+		case ApprovalTypeOvertime:
+			overtimeHours += hours
+		}
+	}
+
+	// 获取手动修正数据（覆盖计算值）
 	stats, _ := s.repo.GetManualStats(orgID, employeeID, yearMonth)
 
 	resp := &LeaveStatsResponse{
-		EmployeeID:   employeeID,
-		EmployeeName: empName,
-		YearMonth:    yearMonth,
+		EmployeeID:     employeeID,
+		EmployeeName:   empName,
+		YearMonth:      yearMonth,
+		LeaveDays:      roundHalf(leaveDays),
+		BusinessDays:   roundHalf(businessDays),
+		OutsideDays:    roundHalf(outsideDays),
+		MakeupCount:    makeupCount,
+		ShiftSwapCount: shiftSwapCount,
+		OvertimeHours:  roundHalf(overtimeHours), // D-07: 0.5h 取整
+		PendingDays:    roundHalf(pendingDays),
+		ApprovedDays:   roundHalf(approvedDays),
 	}
 
+	// 手动修正覆盖（如果存在）
 	if stats != nil {
 		if stats.LeaveDays != nil {
 			resp.LeaveDays = *stats.LeaveDays
@@ -375,9 +422,11 @@ func (s *AttendanceService) GetLeaveStats(ctx context.Context, orgID int64, empl
 		}
 	}
 
-	// TODO: Plan 03 创建 Approval 模型后，从 Approval 表聚合 pending_days/approved_days
-
 	return resp, nil
+}
+
+func roundHalf(val float64) float64 {
+	return float64(int(val/0.5+0.5)) * 0.5
 }
 
 // UpdateLeaveStats 手动修正假勤统计数据（ATT-08）

@@ -11,12 +11,18 @@ import (
 
 // Handler 考勤管理 HTTP 端点
 type Handler struct {
-	svc *AttendanceService
+	svc         *AttendanceService
+	approvalSvc *ApprovalService
 }
 
 // NewHandler 创建 Handler
 func NewHandler(svc *AttendanceService) *Handler {
 	return &Handler{svc: svc}
+}
+
+// SetApprovalService 注入审批服务（避免循环依赖）
+func (h *Handler) SetApprovalService(approvalSvc *ApprovalService) {
+	h.approvalSvc = approvalSvc
 }
 
 // RegisterRoutes 注册路由
@@ -43,6 +49,14 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	g.POST("/clock-records", h.CreateClockRecord)
 	g.GET("/leave-stats", h.GetLeaveStats)
 	g.PUT("/leave-stats/:employee_id", h.UpdateLeaveStats)
+
+	// 审批流
+	g.GET("/approvals/pending-count", h.GetPendingCount)
+	g.GET("/approvals", h.ListApprovals)
+	g.POST("/approvals", h.CreateApproval)
+	g.PUT("/approvals/:id/approve", h.ApproveApproval)
+	g.PUT("/approvals/:id/reject", h.RejectApproval)
+	g.PUT("/approvals/:id/cancel", h.CancelApproval)
 }
 
 func getOrgID(c *gin.Context) int64  { return c.GetInt64("org_id") }
@@ -241,4 +255,113 @@ func (h *Handler) UpdateLeaveStats(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+}
+
+// === Approval Handlers ===
+
+// GetPendingCount 获取待审批条数
+func (h *Handler) GetPendingCount(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	count, err := h.approvalSvc.GetPendingCount(c.Request.Context(), getOrgID(c))
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": PendingCountResponse{PendingCount: count}})
+}
+
+// ListApprovals 审批列表
+func (h *Handler) ListApprovals(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	status := c.Query("status")
+	approvalType := c.Query("approval_type")
+	employeeIDStr := c.Query("employee_id")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	var employeeID *int64
+	if employeeIDStr != "" {
+		if id, err := strconv.ParseInt(employeeIDStr, 10, 64); err == nil {
+			employeeID = &id
+		}
+	}
+
+	result, err := h.approvalSvc.ListApprovals(c.Request.Context(), getOrgID(c), status, approvalType, employeeID, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// CreateApproval 创建审批申请
+func (h *Handler) CreateApproval(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	var req CreateApprovalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+	result, err := h.approvalSvc.CreateApproval(c.Request.Context(), getOrgID(c), getUserID(c), &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": result})
+}
+
+// ApproveApproval 审批通过
+func (h *Handler) ApproveApproval(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	result, err := h.approvalSvc.Approve(c.Request.Context(), getOrgID(c), getUserID(c), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// RejectApproval 审批驳回
+func (h *Handler) RejectApproval(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	var req RejectApprovalRequest
+	_ = c.ShouldBindJSON(&req) // note 为选填
+	result, err := h.approvalSvc.Reject(c.Request.Context(), getOrgID(c), getUserID(c), id, req.Note)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// CancelApproval 撤回申请
+func (h *Handler) CancelApproval(c *gin.Context) {
+	if h.approvalSvc == nil {
+		response.Error(c, http.StatusInternalServerError, 500, "审批服务未初始化")
+		return
+	}
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	result, err := h.approvalSvc.Cancel(c.Request.Context(), getOrgID(c), getUserID(c), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }

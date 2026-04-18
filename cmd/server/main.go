@@ -187,6 +187,8 @@ func main() {
 	attendanceRepo := attendance.NewAttendanceRepository(db)
 	attendanceSvc := attendance.NewAttendanceService(attendanceRepo)
 	attendanceHandler := attendance.NewHandler(attendanceSvc)
+	approvalSvc := attendance.NewApprovalService(attendanceRepo)
+	attendanceHandler.SetApprovalService(approvalSvc)
 
 	// 财务模块依赖注入
 	accountRepo := finance.NewAccountRepository(db)
@@ -228,7 +230,7 @@ func main() {
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
-			attendanceHandler.RegisterRoutes(v1, authMiddleware)
+		attendanceHandler.RegisterRoutes(v1, authMiddleware)
 		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)

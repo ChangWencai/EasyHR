@@ -203,3 +203,71 @@ func (r *AttendanceRepository) UpsertManualStats(stats *AttendanceManualStats) e
 	}
 	return r.db.Create(stats).Error
 }
+
+// --- Approval ---
+
+func (r *AttendanceRepository) CreateApproval(approval *Approval) error {
+	return r.db.Create(approval).Error
+}
+
+func (r *AttendanceRepository) GetApproval(orgID int64, id int64) (*Approval, error) {
+	var approval Approval
+	err := r.db.Scopes(r.orgScope(orgID)).First(&approval, id).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return &approval, err
+}
+
+func (r *AttendanceRepository) ListApprovals(orgID int64, status, approvalType string, employeeID *int64, page, pageSize int) ([]Approval, int64, error) {
+	query := r.db.Scopes(r.orgScope(orgID))
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if approvalType != "" {
+		query = query.Where("approval_type = ?", approvalType)
+	}
+	if employeeID != nil {
+		query = query.Where("employee_id = ?", *employeeID)
+	}
+	var total int64
+	query.Model(&Approval{}).Count(&total)
+	var approvals []Approval
+	offset := (page - 1) * pageSize
+	err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&approvals).Error
+	return approvals, total, err
+}
+
+func (r *AttendanceRepository) ListPendingApprovals(orgID int64, approverID int64) ([]Approval, error) {
+	var approvals []Approval
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("status = ?", ApprovalStatusPending).
+		Order("created_at ASC").
+		Find(&approvals).Error
+	return approvals, err
+}
+
+func (r *AttendanceRepository) ListApprovalsByEmployeeMonth(orgID int64, employeeID int64, yearMonth string) ([]Approval, error) {
+	startDate := yearMonth + "-01"
+	endDate := yearMonth + "-31"
+	var approvals []Approval
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("employee_id = ? AND status IN (?, ?) AND start_time >= ? AND start_time <= ?",
+			employeeID, ApprovalStatusApproved, ApprovalStatusPending,
+			startDate, endDate).
+		Find(&approvals).Error
+	return approvals, err
+}
+
+func (r *AttendanceRepository) CountPendingApprovals(orgID int64) (int64, error) {
+	var count int64
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Model(&Approval{}).
+		Where("status = ?", ApprovalStatusPending).
+		Count(&count).Error
+	return count, err
+}
+
+func (r *AttendanceRepository) UpdateApproval(approval *Approval) error {
+	return r.db.Save(approval).Error
+}

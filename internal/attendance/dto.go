@@ -120,3 +120,51 @@ type UpdateLeaveStatsRequest struct {
 	ShiftSwapCount *int     `json:"shift_swap_count"`
 	OvertimeHours  *float64 `json:"overtime_hours"`
 }
+
+// === Approval DTO ===
+
+type ApprovalResponse struct {
+	ID           int64    `json:"id"`
+	EmployeeID   int64    `json:"employee_id"`
+	EmployeeName string   `json:"employee_name"`
+	ApprovalType string   `json:"approval_type"`
+	TypeName     string   `json:"type_name"`
+	StartTime    string   `json:"start_time"`
+	EndTime      string   `json:"end_time"`
+	Duration     float64  `json:"duration"`
+	LeaveType    string   `json:"leave_type,omitempty"`
+	Reason       string   `json:"reason"`
+	Status       string   `json:"status"`
+	ApproverID   *int64   `json:"approver_id,omitempty"`
+	ApproverName string   `json:"approver_name,omitempty"`
+	ApprovedAt   string   `json:"approved_at,omitempty"`
+	RejectedAt   string   `json:"rejected_at,omitempty"`
+	RejectedNote string   `json:"rejected_note,omitempty"`
+	CancelledAt  string   `json:"cancelled_at,omitempty"`
+	Attachments  []string `json:"attachments"`
+	CreatedAt    string   `json:"created_at"`
+}
+
+type ApprovalListResponse struct {
+	List  []ApprovalResponse `json:"list"`
+	Total int64              `json:"total"`
+	Page  int                `json:"page"`
+}
+
+type PendingCountResponse struct {
+	PendingCount int64 `json:"pending_count"`
+}
+
+type CreateApprovalRequest struct {
+	ApprovalType string   `json:"approval_type" binding:"required"`
+	StartTime    string   `json:"start_time" binding:"required"`
+	EndTime      string   `json:"end_time" binding:"required"`
+	Reason       string   `json:"reason"`
+	LeaveType    string   `json:"leave_type"`
+	Attachments  []string `json:"attachments"`
+	CCUserIDs    []int64  `json:"cc_user_ids"`
+}
+
+type RejectApprovalRequest struct {
+	Note string `json:"note"`
+}

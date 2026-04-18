@@ -21,6 +21,11 @@ const routes: RouteRecordRaw[] = [
         name: 'attendance-clock-live',
         component: () => import('@/views/attendance/ClockLive.vue'),
       },
+      {
+        path: '/attendance/approval',
+        name: 'attendance-approval',
+        component: () => import('@/views/attendance/AttendanceApproval.vue'),
+      },
 
       // 员工管理
       {

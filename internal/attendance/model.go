@@ -66,14 +66,78 @@ type AttendanceManualStats struct {
 	OvertimeHours  *float64  `gorm:"column:overtime_hours;default:0"`
 }
 
+// Approval 审批记录（请假/加班/补卡/调班/出差/外出）
+type Approval struct {
+	model.BaseModel
+	EmployeeID   int64      `gorm:"column:employee_id;not null;index;comment:申请员工ID"`
+	ApprovalType string     `gorm:"column:approval_type;type:varchar(30);not null;index;comment:审批类型"`
+	StartTime    time.Time  `gorm:"column:start_time;not null;comment:开始时间"`
+	EndTime      time.Time  `gorm:"column:end_time;not null;comment:结束时间"`
+	Duration     float64    `gorm:"column:duration;comment:时长（小时）精确到0.01 D-08"`
+	Reason       string     `gorm:"column:reason;type:varchar(500);comment:事由"`
+	LeaveType    string     `gorm:"column:leave_type;type:varchar(30);comment:请假类型（7种请假类型）"`
+	Status       string     `gorm:"column:status;type:varchar(20);not null;default:draft;index;comment:状态 D-02"`
+	ApproverID   *int64     `gorm:"column:approver_id;comment:审批人ID"`
+	ApprovedAt   *time.Time `gorm:"column:approved_at;comment:审批通过时间"`
+	RejectedAt   *time.Time `gorm:"column:rejected_at;comment:审批驳回时间"`
+	RejectedNote string     `gorm:"column:rejected_note;type:varchar(500);comment:驳回原因"`
+	CancelledAt  *time.Time `gorm:"column:cancelled_at;comment:撤回时间"`
+	ExpiredAt    *time.Time `gorm:"column:expired_at;comment:过期时间"`
+	Attachments  string     `gorm:"column:attachments;type:text;comment:附件URLs JSON数组"`
+	CCUserIDs    string     `gorm:"column:cc_user_ids;type:text;comment:抄送人ID列表 JSON"`
+}
+
+// 审批状态常量
+const (
+	ApprovalStatusDraft     = "draft"
+	ApprovalStatusPending   = "pending"
+	ApprovalStatusApproved  = "approved"
+	ApprovalStatusRejected  = "rejected"
+	ApprovalStatusCancelled = "cancelled"
+	ApprovalStatusTimeout   = "timeout"
+)
+
+// 审批类型常量
+const (
+	ApprovalTypeMakeup         = "makeup"
+	ApprovalTypeShiftSwap      = "shift_swap"
+	ApprovalTypeBusinessTrip   = "business_trip"
+	ApprovalTypeOutside        = "outside"
+	ApprovalTypePersonalLeave  = "personal_leave"
+	ApprovalTypeSickLeave      = "sick_leave"
+	ApprovalTypePTO            = "PTO"
+	ApprovalTypeAnnualLeave    = "annual_leave"
+	ApprovalTypeMarriageLeave  = "marriage_leave"
+	ApprovalTypeMaternityLeave = "maternity_leave"
+	ApprovalTypePaternityLeave = "paternity_leave"
+	ApprovalTypeOvertime       = "overtime"
+)
+
+// ApprovalTypeNameMap 审批类型名称映射（用于前端展示）
+var ApprovalTypeNameMap = map[string]string{
+	ApprovalTypeMakeup:         "补卡申请",
+	ApprovalTypeShiftSwap:      "调班申请",
+	ApprovalTypeBusinessTrip:   "出差申请",
+	ApprovalTypeOutside:        "外出申请",
+	ApprovalTypePersonalLeave:  "事假",
+	ApprovalTypeSickLeave:      "病假",
+	ApprovalTypePTO:            "调休",
+	ApprovalTypeAnnualLeave:    "年假",
+	ApprovalTypeMarriageLeave:  "婚假",
+	ApprovalTypeMaternityLeave: "产假",
+	ApprovalTypePaternityLeave: "陪产假",
+	ApprovalTypeOvertime:       "加班申请",
+}
+
 // TableName 设置表名
-func (AttendanceRule) TableName() string          { return "attendance_rules" }
-func (Shift) TableName() string                    { return "attendance_shifts" }
-func (Schedule) TableName() string                 { return "attendance_schedules" }
-func (ClockRecord) TableName() string              { return "attendance_clock_records" }
-func (AttendanceManualStats) TableName() string    { return "attendance_manual_stats" }
+func (AttendanceRule) TableName() string       { return "attendance_rules" }
+func (Shift) TableName() string                { return "attendance_shifts" }
+func (Schedule) TableName() string             { return "attendance_schedules" }
+func (ClockRecord) TableName() string          { return "attendance_clock_records" }
+func (AttendanceManualStats) TableName() string { return "attendance_manual_stats" }
+func (Approval) TableName() string             { return "attendance_approvals" }
 
 // AutoMigrateTables 注册 GORM AutoMigrate（由 main.go 调用）
 func AutoMigrateTables(db *gorm.DB) error {
-	return db.AutoMigrate(&AttendanceRule{}, &Shift{}, &Schedule{}, &ClockRecord{}, &AttendanceManualStats{})
+	return db.AutoMigrate(&AttendanceRule{}, &Shift{}, &Schedule{}, &ClockRecord{}, &AttendanceManualStats{}, &Approval{})
 }
