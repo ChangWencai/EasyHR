@@ -129,7 +129,7 @@ Plans:
 Plans:
 - [x] 07-01: 薪资数据看板 + 后端基础设施（dashboard/adjustment/performance/sick-leave）
 - [x] 07-02: 薪资算法增强（考勤联动 + 病假 + 加班费）
-- [ ] 07-03: TBD
+- [x] 07-03: 个税上传 + 工资条发送（asynq 批量发送 + H5 工资条）
 - [ ] 07-04: TBD
 
 **UI hint**: yes
@@ -181,7 +181,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 |-------|-----------|----------------|--------|-----------|
 | 5. 员工管理增强 + 组织架构基础 | v1.3 | 5/5 | Complete | 2026-04-18 |
 | 6. 考勤管理 | v1.3 | 4/4 | Complete | 2026-04-18 |
-| 7. 薪资管理增强 | v1.3 | 2/4 | In progress | - |
+| 7. 薪资管理增强 | v1.3 | 3/4 | In progress | - |
 | 8. 社保公积金增强 | v1.3 | 0/? | Not started | - |
 | 9. 待办中心 | v1.3 | 0/? | Not started | - |
 
