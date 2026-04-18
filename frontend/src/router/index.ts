@@ -86,6 +86,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/tool/SalaryTool.vue'),
       },
       {
+        path: '/tool/salary/dashboard',
+        name: 'tool-salary-dashboard',
+        component: () => import('@/views/tool/SalaryDashboard.vue'),
+      },
+      {
         path: '/tool/socialinsurance',
         name: 'tool-socialinsurance',
         component: () => import('@/views/tool/SITool.vue'),

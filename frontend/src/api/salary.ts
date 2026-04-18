@@ -57,6 +57,52 @@ export interface PayrollListResponse {
   total: number
 }
 
+// ========== 薪资看板接口 ==========
+
+export interface StatItem {
+  label: string
+  value: string
+  trend_percent: string | null
+  trend_direction: 'up' | 'down' | 'neutral'
+}
+
+export interface SalaryDashboardResponse {
+  stats: StatItem[]
+}
+
+// ========== 调薪接口 ==========
+
+export interface AdjustmentRequest {
+  employee_id: number
+  effective_month: string
+  adjustment_type: 'base_salary' | 'allowance' | 'bonus' | 'year_end_bonus' | 'other'
+  adjust_by: 'amount' | 'ratio'
+  old_value: number
+  new_value: number
+}
+
+export interface MassAdjustmentRequest {
+  department_ids: number[]
+  effective_month: string
+  adjustment_type: 'base_salary' | 'allowance' | 'bonus' | 'year_end_bonus' | 'other'
+  adjust_by: 'amount' | 'ratio'
+  old_value: number
+  new_value: number
+}
+
+export interface AdjustmentPreviewResponse {
+  employee_count: number
+  monthly_impact: number
+  annual_impact: number
+}
+
+// ========== 绩效系数接口 ==========
+
+export interface PerformanceCoefficient {
+  employee_id: number
+  coefficient: number
+}
+
 export const salaryApi = {
   template: () => request.get<SalaryTemplate>('/salary/template'),
 
@@ -102,4 +148,25 @@ export const salaryApi = {
       params: { year, month },
       responseType: 'blob',
     }),
+
+  // 薪资看板
+  getSalaryDashboard: (year: number, month: number) =>
+    request.get<SalaryDashboardResponse>('/salary/dashboard', { params: { year, month } }),
+
+  // 调薪
+  createAdjustment: (data: AdjustmentRequest) =>
+    request.post('/salary/adjustment', data),
+
+  massAdjustment: (data: MassAdjustmentRequest) =>
+    request.post('/salary/mass-adjustment', data),
+
+  getAdjustmentList: (params: { effective_month?: string; page?: number; page_size?: number }) =>
+    request.get('/salary/adjustments', { params }),
+
+  // 绩效系数
+  getPerformance: (year: number, month: number) =>
+    request.get<PerformanceCoefficient[]>('/salary/performance', { params: { year, month } }),
+
+  setPerformance: (data: { coefficients: { employee_id: number; coefficient: number }[]; year: number; month: number }) =>
+    request.put('/salary/performance', data),
 }
