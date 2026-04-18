@@ -14,4 +14,5 @@ func RegisterRouter(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc, db *gor
 
 	rg.Use(authMiddleware)
 	rg.GET("", handler.GetDashboard)
+	rg.GET("/employee-dashboard", handler.GetEmployeeDashboard)
 }

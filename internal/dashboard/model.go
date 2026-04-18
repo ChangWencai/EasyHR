@@ -35,3 +35,11 @@ type DashboardResult struct {
 	Todos    []TodoItem `json:"todos"`
 	Overview Overview   `json:"overview"`
 }
+
+// EmployeeDashboardResult holds the employee-specific dashboard statistics.
+type EmployeeDashboardResult struct {
+	ActiveCount     int     `json:"active_count"`
+	JoinedThisMonth int     `json:"joined_this_month"`
+	LeftThisMonth   int     `json:"left_this_month"`
+	TurnoverRate    float64 `json:"turnover_rate"` // 离职率百分比，保留2位小数
+}
