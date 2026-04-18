@@ -321,3 +321,58 @@ func (r *Repository) BatchCreatePayrollItems(orgID int64, items []PayrollItem) e
 	}
 	return r.db.Create(&items).Error
 }
+
+// ========== SalarySlipSendLog CRUD ==========
+
+// CreateSlipSendLog 创建工资条发送日志
+func (r *Repository) CreateSlipSendLog(log *SalarySlipSendLog) error {
+	return r.db.Create(log).Error
+}
+
+// FindSlipSendLogs 查询工资条发送日志列表
+func (r *Repository) FindSlipSendLogs(orgID int64, recordIDs []int64) ([]SalarySlipSendLog, error) {
+	var logs []SalarySlipSendLog
+	q := r.db.Scopes(middleware.TenantScope(orgID))
+	if len(recordIDs) > 0 {
+		q = q.Where("payroll_record_id IN ?", recordIDs)
+	}
+	err := q.Order("created_at DESC").Find(&logs).Error
+	return logs, err
+}
+
+// FindSlipSendLogByRecord 查询指定工资记录的发送日志
+func (r *Repository) FindSlipSendLogByRecord(orgID int64, recordID int64) ([]SalarySlipSendLog, error) {
+	var logs []SalarySlipSendLog
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("payroll_record_id = ?", recordID).
+		Order("created_at DESC").
+		Find(&logs).Error
+	return logs, err
+}
+
+// UpdateSlipSendLog 更新工资条发送日志
+func (r *Repository) UpdateSlipSendLog(orgID int64, id int64, updates map[string]interface{}) error {
+	result := r.db.Model(&SalarySlipSendLog{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("id = ?", id).
+		Updates(updates)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// FindSlipSendLogByEmployeeMonth 查询员工某月的发送日志
+func (r *Repository) FindSlipSendLogByEmployeeMonth(orgID int64, employeeID int64, year, month int) ([]SalarySlipSendLog, error) {
+	var logs []SalarySlipSendLog
+	// 通过 payroll_record_id 关联查询
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Joins("JOIN payroll_records ON payroll_records.id = salary_slip_send_logs.payroll_record_id").
+		Where("salary_slip_send_logs.employee_id = ? AND payroll_records.year = ? AND payroll_records.month = ?", employeeID, year, month).
+		Order("salary_slip_send_logs.created_at DESC").
+		Find(&logs).Error
+	return logs, err
+}
