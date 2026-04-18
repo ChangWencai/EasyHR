@@ -89,7 +89,7 @@ Plans:
 - [x] 05-02: 组织架构可视化（Department 模块 + ECharts tree）
 - [x] 05-03: 员工信息登记（Registration Token + H5 填写页 + 转发）
 - [x] 05-04: 办离职优化（驳回 + 行内审批 + 去减员跳转）
-- [ ] 05-05: 花名册增强（多列聚合 + Drawer 详情 + Excel 导出增强）
+- [x] 05-05: 花名册增强（多列聚合 + Drawer 详情 + Excel 导出增强）
 
 **UI hint**: yes
 
@@ -179,7 +179,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. 员工管理增强 + 组织架构基础 | v1.3 | 0/5 | Planning | - |
+| 5. 员工管理增强 + 组织架构基础 | v1.3 | 5/5 | Complete | 2026-04-18 |
 | 6. 考勤管理 | v1.3 | 0/? | Not started | - |
 | 7. 薪资管理增强 | v1.3 | 0/? | Not started | - |
 | 8. 社保公积金增强 | v1.3 | 0/? | Not started | - |
