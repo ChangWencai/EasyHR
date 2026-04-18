@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"github.com/wencai/easyhr/internal/attendance"
 	"github.com/wencai/easyhr/internal/audit"
 	"github.com/wencai/easyhr/internal/city"
 	"github.com/wencai/easyhr/internal/common/config"
@@ -87,6 +88,11 @@ func initApp() {
 		&finance.Invoice{}, &finance.ExpenseReimbursement{}, &finance.ReportSnapshot{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
+	}
+
+	// 考勤模块 AutoMigrate
+	if err := attendance.AutoMigrateTables(db); err != nil {
+		logger.Logger.Fatal("attendance auto migrate failed", zap.Error(err))
 	}
 
 	rdb = redis.NewClient(&redis.Options{
@@ -177,6 +183,11 @@ func main() {
 	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, nil, cfg.Crypto)
 	salaryHandler := salary.NewHandler(salarySvc)
 
+	// 考勤模块依赖注入
+	attendanceRepo := attendance.NewAttendanceRepository(db)
+	attendanceSvc := attendance.NewAttendanceService(attendanceRepo)
+	attendanceHandler := attendance.NewHandler(attendanceSvc)
+
 	// 财务模块依赖注入
 	accountRepo := finance.NewAccountRepository(db)
 	periodRepo := finance.NewPeriodRepository(db)
@@ -217,6 +228,7 @@ func main() {
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
+			attendanceHandler.RegisterRoutes(v1, authMiddleware)
 		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
