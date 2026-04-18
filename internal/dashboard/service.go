@@ -2,6 +2,8 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"sort"
 	"strconv"
 
@@ -11,6 +13,8 @@ import (
 // ServiceInterface abstracts DashboardService for handler dependency injection.
 type ServiceInterface interface {
 	GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error)
+	GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error)
+	GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error)
 }
 
 // DashboardService aggregates dashboard data from multiple sources.
@@ -207,6 +211,48 @@ func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*Dash
 			LeftThisMonth:        empStats.left,
 			SocialInsuranceTotal: siTotal,
 			PayrollTotal:         payrollTotal,
+		},
+	}, nil
+}
+
+// GetTodoStats returns ring chart stats for all todos.
+func (s *DashboardService) GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error) {
+	completed, pending, err := s.repo.GetTodoRingStats(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("get todo ring stats: %w", err)
+	}
+	total := completed + pending
+	percent := 0.0
+	if total > 0 {
+		percent = math.Round(float64(completed)*100/float64(total)*100) / 100
+	}
+	return &GetTodoStatsResponse{
+		Stats: RingChartStats{
+			Completed: completed,
+			Pending:   pending,
+			Total:     total,
+			Percent:   percent,
+		},
+	}, nil
+}
+
+// GetTimeLimitedStats returns ring chart stats for time-limited todos only.
+func (s *DashboardService) GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error) {
+	completed, pending, err := s.repo.GetTimeLimitedRingStats(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("get time-limited ring stats: %w", err)
+	}
+	total := completed + pending
+	percent := 0.0
+	if total > 0 {
+		percent = math.Round(float64(completed)*100/float64(total)*100) / 100
+	}
+	return &GetTimeLimitedStatsResponse{
+		Stats: RingChartStats{
+			Completed: completed,
+			Pending:   pending,
+			Total:     total,
+			Percent:   percent,
 		},
 	}, nil
 }

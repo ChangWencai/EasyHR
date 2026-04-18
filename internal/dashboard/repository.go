@@ -20,6 +20,8 @@ type DashboardRepository interface {
 	GetContractExpirations(ctx context.Context, orgID int64) (int, error)
 	GetPendingOffboardings(ctx context.Context, orgID int64) (int, error)
 	GetPendingInvitations(ctx context.Context, orgID int64) (int, error)
+	GetTodoRingStats(ctx context.Context, orgID int64) (completed, pending int, err error)
+	GetTimeLimitedRingStats(ctx context.Context, orgID int64) (completed, pending int, err error)
 }
 
 // DashboardRepositoryImpl is the concrete GORM implementation.
@@ -202,6 +204,57 @@ func (r *DashboardRepositoryImpl) GetPendingOffboardings(ctx context.Context, or
 	return int(count), nil
 }
 
+// GetTodoRingStats returns completed/pending counts for all todos.
+// Only counts status IN ('pending','completed'). Skips terminated.
+func (r *DashboardRepositoryImpl) GetTodoRingStats(ctx context.Context, orgID int64) (completed, pending int, err error) {
+	if !r.db.Migrator().HasTable(&TodoItemRecord{}) {
+		return 0, 0, nil
+	}
+
+	var completedCount, pendingCount int64
+
+	if err := r.db.Model(&TodoItemRecord{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("status = ?", "completed").
+		Count(&completedCount).Error; err != nil {
+		return 0, 0, fmt.Errorf("count completed todos: %w", err)
+	}
+
+	if err := r.db.Model(&TodoItemRecord{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("status = ?", "pending").
+		Count(&pendingCount).Error; err != nil {
+		return 0, 0, fmt.Errorf("count pending todos: %w", err)
+	}
+
+	return int(completedCount), int(pendingCount), nil
+}
+
+// GetTimeLimitedRingStats returns completed/pending counts for time-limited todos only.
+func (r *DashboardRepositoryImpl) GetTimeLimitedRingStats(ctx context.Context, orgID int64) (completed, pending int, err error) {
+	if !r.db.Migrator().HasTable(&TodoItemRecord{}) {
+		return 0, 0, nil
+	}
+
+	var completedCount, pendingCount int64
+
+	if err := r.db.Model(&TodoItemRecord{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("is_time_limited = ? AND status = ?", true, "completed").
+		Count(&completedCount).Error; err != nil {
+		return 0, 0, fmt.Errorf("count completed time-limited todos: %w", err)
+	}
+
+	if err := r.db.Model(&TodoItemRecord{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("is_time_limited = ? AND status = ?", true, "pending").
+		Count(&pendingCount).Error; err != nil {
+		return 0, 0, fmt.Errorf("count pending time-limited todos: %w", err)
+	}
+
+	return int(completedCount), int(pendingCount), nil
+}
+
 // GetPendingInvitations returns the count of invitations with status 'pending'.
 func (r *DashboardRepositoryImpl) GetPendingInvitations(ctx context.Context, orgID int64) (int, error) {
 	if !r.db.Migrator().HasTable(&InvitationRecord{}) {
@@ -304,6 +357,17 @@ type InvitationRecord struct {
 }
 
 func (InvitationRecord) TableName() string { return "invitations" }
+
+// TodoItemRecord mirrors todo.TodoItem for repository queries.
+// Defined here to avoid circular import; actual model in internal/todo/model.go.
+type TodoItemRecord struct {
+	ID             uint
+	OrgID          uint
+	Status         string `gorm:"column:status"`
+	IsTimeLimited  bool   `gorm:"column:is_time_limited"`
+}
+
+func (TodoItemRecord) TableName() string { return "todo_items" }
 
 // Status constants for repository queries.
 const (

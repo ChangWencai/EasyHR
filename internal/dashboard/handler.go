@@ -39,3 +39,47 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 
 	response.Success(c, result)
 }
+
+// GetTodoStats handles GET /api/v1/dashboard/todo-stats.
+func (h *Handler) GetTodoStats(c *gin.Context) {
+	orgIDVal, exists := c.Get("org_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, 40100, "missing org_id in context")
+		return
+	}
+	orgID, ok := orgIDVal.(int64)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, 40100, "invalid org_id type")
+		return
+	}
+
+	result, err := h.svc.GetTodoStats(c.Request.Context(), orgID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 50000, "failed to get todo stats: "+err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// GetTimeLimitedStats handles GET /api/v1/dashboard/time-limited-stats.
+func (h *Handler) GetTimeLimitedStats(c *gin.Context) {
+	orgIDVal, exists := c.Get("org_id")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, 40100, "missing org_id in context")
+		return
+	}
+	orgID, ok := orgIDVal.(int64)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, 40100, "invalid org_id type")
+		return
+	}
+
+	result, err := h.svc.GetTimeLimitedStats(c.Request.Context(), orgID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 50000, "failed to get time-limited stats: "+err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
