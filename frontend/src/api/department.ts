@@ -1,0 +1,34 @@
+import request from './request'
+
+export interface Department {
+  id: number
+  name: string
+  parent_id: number | null
+  sort_order: number
+}
+
+export interface TreeNode {
+  id: number
+  name: string
+  type: 'department' | 'position' | 'employee'
+  children?: TreeNode[]
+  itemStyle?: Record<string, unknown>
+  label?: Record<string, unknown>
+}
+
+export const departmentApi = {
+  list: () => request.get<Department[]>('/departments'),
+
+  getTree: () => request.get<TreeNode[]>('/departments/tree'),
+
+  searchTree: (keyword: string) =>
+    request.get<TreeNode[]>('/departments/search', { params: { keyword } }),
+
+  create: (data: { name: string; parent_id?: number | null; sort_order?: number }) =>
+    request.post<Department>('/departments', data),
+
+  update: (id: number, data: Partial<Pick<Department, 'name' | 'parent_id' | 'sort_order'>>) =>
+    request.put<Department>(`/departments/${id}`, data),
+
+  delete: (id: number) => request.delete(`/departments/${id}`),
+}
