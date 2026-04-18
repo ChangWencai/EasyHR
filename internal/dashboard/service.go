@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sort"
 	"strconv"
@@ -12,7 +13,8 @@ import (
 // ServiceInterface abstracts DashboardService for handler dependency injection.
 type ServiceInterface interface {
 	GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error)
-	GetEmployeeDashboard(ctx context.Context, orgID int64) (*EmployeeDashboardResult, error)
+	GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error)
+	GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error)
 }
 
 // DashboardService aggregates dashboard data from multiple sources.
@@ -213,24 +215,44 @@ func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*Dash
 	}, nil
 }
 
-// GetEmployeeDashboard returns employee-specific statistics for the employee dashboard.
-func (s *DashboardService) GetEmployeeDashboard(ctx context.Context, orgID int64) (*EmployeeDashboardResult, error) {
-	active, joined, left, err := s.repo.GetEmployeeStats(ctx, orgID)
+// GetTodoStats returns ring chart stats for all todos.
+func (s *DashboardService) GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error) {
+	completed, pending, err := s.repo.GetTodoRingStats(ctx, orgID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get todo ring stats: %w", err)
 	}
-
-	// 离职率 = 离职人数 / (离职人数 + 期末人数) x 100%
-	turnoverRate := 0.0
-	denominator := float64(left + active)
-	if denominator > 0 {
-		turnoverRate = float64(left) / denominator * 100
+	total := completed + pending
+	percent := 0.0
+	if total > 0 {
+		percent = math.Round(float64(completed)*100/float64(total)*100) / 100
 	}
+	return &GetTodoStatsResponse{
+		Stats: RingChartStats{
+			Completed: completed,
+			Pending:   pending,
+			Total:     total,
+			Percent:   percent,
+		},
+	}, nil
+}
 
-	return &EmployeeDashboardResult{
-		ActiveCount:     active,
-		JoinedThisMonth: joined,
-		LeftThisMonth:   left,
-		TurnoverRate:    math.Round(turnoverRate*100) / 100,
+// GetTimeLimitedStats returns ring chart stats for time-limited todos only.
+func (s *DashboardService) GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error) {
+	completed, pending, err := s.repo.GetTimeLimitedRingStats(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("get time-limited ring stats: %w", err)
+	}
+	total := completed + pending
+	percent := 0.0
+	if total > 0 {
+		percent = math.Round(float64(completed)*100/float64(total)*100) / 100
+	}
+	return &GetTimeLimitedStatsResponse{
+		Stats: RingChartStats{
+			Completed: completed,
+			Pending:   pending,
+			Total:     total,
+			Percent:   percent,
+		},
 	}, nil
 }

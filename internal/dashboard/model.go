@@ -30,6 +30,24 @@ type Overview struct {
 	PayrollTotal         string `json:"payroll_total"`
 }
 
+// RingChartStats holds ring chart data for todo completion stats.
+type RingChartStats struct {
+	Completed int     `json:"completed"` // 已完成数
+	Pending   int     `json:"pending"`   // 待办数
+	Total     int     `json:"total"`     // 总数
+	Percent   float64 `json:"percent"`   // 完成率百分比，0-100
+}
+
+// GetTodoStatsResponse 全事项完成率响应
+type GetTodoStatsResponse struct {
+	Stats RingChartStats `json:"stats"`
+}
+
+// GetTimeLimitedStatsResponse 限时任务完成率响应
+type GetTimeLimitedStatsResponse struct {
+	Stats RingChartStats `json:"stats"`
+}
+
 // DashboardResult is the full dashboard response.
 type DashboardResult struct {
 	Todos    []TodoItem `json:"todos"`

@@ -14,6 +14,23 @@
       </div>
     </div>
 
+    <!-- 完成率环形图 -->
+    <div class="section ring-chart-card">
+      <div class="ring-chart-row">
+        <div class="ring-chart-item">
+          <div class="ring-chart-label">全部事项完成率</div>
+          <TodoRingChart type="all" />
+        </div>
+        <div class="ring-chart-item">
+          <div class="ring-chart-label">限时任务完成率</div>
+          <TodoRingChart type="time-limited" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 轮播图公告 -->
+    <HomeCarousel />
+
     <!-- 待办事项（全宽） -->
     <div class="section todo-section">
       <div class="section-header">
@@ -122,9 +139,13 @@ import {
   ArrowUp,
   Clock,
   Loading,
+  UserAdd,
+  TrendCharts,
 } from '@element-plus/icons-vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import type { TodoItem } from '@/api/dashboard'
+import TodoRingChart from './components/TodoRingChart.vue'
+import HomeCarousel from './components/HomeCarousel.vue'
 
 const store = useDashboardStore()
 const router = useRouter()
@@ -143,6 +164,9 @@ const gridItems = [
   { path: '/tool/tax', label: '个税申报', icon: Document, color: '#fa8c16', bg: '#fff7e6' },
   { path: '/finance/vouchers', label: '凭证管理', icon: Wallet, color: '#13c2c2', bg: '#e6fffa' },
   { path: '/finance/invoices', label: '发票管理', icon: Document, color: '#eb2f96', bg: '#fff0f6' },
+  { path: '/employee/create', label: '新入职', icon: UserAdd, color: '#1677ff', bg: '#e6f4ff' },
+  { path: '/tool/salary', label: '调薪', icon: TrendCharts, color: '#52c41a', bg: '#f6ffed' },
+  { path: '/attendance/clock-live', label: '考勤', icon: Clock, color: '#722ed1', bg: '#f9f0ff' },
 ]
 
 function handleTodoClick(todo: TodoItem) {
@@ -208,6 +232,26 @@ onMounted(() => {
   padding: 20px;
   margin-bottom: 16px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+// ============================================================
+// 环形图卡片
+// ============================================================
+.ring-chart-row {
+  display: flex;
+  gap: 16px;
+}
+
+.ring-chart-item {
+  flex: 1;
+  text-align: center;
+}
+
+.ring-chart-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #172B4D;
+  margin-bottom: 8px;
 }
 
 .section-header {
@@ -321,8 +365,7 @@ onMounted(() => {
 
 .shortcuts-grid {
   display: grid;
-  // 6个入口: 6列(>1400px) → 3列(>900px) → 2列(<=768px)
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 8px;
   margin-top: 12px;
 }
@@ -412,7 +455,7 @@ onMounted(() => {
     grid-template-columns: repeat(3, 1fr);
   }
   .shortcuts-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 
@@ -423,6 +466,9 @@ onMounted(() => {
   }
   .shortcuts-grid {
     grid-template-columns: repeat(6, 1fr);
+  }
+  .ring-chart-row {
+    flex-direction: column;
   }
 }
 

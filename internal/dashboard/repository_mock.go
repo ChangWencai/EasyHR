@@ -59,6 +59,14 @@ func (m *MockDashboardRepository) GetPendingInvitations(ctx context.Context, org
 	return m.PendingInvitations, m.Err
 }
 
+func (m *MockDashboardRepository) GetTodoRingStats(ctx context.Context, orgID int64) (int, int, error) {
+	return 0, 0, m.Err
+}
+
+func (m *MockDashboardRepository) GetTimeLimitedRingStats(ctx context.Context, orgID int64) (int, int, error) {
+	return 0, 0, m.Err
+}
+
 // ErrorMockRepository returns an error on every call — useful for error propagation tests.
 type ErrorMockRepository struct{}
 
@@ -98,4 +106,12 @@ func (e *ErrorMockRepository) GetPendingOffboardings(ctx context.Context, orgID 
 
 func (e *ErrorMockRepository) GetPendingInvitations(ctx context.Context, orgID int64) (int, error) {
 	return 0, errors.New("pending invitations error")
+}
+
+func (e *ErrorMockRepository) GetTodoRingStats(ctx context.Context, orgID int64) (int, int, error) {
+	return 0, 0, errors.New("todo ring stats error")
+}
+
+func (e *ErrorMockRepository) GetTimeLimitedRingStats(ctx context.Context, orgID int64) (int, int, error) {
+	return 0, 0, errors.New("time-limited ring stats error")
 }
