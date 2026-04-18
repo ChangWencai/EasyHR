@@ -149,7 +149,7 @@ Plans:
 Plans:
 - [x] 08-01: 后端基础设施（SIMonthlyPayment 模型 + DashboardService + asynq 定时任务 + API 路由）
 - [x] 08-02: 前端社保数据看板 + 优化增员弹窗 + SIToolContent 重构 + 红色横幅
-- [ ] 08-03: 优化减员弹窗 + 参保记录 Tab 增强（SIRecordsTable）+ 五险分项详情弹窗
+- [x] 08-03: 优化减员弹窗 + 参保记录 Tab 增强（SIRecordsTable）+ 五险分项详情弹窗
 - [ ] 08-04: Excel 导出扩展（五险分项列）
 
 **UI hint**: yes
@@ -183,7 +183,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 5. 员工管理增强 + 组织架构基础 | v1.3 | 5/5 | Complete | 2026-04-18 |
 | 6. 考勤管理 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 7. 薪资管理增强 | v1.3 | 3/4 | In progress | - |
-| 8. 社保公积金增强 | v1.3 | 2/4 | In progress | - |
+| 8. 社保公积金增强 | v1.3 | 3/4 | In progress | - |
 | 9. 待办中心 | v1.3 | 0/? | Not started | - |
 
 ---
