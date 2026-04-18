@@ -83,6 +83,12 @@ func initApp() {
 		&salary.PayrollItem{},
 		&salary.PayrollSlip{},
 
+		// 薪资增强模型
+		&salary.SalaryAdjustment{},
+		&salary.PerformanceCoefficient{},
+		&salary.SickLeavePolicy{},
+		&salary.SalarySlipSendLog{},
+
 		// 财务模块模型
 		&finance.Account{}, &finance.Period{}, &finance.Voucher{}, &finance.JournalEntry{},
 		&finance.Invoice{}, &finance.ExpenseReimbursement{}, &finance.ReportSnapshot{},
@@ -288,6 +294,12 @@ func main() {
 	// 初始化薪资模板种子数据（如果不存在）
 	if err := salarySvc.SeedTemplateItems(); err != nil {
 		logger.Logger.Warn("salary template seed failed", zap.Error(err))
+	}
+
+	// 初始化病假系数策略种子数据（北上广深）
+	sickLeavePolicySvc := salary.NewSickLeavePolicyService(db)
+	if err := sickLeavePolicySvc.SeedInitialPolicies(); err != nil {
+		logger.Logger.Warn("sick leave policy seed failed", zap.Error(err))
 	}
 
 	if err := r.Run(addr); err != nil {
