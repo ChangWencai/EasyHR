@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"github.com/wencai/easyhr/internal/common/model"
 )
 
@@ -443,4 +444,195 @@ func (s *AttendanceService) UpdateLeaveStats(ctx context.Context, orgID, userID 
 		OvertimeHours:  req.OvertimeHours,
 	}
 	return s.repo.UpsertManualStats(stats)
+}
+
+// === 出勤月报 ===
+
+type MonthlyReportItem struct {
+	EmployeeID     int64   `json:"employee_id"`
+	EmployeeName   string  `json:"employee_name"`
+	DepartmentName string  `json:"department_name"`
+	ActualDays     float64 `json:"actual_days"`
+	RequiredDays   float64 `json:"required_days"`
+	OvertimeHours  float64 `json:"overtime_hours"`
+	AbsentDays     float64 `json:"absent_days"`
+	LeaveDays      float64 `json:"leave_days"`
+	BusinessDays   float64 `json:"business_days"`
+	AttendanceRate float64 `json:"attendance_rate"`
+	LateCount      int     `json:"late_count"`
+}
+
+type MonthlyStats struct {
+	TotalActualDays    float64 `json:"total_actual_days"`
+	TotalRequiredDays  float64 `json:"total_required_days"`
+	TotalOvertimeHours float64 `json:"total_overtime_hours"`
+	TotalAbsentDays    float64 `json:"total_absent_days"`
+}
+
+type MonthlyReportResponse struct {
+	YearMonth string              `json:"year_month"`
+	Stats     MonthlyStats        `json:"stats"`
+	List      []MonthlyReportItem `json:"list"`
+	Total     int64               `json:"total"`
+	Page      int                 `json:"page"`
+	PageSize  int                 `json:"page_size"`
+}
+
+type DailyRecord struct {
+	Date      string `json:"date"`
+	ClockIn   string `json:"clock_in"`
+	ClockOut  string `json:"clock_out"`
+	Status    string `json:"status"`
+	IsHoliday bool   `json:"is_holiday"`
+	IsWeekend bool   `json:"is_weekend"`
+	Symbol    string `json:"symbol"`
+}
+
+type DailyRecordsResponse struct {
+	EmployeeID int64         `json:"employee_id"`
+	YearMonth  string        `json:"year_month"`
+	Records    []DailyRecord `json:"records"`
+}
+
+func (s *AttendanceService) GetMonthlyReport(ctx context.Context, orgID int64, yearMonth string, page, pageSize int) (*MonthlyReportResponse, error) {
+	reports, total, err := s.repo.ListAttendanceMonthly(orgID, yearMonth, page, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("获取月报数据失败: %w", err)
+	}
+
+	var totalActual, totalRequired, totalOvertime, totalAbsent float64
+	items := make([]MonthlyReportItem, len(reports))
+	for i, r := range reports {
+		overtimeDisplay := roundHalf(r.OvertimeHours)
+		rate := 0.0
+		if r.RequiredDays > 0 {
+			rate = float64(int(r.ActualDays/r.RequiredDays*100*10)) / 10
+		}
+		items[i] = MonthlyReportItem{
+			EmployeeID:     r.EmployeeID,
+			ActualDays:     r.ActualDays,
+			RequiredDays:   r.RequiredDays,
+			OvertimeHours:  overtimeDisplay,
+			AbsentDays:     r.AbsentDays,
+			LeaveDays:      r.LeaveDays,
+			BusinessDays:   r.BusinessDays,
+			AttendanceRate: rate,
+			LateCount:      r.LateCount,
+		}
+		totalActual += r.ActualDays
+		totalRequired += r.RequiredDays
+		totalOvertime += r.OvertimeHours
+		totalAbsent += r.AbsentDays
+	}
+
+	return &MonthlyReportResponse{
+		YearMonth: yearMonth,
+		Stats: MonthlyStats{
+			TotalActualDays:    roundHalf(totalActual),
+			TotalRequiredDays:  roundHalf(totalRequired),
+			TotalOvertimeHours: roundHalf(totalOvertime),
+			TotalAbsentDays:    roundHalf(totalAbsent),
+		},
+		List:     items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func (s *AttendanceService) GetDailyRecords(ctx context.Context, orgID int64, employeeID int64, yearMonth string) (*DailyRecordsResponse, error) {
+	rule, err := s.repo.GetRule(orgID)
+	if err != nil {
+		return nil, fmt.Errorf("获取考勤规则失败: %w", err)
+	}
+	ruleEngine := NewRuleEngine(rule)
+
+	clockMap, err := s.repo.GetDailyClockRecords(orgID, employeeID, yearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取打卡记录失败: %w", err)
+	}
+
+	parsed, _ := time.Parse("2006-01", yearMonth)
+	year, month, _ := parsed.Date()
+	daysInMonth := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC).Day()
+
+	records := make([]DailyRecord, daysInMonth)
+	for day := 1; day <= daysInMonth; day++ {
+		date := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+		dateStr := date.Format("2006-01-02")
+		weekday := date.Weekday()
+		isWeekend := weekday == time.Saturday || weekday == time.Sunday
+		isHoliday := ruleEngine.IsHoliday(date)
+
+		dayClocks := clockMap[dateStr]
+		clockIn := dayClocks["in"]
+		clockOut := dayClocks["out"]
+
+		status := "normal"
+		symbol := "√"
+		if clockIn == "" && clockOut == "" {
+			if !isWeekend && !isHoliday {
+				status = "absent"
+				symbol = "缺"
+			} else {
+				status = "no_schedule"
+				symbol = "--"
+			}
+		} else if clockIn != "" && rule != nil && rule.WorkStart != "" {
+			if clockIn > rule.WorkStart {
+				status = "late"
+				symbol = "迟到"
+			}
+		}
+
+		records[day-1] = DailyRecord{
+			Date: dateStr, ClockIn: clockIn, ClockOut: clockOut,
+			Status: status, IsHoliday: isHoliday, IsWeekend: isWeekend, Symbol: symbol,
+		}
+	}
+
+	return &DailyRecordsResponse{EmployeeID: employeeID, YearMonth: yearMonth, Records: records}, nil
+}
+
+func (s *AttendanceService) ExportMonthlyExcel(ctx context.Context, orgID int64, yearMonth string) ([]byte, string, error) {
+	report, err := s.GetMonthlyReport(ctx, orgID, yearMonth, 1, 1000)
+	if err != nil {
+		return nil, "", fmt.Errorf("获取月报数据失败: %w", err)
+	}
+
+	f := excelize.NewFile()
+	sheet := "出勤月报"
+	index, _ := f.NewSheet(sheet)
+	f.SetActiveSheet(index)
+	f.DeleteSheet("Sheet1")
+
+	headers := []string{"姓名", "部门", "实际出勤(天)", "应出勤(天)", "加班时长(小时)", "缺勤(天)", "请假(天)", "出差(天)", "出勤率(%)"}
+	style, _ := f.NewStyle(&excelize.Style{Font: &excelize.Font{Bold: true}, Fill: excelize.Fill{Type: "pattern", Color: []string{"#E6E6E6"}, Pattern: 1}})
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, style)
+	}
+
+	for rowIdx, item := range report.List {
+		row := rowIdx + 2
+		vals := []interface{}{item.EmployeeName, item.DepartmentName, item.ActualDays, item.RequiredDays, item.OvertimeHours, item.AbsentDays, item.LeaveDays, item.BusinessDays, fmt.Sprintf("%.1f%%", item.AttendanceRate)}
+		for colIdx, val := range vals {
+			cell, _ := excelize.CoordinatesToCellName(colIdx+1, row)
+			f.SetCellValue(sheet, cell, val)
+		}
+	}
+
+	summaryRow := len(report.List) + 2
+	f.SetCellValue(sheet, fmt.Sprintf("A%d", summaryRow), "合计")
+	f.SetCellValue(sheet, fmt.Sprintf("C%d", summaryRow), report.Stats.TotalActualDays)
+	f.SetCellValue(sheet, fmt.Sprintf("D%d", summaryRow), report.Stats.TotalRequiredDays)
+	f.SetCellValue(sheet, fmt.Sprintf("E%d", summaryRow), roundHalf(report.Stats.TotalOvertimeHours))
+	f.SetCellValue(sheet, fmt.Sprintf("F%d", summaryRow), report.Stats.TotalAbsentDays)
+
+	buf, err := f.WriteToBuffer()
+	if err != nil {
+		return nil, "", fmt.Errorf("生成 Excel 失败: %w", err)
+	}
+	return buf.Bytes(), fmt.Sprintf("出勤月报_%s.xlsx", yearMonth), nil
 }

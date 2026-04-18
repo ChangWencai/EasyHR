@@ -1,6 +1,7 @@
 package attendance
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -57,6 +58,11 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	g.PUT("/approvals/:id/approve", h.ApproveApproval)
 	g.PUT("/approvals/:id/reject", h.RejectApproval)
 	g.PUT("/approvals/:id/cancel", h.CancelApproval)
+
+	// 出勤月报
+	g.GET("/monthly", h.GetMonthlyReport)
+	g.GET("/monthly/export", h.ExportMonthlyExcel)
+	g.GET("/daily-records", h.GetDailyRecords)
 }
 
 func getOrgID(c *gin.Context) int64  { return c.GetInt64("org_id") }
@@ -359,6 +365,59 @@ func (h *Handler) CancelApproval(c *gin.Context) {
 	}
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	result, err := h.approvalSvc.Cancel(c.Request.Context(), getOrgID(c), getUserID(c), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// GetMonthlyReport 出勤月报
+func (h *Handler) GetMonthlyReport(c *gin.Context) {
+	yearMonth := c.DefaultQuery("year_month", time.Now().Format("2006-01"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+	result, err := h.svc.GetMonthlyReport(c.Request.Context(), getOrgID(c), yearMonth, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// ExportMonthlyExcel 导出月报 Excel
+func (h *Handler) ExportMonthlyExcel(c *gin.Context) {
+	yearMonth := c.DefaultQuery("year_month", time.Now().Format("2006-01"))
+	data, filename, err := h.svc.ExportMonthlyExcel(c.Request.Context(), getOrgID(c), yearMonth)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
+}
+
+// GetDailyRecords 每日打卡详情
+func (h *Handler) GetDailyRecords(c *gin.Context) {
+	employeeIDStr := c.Query("employee_id")
+	yearMonth := c.DefaultQuery("year_month", time.Now().Format("2006-01"))
+	if employeeIDStr == "" {
+		response.BadRequest(c, "employee_id required")
+		return
+	}
+	employeeID, err := strconv.ParseInt(employeeIDStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "employee_id 格式错误")
+		return
+	}
+	result, err := h.svc.GetDailyRecords(c.Request.Context(), getOrgID(c), employeeID, yearMonth)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, 500, err.Error())
 		return

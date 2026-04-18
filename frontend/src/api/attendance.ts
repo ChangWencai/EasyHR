@@ -124,6 +124,52 @@ export const approvalApi = {
     request.get<{ pending_count: number }>('/attendance/approvals/pending-count'),
 }
 
+export interface MonthlyReportItem {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  actual_days: number
+  required_days: number
+  overtime_hours: number
+  absent_days: number
+  leave_days: number
+  business_days: number
+  attendance_rate: number
+  late_count: number
+}
+
+export interface MonthlyStats {
+  total_actual_days: number
+  total_required_days: number
+  total_overtime_hours: number
+  total_absent_days: number
+}
+
+export interface MonthlyReportResponse {
+  year_month: string
+  stats: MonthlyStats
+  list: MonthlyReportItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface DailyRecord {
+  date: string
+  clock_in: string
+  clock_out: string
+  status: string
+  is_holiday: boolean
+  is_weekend: boolean
+  symbol: string
+}
+
+export interface DailyRecordsResponse {
+  employee_id: number
+  year_month: string
+  records: DailyRecord[]
+}
+
 export const attendanceApi = {
   // 打卡规则
   getRule: () => request.get<AttendanceRule>('/attendance/rule'),
@@ -169,4 +215,14 @@ export const attendanceApi = {
   // 手动修正假勤统计
   updateLeaveStats: (employeeId: number, yearMonth: string, data: Partial<LeaveStats>) =>
     request.put(`/attendance/leave-stats/${employeeId}?year_month=${yearMonth}`, data),
+
+  // 出勤月报
+  getMonthlyReport: (params: { year_month: string; page?: number; page_size?: number }) =>
+    request.get<MonthlyReportResponse>('/attendance/monthly', { params }),
+
+  exportMonthlyExcel: (params: { year_month: string }) =>
+    request.get('/attendance/monthly/export', { params, responseType: 'blob' }),
+
+  getDailyRecords: (params: { employee_id: number; year_month: string }) =>
+    request.get<DailyRecordsResponse>('/attendance/daily-records', { params }),
 }

@@ -26,6 +26,11 @@ const routes: RouteRecordRaw[] = [
         name: 'attendance-approval',
         component: () => import('@/views/attendance/AttendanceApproval.vue'),
       },
+      {
+        path: '/attendance/monthly',
+        name: 'attendance-monthly',
+        component: () => import('@/views/attendance/AttendanceMonthly.vue'),
+      },
 
       // 员工管理
       {

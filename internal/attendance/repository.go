@@ -271,3 +271,36 @@ func (r *AttendanceRepository) CountPendingApprovals(orgID int64) (int64, error)
 func (r *AttendanceRepository) UpdateApproval(approval *Approval) error {
 	return r.db.Save(approval).Error
 }
+
+// --- AttendanceMonthly ---
+
+func (r *AttendanceRepository) ListAttendanceMonthly(orgID int64, yearMonth string, page, pageSize int) ([]AttendanceMonthly, int64, error) {
+	query := r.db.Scopes(r.orgScope(orgID)).Where("year_month = ?", yearMonth)
+	var total int64
+	query.Model(&AttendanceMonthly{}).Count(&total)
+	offset := (page - 1) * pageSize
+	var list []AttendanceMonthly
+	err := query.Order("employee_id ASC").Offset(offset).Limit(pageSize).Find(&list).Error
+	return list, total, err
+}
+
+func (r *AttendanceRepository) UpsertAttendanceMonthly(m *AttendanceMonthly) error {
+	return r.db.Save(m).Error
+}
+
+func (r *AttendanceRepository) GetDailyClockRecords(orgID int64, employeeID int64, yearMonth string) (map[string]map[string]string, error) {
+	startDate := yearMonth + "-01"
+	records, err := r.GetClockRecordsByEmployee(orgID, employeeID, startDate, yearMonth+"-31")
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]map[string]string)
+	for _, r := range records {
+		dateStr := r.WorkDate.Format("2006-01-02")
+		if result[dateStr] == nil {
+			result[dateStr] = make(map[string]string)
+		}
+		result[dateStr][r.ClockType] = r.ClockTime.Format("15:04")
+	}
+	return result, nil
+}
