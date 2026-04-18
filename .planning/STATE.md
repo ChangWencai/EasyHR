@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: 产品功能全面优化（基于 PRD 1.1）
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-04-18T03:22:06.927Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-04-18T03:31:00.000Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 05 (员工管理增强-组织架构基础) — EXECUTING
-Plan: 2 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-18
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: Stable
 
 | Phase 05 P03 | 10 | 2 tasks | 12 files |
+| Phase 05 P04 | 8 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [v1.3 research]: 调薪 INSERT ONLY，禁止 UPDATE 历史
 - [v1.3 research]: 考勤班次模型必须包含 workDateOffset
 - [Phase 05]: Registration 模块复用 Invitation 的 generateToken 模式（crypto/rand 32-byte hex），SubmitRegistration 事务性 upsert 员工记录
+- [Phase 05 P04]: 前端状态值从 pending_review 修正为 pending，与后端模型保持一致
+- [Phase 05 P04]: CompleteOffboardingFromSI 接收 employeeID 而非 offboardingID，因社保模块只持有员工 ID
+- [Phase 05 P04]: 前端 API 调用从 POST 改为 PUT，与后端 approve/reject/complete 路由对齐
 
 ### Roadmap Evolution
 
@@ -95,6 +99,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-18T03:22:06.922Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-04-18T03:31:00.000Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None

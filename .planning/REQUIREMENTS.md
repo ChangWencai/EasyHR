@@ -184,10 +184,10 @@
 
 ### 办离职优化
 
-- [ ] **EMP-09**: 离职待办列表展示事项/发起人/时间/状态/排序
-- [ ] **EMP-10**: 管理员可审批离职申请（同意/驳回）
-- [ ] **EMP-11**: 离职审批通过后可立即减员（跳转社保公积金减员）
-- [ ] **EMP-12**: 减员完成后离职状态自动更新
+- [x] **EMP-09**: 离职待办列表展示事项/发起人/时间/状态/排序
+- [x] **EMP-10**: 管理员可审批离职申请（同意/驳回）
+- [x] **EMP-11**: 离职审批通过后可立即减员（跳转社保公积金减员）
+- [x] **EMP-12**: 减员完成后离职状态自动更新
 
 ### 花名册增强
 
@@ -253,10 +253,10 @@
 | EMP-06 | Phase 5 | Complete |
 | EMP-07 | Phase 5 | Complete |
 | EMP-08 | Phase 5 | Complete |
-| EMP-09 | Phase 5 | Pending |
-| EMP-10 | Phase 5 | Pending |
-| EMP-11 | Phase 5 | Pending |
-| EMP-12 | Phase 5 | Pending |
+| EMP-09 | Phase 5 | Complete |
+| EMP-10 | Phase 5 | Complete |
+| EMP-11 | Phase 5 | Complete |
+| EMP-12 | Phase 5 | Complete |
 | EMP-13 | Phase 5 | Pending |
 | EMP-14 | Phase 5 | Pending |
 | EMP-15 | Phase 5 | Pending |
