@@ -208,6 +208,13 @@ func main() {
 	salaryPerformanceSvc := salary.NewPerformanceService(salaryPerformanceRepo)
 	salaryPerformanceHandler := salary.NewPerformanceHandler(salaryPerformanceSvc)
 
+	// 薪资列表模块依赖注入
+	salaryListHandler := salary.NewSalaryListHandler(salarySvc)
+
+	// 解锁模块依赖注入
+	salaryUnlockSvc := salary.NewUnlockService(salaryRepo, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port), db)
+	salaryUnlockHandler := salary.NewUnlockHandler(salaryUnlockSvc, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+
 	// 考勤模块依赖注入
 	attendanceRepo := attendance.NewAttendanceRepository(db)
 	attendanceSvc := attendance.NewAttendanceService(attendanceRepo)
@@ -258,6 +265,8 @@ func main() {
 		salarySlipSendHandler.RegisterRoutes(v1, authMiddleware)
 		salaryAdjustmentHandler.RegisterRoutes(v1, authMiddleware)
 		salaryPerformanceHandler.RegisterRoutes(v1, authMiddleware)
+		salaryListHandler.RegisterRoutes(v1, authMiddleware)
+		salaryUnlockHandler.RegisterRoutes(v1, authMiddleware)
 		taxUploadHandler.RegisterRoutes(v1, authMiddleware)
 		attendanceHandler.RegisterRoutes(v1, authMiddleware)
 		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)

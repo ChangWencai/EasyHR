@@ -210,6 +210,165 @@ func getSalaryItemAmount(items []PayrollItem, name string) float64 {
 }
 
 // getSalaryItemSum 获取多个薪资项总和
+func ExportPayrollExcelWithDetails(records []PayrollRecordWithItems, year, month int, includeDetails bool) ([]byte, error) {
+	f := excelize.NewFile()
+	sheetName := "工资条"
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		return nil, fmt.Errorf("创建工作表失败: %w", err)
+	}
+	f.SetActiveSheet(index)
+	f.DeleteSheet("Sheet1")
+
+	// 基础表头
+	headers := []string{
+		"员工姓名", "税前收入", "社保个人", "公积金个人", "个税",
+		"扣除合计", "实发工资", "状态",
+	}
+	detailHeaders := []string{} // 明细列（当 includeDetails=true 时填充）
+
+	if includeDetails {
+		// 收集所有明细项名称作为表头
+		itemNameMap := make(map[string]bool)
+		var itemNames []string
+		for _, rec := range records {
+			for _, item := range rec.Items {
+				if !itemNameMap[item.ItemName] {
+					itemNameMap[item.ItemName] = true
+					itemNames = append(itemNames, item.ItemName)
+				}
+			}
+		}
+		detailHeaders = itemNames
+	}
+
+	// 合并表头
+	fullHeaders := append(headers, detailHeaders...)
+
+	// 设置表头样式
+	headerStyle, err := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "#FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#4472C4"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("创建表头样式失败: %w", err)
+	}
+
+	for i, header := range fullHeaders {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		if err := f.SetCellValue(sheetName, cell, header); err != nil {
+			return nil, fmt.Errorf("设置表头失败: %w", err)
+		}
+	}
+	lastCol, _ := excelize.CoordinatesToCellName(len(fullHeaders), 1)
+	if err := f.SetCellStyle(sheetName, "A1", lastCol, headerStyle); err != nil {
+		return nil, fmt.Errorf("应用表头样式失败: %w", err)
+	}
+
+	// 写入数据行
+	row := 2
+	var totalGross, totalSI, totalTax, totalNet float64
+
+	for _, recordWithItems := range records {
+		rec := recordWithItems.Record
+		items := recordWithItems.Items
+
+		// 基础列
+		rowData := []interface{}{
+			rec.EmployeeName,
+			rec.GrossIncome,
+			rec.SIDeduction,
+			0.0, // 公积金单独列（目前合并在 si_deduction 中）
+			rec.Tax,
+			rec.TotalDeductions,
+			rec.NetIncome,
+			statusText(rec.Status),
+		}
+
+		// 明细列
+		if includeDetails {
+			for _, name := range detailHeaders {
+				amount := getSalaryItemAmount(items, name)
+				rowData = append(rowData, amount)
+			}
+		}
+
+		for i, val := range rowData {
+			cell, _ := excelize.CoordinatesToCellName(i+1, row)
+			if err := f.SetCellValue(sheetName, cell, val); err != nil {
+				return nil, fmt.Errorf("设置单元格值失败: %w", err)
+			}
+		}
+
+		totalGross += rec.GrossIncome
+		totalSI += rec.SIDeduction
+		totalTax += rec.Tax
+		totalNet += rec.NetIncome
+		row++
+	}
+
+	// 合计行
+	合计Row := row
+	totalRowData := []interface{}{
+		"合计", totalGross, totalSI, "", totalTax, "", totalNet, "",
+	}
+	if includeDetails {
+		for range detailHeaders {
+			totalRowData = append(totalRowData, "")
+		}
+	}
+	for i, val := range totalRowData {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 合计Row)
+		if err := f.SetCellValue(sheetName, cell, val); err != nil {
+			return nil, fmt.Errorf("设置合计值失败: %w", err)
+		}
+	}
+
+	// 数字格式
+	totalCols := len(fullHeaders)
+	numStyle, err := f.NewStyle(&excelize.Style{NumFmt: 2})
+	if err == nil {
+		// 根据表头数量计算最后一列
+		for colIdx := 2; colIdx <= totalCols; colIdx++ {
+			colName, _ := excelize.CoordinatesToCellName(colIdx, 1)
+			for r := 2; r <= 合计Row; r++ {
+				cell := fmt.Sprintf("%s%d", colName[:len(colName)-1], r)
+				_ = f.SetCellStyle(sheetName, cell, cell, numStyle)
+			}
+		}
+	}
+
+	lastColName, _ := excelize.CoordinatesToCellName(totalCols, 1)
+	// 列宽
+	f.SetColWidth(sheetName, "A", "A", 12)
+	f.SetColWidth(sheetName, "B", lastColName[:len(lastColName)-1], 14)
+
+	buffer, err := f.WriteToBuffer()
+	if err != nil {
+		return nil, fmt.Errorf("生成 Excel 文件失败: %w", err)
+	}
+
+	return buffer.Bytes(), nil
+}
+
+// statusText 返回状态中文文本
+func statusText(status string) string {
+	switch status {
+	case "draft":
+		return "草稿"
+	case "calculated":
+		return "已核算"
+	case "confirmed":
+		return "已确认"
+	case "paid":
+		return "已发放"
+	default:
+		return status
+	}
+}
+
+// getSalaryItemSum 获取多个薪资项总和
 func getSalaryItemSum(items []PayrollItem, names []string) float64 {
 	var sum float64
 	nameMap := make(map[string]bool)
