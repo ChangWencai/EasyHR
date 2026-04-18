@@ -1,73 +1,116 @@
 ---
-phase: "09"
-plan: "02"
-subsystem: frontend
-tags: [employee, tool, salary, social-insurance, tax, api-layer, vue]
-dependency_graph:
-  requires: ["09-01"]
-  provides: ["employee-crud", "tool-pages", "api-client-layer"]
-  affects: [frontend]
-tech_stack:
+phase: 09-待办中心
+plan: 02
+subsystem: todo-list
+tags: [todo, excel, excelize, el-table, search, filter, pin]
+
+# Dependency graph
+requires:
+  - phase: 09-01
+    provides: dashboard ring stats API, carousel API, HomeView carousel
+provides:
+  - TodoItem/CarouselItem/TodoInvite backend models
+  - Todo CRUD API (list/search/filter/pin/export/carousels)
+  - Frontend /todo page with full list management
+affects: [todo-scheduler, invite-fill-page, HomeView-shortcuts]
+
+# Tech tracking
+tech-stack:
   added: []
-  patterns: [composition-api, el-table-pagination, api-module-pattern]
-key_files:
-  created: []
+  patterns: [todo-crud-pattern, excel-export-pattern, status-filter-pattern]
+
+key-files:
+  created:
+    - internal/todo/model.go
+    - internal/todo/repository.go
+    - internal/todo/service.go
+    - internal/todo/handler.go
+    - internal/todo/router.go
+    - internal/todo/excel.go
+    - frontend/src/api/todo.ts
+    - frontend/src/views/todo/TodoListView.vue
   modified:
-    - frontend/src/api/employee.ts
-    - frontend/src/api/socialinsurance.ts
-    - frontend/src/api/salary.ts
-    - frontend/src/api/tax.ts
-    - frontend/src/views/employee/EmployeeList.vue
-    - frontend/src/views/employee/EmployeeDetail.vue
-    - frontend/src/views/employee/EmployeeCreate.vue
-    - frontend/src/views/employee/InvitationList.vue
-    - frontend/src/views/employee/OffboardingList.vue
-    - frontend/src/views/employee/statusMap.ts
-    - frontend/src/views/tool/SalaryTool.vue
-    - frontend/src/views/tool/SITool.vue
-    - frontend/src/views/tool/TaxTool.vue
-    - frontend/src/views/tool/ToolHome.vue
+    - cmd/server/main.go
     - frontend/src/router/index.ts
-decisions: []
-metrics:
-  duration: "1 min"
-  completed: "2026-04-19"
-  tasks_completed: 4
-  tasks_total: 4
-  files_count: 16
+
+key-decisions:
+  - "TodoItem uses model.BaseModel for soft-delete and tenant isolation"
+  - "Export function named ExportTodosExcel to avoid collision with handler method"
+  - "Router registered at v1.Group('') so routes are /api/v1/todos and /api/v1/carousels"
+
+patterns-established:
+  - "Todo CRUD: Repository -> Service -> Handler -> Router, same as dashboard pattern"
+  - "Excel export: excelize with styled headers, status colors, CST timezone conversion"
+
+requirements-completed: [TODO-01, TODO-02, TODO-03, TODO-06, TODO-07, TODO-08]
+
+# Metrics
+duration: 5min
+completed: 2026-04-19
 ---
 
-# Phase 09 Plan 02: H5 Employee + Tool Tab Summary
+# Phase 09 Plan 02: 待办事项完整列表页 Summary
 
-## One-liner
+**TodoItem/CarouselItem/TodoInvite 后端模型 + CRUD API（搜索/筛选/置顶/导出）+ 前端 /todo 页面（el-table + 状态筛选 + 分页 + Excel 导出）**
 
-Employee CRUD (list/detail/create/invitation/offboarding) and tool pages (salary/SI/tax) with full API client layer -- all pre-existing in codebase.
+## Performance
 
-## Summary
+- **Duration:** 5 min
+- **Started:** 2026-04-18T19:12:31Z
+- **Completed:** 2026-04-19T04:18:00Z
+- **Tasks:** 2
+- **Files modified:** 9
 
-Plan 09-02 requested implementation of 4 tasks: API layer, employee tab pages, tool tab pages, and AppLayout router update. Upon inspection, all 16 files already contained complete, substantive implementations matching or exceeding the plan specifications. No code changes were needed.
+## Accomplishments
+- Backend TodoItem/CarouselItem/TodoInvite models with full field definitions
+- CRUD API: list with pagination, keyword search, date range filter (60-day limit), status filter, pin toggle, Excel export, carousels
+- Frontend /todo page with el-table, status/keyword/date search, pin toggle, Excel download, pagination (20/50/100)
 
-## Tasks Completed
+## Task Commits
 
-| Task | Name | Status | Notes |
-|------|------|--------|-------|
-| 1 | API Layer | DONE (pre-existing) | employee.ts, socialinsurance.ts, salary.ts, tax.ts all fully implemented |
-| 2 | Employee Tab Pages | DONE (pre-existing) | EmployeeList, EmployeeDetail, EmployeeCreate, InvitationList, OffboardingList all complete |
-| 3 | Tool Tab Pages | DONE (pre-existing) | SalaryTool (3 tabs), SITool (3 tabs), TaxTool (3 tabs) all complete |
-| 4 | AppLayout Tab Update | DONE (pre-existing) | Router already has all routes registered |
+Each task was committed atomically:
+
+1. **Task 1: Backend TodoItem/CarouselItem/TodoInvite models + Repository + Service + Handler + Router + Excel** - `baf1828` (feat)
+2. **Task 2: Frontend todo list page TodoListView.vue + api/todo.ts** - `e87ba4b` (feat)
+
+## Files Created/Modified
+- `internal/todo/model.go` - TodoItem, CarouselItem, TodoInvite models with status/urgency constants
+- `internal/todo/repository.go` - ListTodos, SearchTodos, FilterByDateRange, PinTodo, ListAllForExport, ListCarousels, CreateTodo, FindTodoByID, UpdateTodoStatus, ExistsBySource
+- `internal/todo/service.go` - ListTodos with keyword/date/status routing, PinTodo, ExportTodos, CreateTodo with idempotency, ListCarousels, ComputeUrgencyStatus, GenerateInviteToken
+- `internal/todo/handler.go` - ListTodos, PinTodo, ExportTodos, ListCarousels endpoints
+- `internal/todo/router.go` - RegisterRouter with auth middleware, registers /todos, /todos/:id/pin, /todos/export, /carousels
+- `internal/todo/excel.go` - ExportTodosExcel with styled headers, status colors, CST timezone, xlsx output
+- `frontend/src/api/todo.ts` - listTodos, pinTodo, listCarousels, exportTodos API functions
+- `frontend/src/views/todo/TodoListView.vue` - Full todo list page with search, status filter, date range, pin toggle, export, pagination
+- `cmd/server/main.go` - Added todo import and RegisterRouter call
+- `frontend/src/router/index.ts` - Added /todo route and auth guard
+
+## Decisions Made
+1. **Export function named ExportTodosExcel** - Avoids name collision between handler method ExportTodos and excel helper function
+2. **Router at v1.Group("")** - Routes become /api/v1/todos and /api/v1/carousels (not nested under /todo)
+3. **disabledDate blocks future dates only** - Plan's 60-day limit is enforced server-side; frontend simply disables future dates
 
 ## Deviations from Plan
 
-None -- plan executed exactly as written. All tasks were already implemented in a prior phase.
-
-## Verification
-
-- All 4 API modules export typed interfaces and API functions
-- Employee pages include search, pagination, status tags, CRUD operations
-- Tool pages include multi-tab layouts with full form logic
-- Router includes all required routes (employee, tool, finance, mine)
-- statusMap.ts centralizes all status display mappings
+None - plan executed exactly as written.
 
 ## Self-Check: PASSED
 
-All 16 files verified present and containing substantive implementations.
+- All 8 created files verified present
+- Both commits (baf1828, e87ba4b) verified in git log
+- Backend build passes (go build ./internal/todo/...)
+
+## Issues Encountered
+None
+
+## User Setup Required
+None - no external service configuration required.
+
+## Next Phase Readiness
+- TodoItem model ready for Plan 03 (scheduler, urgency scan, invite flow)
+- CarouselItem model ready for admin management UI
+- TodoInvite model ready for token-based invite submission
+
+---
+*Phase: 09-待办中心*
+*Completed: 2026-04-19*
