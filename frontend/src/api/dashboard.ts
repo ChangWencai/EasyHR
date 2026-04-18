@@ -24,3 +24,19 @@ export interface DashboardResponse {
 export function fetchDashboard(): Promise<DashboardResponse> {
   return request.get('/dashboard').then((res) => res.data)
 }
+
+export interface RingChartStats {
+  completed: number
+  pending: number
+  total: number
+  percent: number
+}
+
+export interface RingChartResponse {
+  stats: RingChartStats
+}
+
+export function fetchTodoRingStats(type: 'all' | 'time-limited'): Promise<RingChartResponse> {
+  const endpoint = type === 'all' ? '/dashboard/todo-stats' : '/dashboard/time-limited-stats'
+  return request.get(endpoint).then((res) => res.data)
+}
