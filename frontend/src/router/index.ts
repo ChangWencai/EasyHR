@@ -10,6 +10,13 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '/home', name: 'home', component: () => import('@/views/home/HomeView.vue') },
 
+      // 考勤管理
+      {
+        path: '/attendance/rule',
+        name: 'attendance-rule',
+        component: () => import('@/views/attendance/AttendanceRule.vue'),
+      },
+
       // 员工管理
       {
         path: '/employee/dashboard',
@@ -155,12 +162,13 @@ router.beforeEach((to, _from) => {
     return
   }
 
-  // 受保护路由：/home, /employee, /tool, /finance, /mine
+  // 受保护路由：/home, /employee, /tool, /finance, /attendance, /mine
   const isProtectedRoute =
     to.path.startsWith('/home') ||
     to.path.startsWith('/employee') ||
     to.path.startsWith('/tool') ||
     to.path.startsWith('/finance') ||
+    to.path.startsWith('/attendance') ||
     to.path.startsWith('/mine')
 
   if (isProtectedRoute && !authStore.isLoggedIn) {

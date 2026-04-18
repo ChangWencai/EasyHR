@@ -47,6 +47,14 @@
             <el-menu-item index="/employee/offboardings">离职管理</el-menu-item>
           </el-sub-menu>
 
+          <el-sub-menu index="/attendance">
+            <template #title>
+              <el-icon><Clock /></el-icon>
+              <span>考勤管理</span>
+            </template>
+            <el-menu-item index="/attendance/rule">打卡规则设置</el-menu-item>
+          </el-sub-menu>
+
           <el-sub-menu index="/tool">
             <template #title>
               <el-icon><Tools /></el-icon>
@@ -134,6 +142,11 @@
           <el-menu-item index="/employee/offboardings">离职管理</el-menu-item>
         </el-sub-menu>
 
+        <el-sub-menu index="/attendance">
+          <template #title><el-icon><Clock /></el-icon><span>考勤管理</span></template>
+          <el-menu-item index="/attendance/rule">打卡规则设置</el-menu-item>
+        </el-sub-menu>
+
         <el-sub-menu index="/tool">
           <template #title><el-icon><Tools /></el-icon><span>人事工具</span></template>
           <el-menu-item index="/tool">概览</el-menu-item>
@@ -175,6 +188,7 @@ import {
   DArrowLeft,
   DArrowRight,
   Management,
+  Clock,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -191,6 +205,7 @@ const activeMenu = computed(() => {
 
 const pageTitleMap: Record<string, string> = {
   '/home': '首页',
+  '/attendance/rule': '打卡规则设置',
   '/employee': '员工列表',
   '/employee/create': '新增员工',
   '/employee/invitations': '入职邀请',
