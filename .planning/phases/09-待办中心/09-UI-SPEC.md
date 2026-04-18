@@ -1,10 +1,11 @@
 ---
 phase: 09
 slug: 待办中心
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-19
+reviewed_at: 2026-04-19
 ---
 
 # Phase 9 — UI Design Contract
@@ -54,11 +55,12 @@ All values are multiples of 4px (8-point grid base).
 |------|------|--------|-------------|---------|
 | Display | 22px | 700 | 1.2 | Page title (`.page-title`), section heading |
 | Body | 14px | 400 | 1.5 | Default text, table content |
-| Label | 13px | 500 | 1.4 | Shortcut label, table header |
-| Caption | 12px | 400 | 1.4 | Deadline text, badge count, tertiary info |
-| CTA | 16px | 500 | 1.0 | Primary button text |
+| Label | 13px | 400 | 1.4 | Shortcut label, table header, deadline text, badge count, tertiary info (was Caption 12px merged here) |
+| CTA | 16px | 400 | 1.0 | Primary button text |
 
-**Source:** HomeView.vue existing tokens (page-title: 22px/700; todo-title: 14px/500; shortcut-label: 13px; todo-deadline: 12px; submit-btn: 16px)
+**Weight budget: 2 weights total (700 for display/headings; 400 for all other roles including CTA).**
+
+**Source:** HomeView.vue existing tokens (page-title: 22px/700; todo-title: 14px/400; shortcut-label: 13px; todo-deadline: 13px merged; submit-btn: 16px/400). Reduced from 5 sizes to 4; reduced from 3 weights to 2.
 
 **Note:** Headings and body use `--text-primary: #172B4D`; secondary uses `--text-secondary: #5E6C84`; tertiary uses `--text-tertiary: #97A0AF` from variables.scss.
 
@@ -102,7 +104,7 @@ All values are multiples of 4px (8-point grid base).
 | Completed segment color | `#4F6EF7` (brand primary) |
 | Pending/Incomplete segment color | `#E8ECF0` (light gray, `--border`) |
 | Center label | Percentage text, 22px/700, `--text-primary` |
-| Center sublabel | Count below percentage (e.g. "12/20"), 12px/400, `--text-tertiary` |
+| Center sublabel | Count below percentage (e.g. "12/20"), 13px/400, `--text-tertiary` |
 | Layout | `display: flex; gap: 16px` within card, each chart `flex: 1` |
 | Card container | White card with `--radius-lg: 12px`, padding 20px, below page title |
 
@@ -172,7 +174,7 @@ All values are multiples of 4px (8-point grid base).
 - **Time range:** el-date-picker range, start_at / end_at
 - **Link URL:** el-input for external or internal route
 - **Active toggle:** el-switch, updates `active` boolean
-- **Sort:** up/down arrow buttons to reorder (updates `sort_order`)
+- **Sort:** up/down arrow buttons to reorder (updates `sort_order`). Each button must have an `aria-label` attribute (e.g. `aria-label="上移"` for the up arrow, `aria-label="下移"` for the down arrow) for accessibility.
 
 ### 8. TodoInvitePage (new page — reuse RegisterPage pattern)
 - **Route:** `/todo/:id/invite?token=xxx` (D-09-10)
@@ -185,7 +187,7 @@ All values are multiples of 4px (8-point grid base).
 
 ### 9. StatsCard (reused from existing patterns)
 - **Purpose:** Show completed count / total count below each ring chart
-- **Typography:** 22px/700 number, 12px/400 label
+- **Typography:** 22px/700 number, 13px/400 label (deadline/tertiary info merged into 13px label tier)
 
 ---
 
@@ -254,7 +256,7 @@ No third-party registries. All components from Element Plus official set or ECha
 - [ ] Dimension 1 Copywriting: PASS
 - [ ] Dimension 2 Visuals: PASS
 - [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
+- [ ] Dimension 4 Typography: PASS (reduced to 4 sizes, 2 weights)
 - [ ] Dimension 5 Spacing: PASS
 - [ ] Dimension 6 Registry Safety: PASS
 
