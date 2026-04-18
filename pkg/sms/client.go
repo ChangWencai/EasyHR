@@ -101,6 +101,65 @@ func (c *Client) SendCode(ctx context.Context, phone, code string) error {
 	return nil
 }
 
+// SendTemplateMessage 发送自定义模板短信
+func (c *Client) SendTemplateMessage(ctx context.Context, phone, templateCode, templateParam string) error {
+	if c.cfg.TestMode {
+		return nil
+	}
+	params := map[string]string{
+		"AccessKeyId":      c.cfg.AccessKeyID,
+		"Action":           "SendSms",
+		"Format":           "JSON",
+		"PhoneNumbers":     phone,
+		"RegionId":         "cn-hangzhou",
+		"SignName":         c.cfg.SignName,
+		"SignatureMethod":  "HMAC-SHA1",
+		"SignatureNonce":   fmt.Sprintf("%d", time.Now().UnixNano()),
+		"SignatureVersion": "1.0",
+		"TemplateCode":     templateCode,
+		"TemplateParam":    templateParam,
+		"Timestamp":        time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+		"Version":          "2017-05-25",
+	}
+
+	sign := signRequest(params, c.cfg.AccessKeySecret)
+	params["Signature"] = sign
+
+	query := url.Values{}
+	for k, v := range params {
+		query.Set(k, v)
+	}
+
+	scheme := "https"
+	if strings.HasPrefix(c.cfg.Endpoint, "http://") || strings.HasPrefix(c.cfg.Endpoint, "localhost") || strings.HasPrefix(c.cfg.Endpoint, "127.0.0.1") {
+		scheme = "http"
+	}
+	endpoint := c.cfg.Endpoint
+	if !strings.HasPrefix(endpoint, "http") {
+		endpoint = scheme + "://" + endpoint
+	}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetQueryString(query.Encode()).
+		Get(endpoint)
+	if err != nil {
+		return fmt.Errorf("send template sms: %w", err)
+	}
+
+	var result struct {
+		Code    string `json:"Code"`
+		Message string `json:"Message"`
+	}
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return fmt.Errorf("parse response: %w", err)
+	}
+	if result.Code != "OK" {
+		return fmt.Errorf("sms api error: %s - %s", result.Code, result.Message)
+	}
+	return nil
+}
+
 func signRequest(params map[string]string, secret string) string {
 	keys := make([]string, 0, len(params))
 	for k := range params {

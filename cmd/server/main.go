@@ -66,6 +66,7 @@ func initApp() {
 		&employee.Invitation{},
 		&employee.Offboarding{},
 		&employee.Contract{},
+		&employee.Registration{},
 		&department.Department{},
 		&socialinsurance.SocialInsurancePolicy{},
 		&socialinsurance.SocialInsuranceRecord{},
@@ -132,6 +133,11 @@ func main() {
 	invRepo := employee.NewInvitationRepository(db)
 	invSvc := employee.NewInvitationService(invRepo, empRepo, cfg.Crypto)
 	invHandler := employee.NewInvitationHandler(invSvc)
+
+	// 员工信息登记模块依赖注入
+	regRepo := employee.NewRegistrationRepository(db)
+	regSvc := employee.NewRegistrationService(regRepo, empRepo, cfg.Crypto)
+	regHandler := employee.NewRegistrationHandler(regSvc)
 
 	// 部门模块依赖注入
 	deptRepo := department.NewRepository(db)
@@ -205,6 +211,7 @@ func main() {
 		empHandler.RegisterRoutes(v1, authMiddleware)
 		deptHandler.RegisterRoutes(v1, authMiddleware)
 		invHandler.RegisterRoutes(v1, authMiddleware)
+		regHandler.RegisterRoutes(v1, authMiddleware)
 		obHandler.RegisterRoutes(v1, authMiddleware)
 		contractHandler.RegisterRoutes(v1, authMiddleware)
 		siHandler.RegisterRoutes(v1, authMiddleware)
