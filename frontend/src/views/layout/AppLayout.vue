@@ -53,6 +53,7 @@
               <span>考勤管理</span>
             </template>
             <el-menu-item index="/attendance/rule">打卡规则设置</el-menu-item>
+            <el-menu-item index="/attendance/clock-live">今日打卡实况</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/tool">
@@ -206,6 +207,7 @@ const activeMenu = computed(() => {
 const pageTitleMap: Record<string, string> = {
   '/home': '首页',
   '/attendance/rule': '打卡规则设置',
+  '/attendance/clock-live': '今日打卡实况',
   '/employee': '员工列表',
   '/employee/create': '新增员工',
   '/employee/invitations': '入职邀请',

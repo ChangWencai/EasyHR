@@ -16,6 +16,11 @@ const routes: RouteRecordRaw[] = [
         name: 'attendance-rule',
         component: () => import('@/views/attendance/AttendanceRule.vue'),
       },
+      {
+        path: '/attendance/clock-live',
+        name: 'attendance-clock-live',
+        component: () => import('@/views/attendance/ClockLive.vue'),
+      },
 
       // 员工管理
       {
