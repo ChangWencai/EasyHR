@@ -142,6 +142,19 @@ func (m *MockDashboardService) GetEmployeeDashboard(ctx context.Context, orgID i
 	return m.EmployeeResult, nil
 }
 
+func (m *MockDashboardService) GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return &GetTodoStatsResponse{}, nil
+}
+func (m *MockDashboardService) GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	return &GetTimeLimitedStatsResponse{}, nil
+}
+
 // Verify Handler works with ServiceInterface
 var _ ServiceInterface = (*MockDashboardService)(nil)
 

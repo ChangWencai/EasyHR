@@ -13,6 +13,7 @@ import (
 // ServiceInterface abstracts DashboardService for handler dependency injection.
 type ServiceInterface interface {
 	GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error)
+	GetEmployeeDashboard(ctx context.Context, orgID int64) (*EmployeeDashboardResult, error)
 	GetTodoStats(ctx context.Context, orgID int64) (*GetTodoStatsResponse, error)
 	GetTimeLimitedStats(ctx context.Context, orgID int64) (*GetTimeLimitedStatsResponse, error)
 }
@@ -254,5 +255,26 @@ func (s *DashboardService) GetTimeLimitedStats(ctx context.Context, orgID int64)
 			Total:     total,
 			Percent:   percent,
 		},
+	}, nil
+}
+// GetEmployeeDashboard returns employee-specific statistics for the employee dashboard.
+func (s *DashboardService) GetEmployeeDashboard(ctx context.Context, orgID int64) (*EmployeeDashboardResult, error) {
+	active, joined, left, err := s.repo.GetEmployeeStats(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 离职率 = 离职人数 / (离职人数 + 期末人数) x 100%
+	turnoverRate := 0.0
+	denominator := float64(left + active)
+	if denominator > 0 {
+		turnoverRate = float64(left) / denominator * 100
+	}
+
+	return &EmployeeDashboardResult{
+		ActiveCount:     active,
+		JoinedThisMonth: joined,
+		LeftThisMonth:   left,
+		TurnoverRate:    math.Round(turnoverRate*100) / 100,
 	}, nil
 }
