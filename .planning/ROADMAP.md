@@ -18,9 +18,9 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 5: 员工管理增强 + 组织架构基础** - 数据看板、花名册增强、组织架构可视化、员工信息登记、办离职优化、下载导出
+- [ ] **Phase 5: 员工管理增强 + 组织架构基础** - 数据看板，花名册增强、组织架构可视化、员工信息登记、办离职优化、下载导出
 - [ ] **Phase 6: 考勤管理** - 打卡设置（3种模式）、今日打卡实况、审批流引擎（11种审批类型）、出勤月报
-- [ ] **Phase 7: 薪资管理增强** - 数据看板、调薪/普调、个税上传、绩效系数、薪资算法增强、发工资条、下载导出
+- [ ] **Phase 7: 薪资管理增强** - 数据看板，调薪/普调、个税上传、绩效系数、薪资算法增强，发工资条、下载导出
 - [ ] **Phase 8: 社保公积金增强** - 数据看板、增减员优化、缴费渠道与状态管理、提醒与明细
 - [ ] **Phase 9: 待办中心** - 待办事项汇总、轮播图与快捷办事、限时任务引擎、完成率统计
 
@@ -164,12 +164,12 @@ Plans:
   3. 首页展示 1-3 张轮播图和快捷办事入口（新入职/调薪/考勤/个税/社保公积金），点击直达对应功能
   4. 系统自动生成 7 种限时任务（合同签约/续签、个税申报、社保缴费/增减员/基数调整），显示剩余时间和超时/失效状态
   5. 待办中心展示全部事项完成率和限时任务完成率的环形图
-**Plans**: 4 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
-- [ ] 09-03: TBD
+- [ ] 09-01: HomeView 环形图（ECharts）+ HomeCarousel 轮播图组件 + 快捷入口扩展 + 后端 GetTodoStats API
+- [ ] 09-02: 待办完整列表页 TodoListView.vue + CarouselItem/TodoItem/TodoInvite 模型 + todo API + Excel 导出
+- [ ] 09-03: 协办邀请 + 终止任务 + asynq 调度器（urgency 扫描 + 轮播激活 + 7种限时任务生成）+ 前端 InviteFillPage.vue
 
 **UI hint**: yes
 
@@ -184,7 +184,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 6. 考勤管理 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 7. 薪资管理增强 | v1.3 | 3/4 | In progress | - |
 | 8. 社保公积金增强 | v1.3 | 4/4 | Complete | 2026-04-19 |
-| 9. 待办中心 | v1.3 | 0/? | Not started | - |
+| 9. 待办中心 | v1.3 | 0/3 | Ready for planning | - |
 
 ---
 _v1.0 + v1.1 + v1.2 已完整交付。v1.3 roadmap created: 2026-04-17_
