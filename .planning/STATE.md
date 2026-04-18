@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: 产品功能全面优化（基于 PRD 1.1）
 status: in_progress
-stopped_at: Phase 08 verified and complete
-last_updated: "2026-04-19T02:30:00Z"
+stopped_at: Phase 09 context gathered
+last_updated: "2026-04-19T03:00:00Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 6
@@ -21,16 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 08 — 社保公积金增强
+**Current focus:** Phase 09 — 待办中心
 
 ## Current Position
 
-Phase: 08 (社保公积金增强) -- Complete
-Plan: 4 of 4 completed
-Status: Plan 04 completed (Excel 导出含五险分项列)
+Phase: 09 (待办中心) -- Context gathered
+Plan: 0 of ? planned
+Status: Ready for planning
 Last activity: 2026-04-19
 
-Progress: [█████████▊] 88%
+Progress: [█████████░] 88%
+
+## Phase 09 Key Decisions
+
+- **环形图**: ECharts + HomeView 顶部
+- **限时任务**: 扩展 TodoItem 字段（deadline/is_time_limited/urgency_status），1-7天超期=超时，15天+=失效
+- **轮播图**: CarouselItem 表，管理员配置 1-3 张
+- **快捷入口**: 保留现有 6 个 + 追加 3 个新入口
+- **协办邀请**: 复用 Token 机制，纯填写，无登录
+- **终止任务**: 保留数据，状态改为"已终止"
 
 ## Performance Metrics
 
@@ -101,6 +110,7 @@ Recent decisions affecting current work:
 - [Phase 07 P04]: SalaryListHandler 和 PayrollHandler 路由分开（/salary/list vs /salary/payroll）避免重复注册
 - [Phase 08]: SIMonthlyPayment 月度缴费表（employee_id + year_month + status + payment_channel），asynq 定时任务流转状态，Organization.payment_channel 作为默认值
 - [Phase 08 P04]: Excel 导出 handler 直接调用 repo.ListRecords，export=full 控制含明细导出，写入 gin.Context.Data 避免双重 buffer
+- [Phase 09]: TodoItem 扩展 deadline/is_time_limited/urgency_status 字段，不新建表；环形图 ECharts + HomeView 顶部；CarouselItem 表存轮播图配置；协办复用 Token 机制，纯填写无需登录；终止保留数据+标记状态
 
 ### Roadmap Evolution
 
@@ -120,3 +130,4 @@ Recent decisions affecting current work:
 Last session: 2026-04-19T02:05:00Z
 Stopped at: Phase 08 complete (all 4 plans done)
 Resume file: .planning/phases/08-社保公积金增强/08-PLAN-04-SUMMARY.md
+
