@@ -29,14 +29,16 @@ export const invitationStatusTagType: Record<string, string> = {
 }
 
 export const offboardingStatusMap: Record<string, string> = {
-  pending_review: '待审核',
+  pending: '待审核',
   approved: '已批准',
+  rejected: '已驳回',
   completed: '已完成',
 }
 
 export const offboardingStatusTagType: Record<string, string> = {
-  pending_review: 'warning',
+  pending: 'warning',
   approved: 'primary',
+  rejected: 'danger',
   completed: 'success',
 }
 </script>

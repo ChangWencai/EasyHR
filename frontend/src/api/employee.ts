@@ -29,14 +29,14 @@ export interface Offboarding {
   id: number
   employee_id: number
   employee_name: string
-  status: 'pending_review' | 'approved' | 'completed'
-  resign_reason: string
-  last_workday: string
-  checklist: {
-    items_returned: boolean
-    handover_done: boolean
-    final_settlement: boolean
-  }
+  status: 'pending' | 'approved' | 'rejected' | 'completed'
+  type: string
+  resignation_date: string
+  reason: string
+  checklist_items: Record<string, unknown>
+  completed_at: string | null
+  approved_by: number | null
+  approved_at: string | null
   created_at: string
 }
 
@@ -148,10 +148,13 @@ export const employeeApi = {
     request.get<OffboardingListResponse>('/offboardings', { params }),
 
   approveOffboarding: (id: number) =>
-    request.post<void>(`/offboardings/${id}/approve`),
+    request.put<void>(`/offboardings/${id}/approve`),
+
+  rejectOffboarding: (id: number, reason?: string) =>
+    request.put<void>(`/offboardings/${id}/reject`, { reason }),
 
   completeOffboarding: (id: number) =>
-    request.post<void>(`/offboardings/${id}/complete`),
+    request.put<void>(`/offboardings/${id}/complete`),
 
   exportExcel: () =>
     request.get('/employees/export', { responseType: 'blob' }),
