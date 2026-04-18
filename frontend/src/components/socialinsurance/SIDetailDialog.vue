@@ -177,7 +177,7 @@ function getSummary({ columns, data }: { columns: { property: string }[]; data: 
 async function fetchDetail(recordId: number): Promise<void> {
   loading.value = true
   try {
-    const res = await axios.get(`/api/v1/socialinsurance/records/${recordId}/detail`)
+    const res = await axios.get(`/api/v1/social-insurance/monthly-records/${recordId}`)
     const responseData = (res as { data?: SIDetailData })?.data ?? res
     detail.value = {
       ...(responseData as SIDetailData),
