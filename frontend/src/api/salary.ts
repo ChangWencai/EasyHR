@@ -77,8 +77,9 @@ export interface AdjustmentRequest {
   effective_month: string
   adjustment_type: 'base_salary' | 'allowance' | 'bonus' | 'year_end_bonus' | 'other'
   adjust_by: 'amount' | 'ratio'
-  old_value: number
-  new_value: number
+  adjust_value: number
+  old_value?: number
+  new_value?: number
 }
 
 export interface MassAdjustmentRequest {
@@ -86,14 +87,26 @@ export interface MassAdjustmentRequest {
   effective_month: string
   adjustment_type: 'base_salary' | 'allowance' | 'bonus' | 'year_end_bonus' | 'other'
   adjust_by: 'amount' | 'ratio'
-  old_value: number
-  new_value: number
+  adjust_value: number
+  old_value?: number
+  new_value?: number
+}
+
+export interface AdjustmentPreviewRequest {
+  employee_id?: number
+  department_ids?: number[]
+  effective_month: string
+  adjustment_type: 'base_salary' | 'allowance' | 'bonus' | 'year_end_bonus' | 'other'
+  adjust_by: 'amount' | 'ratio'
+  adjust_value: number
 }
 
 export interface AdjustmentPreviewResponse {
   employee_count: number
+  department_count?: number
   monthly_impact: number
   annual_impact: number
+  effective_month: string
 }
 
 // ========== 绩效系数接口 ==========
@@ -197,6 +210,9 @@ export const salaryApi = {
   massAdjustment: (data: MassAdjustmentRequest) =>
     request.post('/salary/mass-adjustment', data),
 
+  previewAdjustment: (data: AdjustmentPreviewRequest) =>
+    request.post<AdjustmentPreviewResponse>('/salary/adjustment/preview', data),
+
   getAdjustmentList: (params: { effective_month?: string; page?: number; page_size?: number }) =>
     request.get('/salary/adjustments', { params }),
 
@@ -223,4 +239,35 @@ export const salaryApi = {
 
   getSlipLogs: (params: { year?: number; month?: number; page?: number; page_size?: number }) =>
     request.get<{ logs: SlipSendLog[]; total: number }>('/salary/slip/logs', { params }),
+
+  // 薪资列表
+  getSalaryList: (params: { year: number; month: number; department_id?: number; keyword?: string; page?: number; page_size?: number }) =>
+    request.get<{ list: SalaryRecord[]; total: number }>('/salary/list', { params }),
+
+  // 解锁
+  sendUnlockCode: (data: { phone: string }) =>
+    request.post('/salary/unlock/send-code', data),
+
+  unlockRecord: (data: { record_id: number; sms_code: string }) =>
+    request.post('/salary/unlock', data),
+
+  // 导出（含税前明细）
+  exportWithDetails: (year: number, month: number, includeDetails: boolean) =>
+    request.get('/salary/export', {
+      params: { year, month, include_details: includeDetails },
+      responseType: 'blob',
+    }),
+}
+
+export interface SalaryRecord {
+  id: number
+  employee_id: number
+  employee_name: string
+  department_name: string
+  gross_income: number
+  total_deductions: number
+  tax: number
+  si_deduction: number
+  net_income: number
+  status: string
 }
