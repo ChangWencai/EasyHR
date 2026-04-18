@@ -167,9 +167,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01: HomeView 环形图（ECharts）+ HomeCarousel 轮播图组件 + 快捷入口扩展 + 后端 GetTodoStats API
-- [ ] 09-02: 待办完整列表页 TodoListView.vue + CarouselItem/TodoItem/TodoInvite 模型 + todo API + Excel 导出
-- [ ] 09-03: 协办邀请 + 终止任务 + asynq 调度器（urgency 扫描 + 轮播激活 + 7种限时任务生成）+ 前端 InviteFillPage.vue
+- [x] 09-01: HomeView 环形图（ECharts）+ HomeCarousel 轮播图组件 + 快捷入口扩展 + 后端 GetTodoStats API
+- [x] 09-02: 待办完整列表页 TodoListView.vue + CarouselItem/TodoItem/TodoInvite 模型 + todo API + Excel 导出
+- [x] 09-03: 协办邀请 + 终止任务 + gocron 调度器（urgency 扫描 + 轮播激活 + 7种限时任务生成）+ 轮播图管理页 + 前端 InviteFillPage.vue
 
 **UI hint**: yes
 
@@ -184,7 +184,7 @@ Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 | 6. 考勤管理 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 7. 薪资管理增强 | v1.3 | 3/4 | In progress | - |
 | 8. 社保公积金增强 | v1.3 | 4/4 | Complete | 2026-04-19 |
-| 9. 待办中心 | v1.3 | 0/3 | Ready for planning | - |
+| 9. 待办中心 | v1.3 | 3/3 | Complete | 2026-04-19 |
 
 ---
 _v1.0 + v1.1 + v1.2 已完整交付。v1.3 roadmap created: 2026-04-17_
