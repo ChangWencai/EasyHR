@@ -141,3 +141,189 @@ func ComputeUrgencyStatus(deadline time.Time, currentStatus string) string {
 	}
 	return UrgencyNormal
 }
+
+// InviteResult 邀请结果
+type InviteResult struct {
+	URL string `json:"url"`
+}
+
+// InviteTodo 创建协办邀请（生成Token）
+func (s *Service) InviteTodo(ctx context.Context, orgID int64, todoID int64, userID int64) (*InviteResult, error) {
+	// 验证待办存在
+	_, err := s.repo.FindTodoByID(ctx, orgID, todoID)
+	if err != nil {
+		return nil, fmt.Errorf("todo not found")
+	}
+
+	token, err := GenerateInviteToken()
+	if err != nil {
+		return nil, fmt.Errorf("generate token: %w", err)
+	}
+
+	now := time.Now()
+	invite := &TodoInvite{}
+	invite.OrgID = orgID
+	invite.TodoID = todoID
+	invite.Token = token
+	invite.Status = InviteStatusPending
+	invite.ExpiresAt = now.Add(InviteExpiryDuration)
+	invite.CreatedBy = userID
+	if err := s.repo.CreateInvite(ctx, invite); err != nil {
+		return nil, fmt.Errorf("create invite: %w", err)
+	}
+
+	// 返回邀请URL（前端通过 VITE_API_BASE_URL 拼接完整地址）
+	inviteURL := fmt.Sprintf("/todo/%d/invite?token=%s", todoID, token)
+	return &InviteResult{URL: inviteURL}, nil
+}
+
+// TerminateTodo 终止待办任务（状态变为 terminated）
+func (s *Service) TerminateTodo(ctx context.Context, orgID int64, todoID int64) error {
+	return s.repo.UpdateTodoStatus(ctx, orgID, todoID, TodoStatusTerminated)
+}
+
+// VerifyResult Token验证结果
+type VerifyResult struct {
+	Valid   bool   `json:"valid"`
+	Expired bool   `json:"expired"`
+	Title   string `json:"title"`
+	TodoID  int64  `json:"todo_id"`
+}
+
+// VerifyInviteToken 验证协办邀请Token
+func (s *Service) VerifyInviteToken(ctx context.Context, token string) (*VerifyResult, error) {
+	invite, err := s.repo.FindInviteByToken(ctx, token)
+	if err != nil {
+		return &VerifyResult{Valid: false}, nil // 找不到Token -> 无效
+	}
+
+	if invite.Status == InviteStatusUsed {
+		return &VerifyResult{Valid: false}, nil
+	}
+	if time.Now().After(invite.ExpiresAt) {
+		return &VerifyResult{Valid: false, Expired: true}, nil
+	}
+
+	// 查询关联待办标题
+	todo, err := s.repo.FindTodoByID(ctx, invite.OrgID, invite.TodoID)
+	if err != nil {
+		return &VerifyResult{Valid: false}, nil
+	}
+
+	return &VerifyResult{
+		Valid:  true,
+		Title:  todo.Title,
+		TodoID: invite.TodoID,
+	}, nil
+}
+
+// SubmitInviteRequest 协办提交请求
+type SubmitInviteRequest struct {
+	Name   string `json:"name" binding:"required"`
+	Phone  string `json:"phone"`
+	Remark string `json:"remark"`
+}
+
+// SubmitInviteResponse 协办提交响应
+type SubmitInviteResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// SubmitInvite 协办人提交信息（公开接口，无需登录）
+func (s *Service) SubmitInvite(ctx context.Context, token string, req *SubmitInviteRequest) (*SubmitInviteResponse, error) {
+	// 验证Token
+	invite, err := s.repo.FindInviteByToken(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("invalid token")
+	}
+	if invite.Status == InviteStatusUsed {
+		return nil, fmt.Errorf("link already used")
+	}
+	if time.Now().After(invite.ExpiresAt) {
+		return nil, fmt.Errorf("link expired")
+	}
+
+	// 标记邀请已使用
+	if err := s.repo.MarkInviteUsed(ctx, invite.ID); err != nil {
+		return nil, fmt.Errorf("mark used: %w", err)
+	}
+
+	// 当前仅记录协办人已提交，后续可在此扩展实际业务逻辑
+	_ = req.Name
+	_ = req.Phone
+	_ = req.Remark
+
+	return &SubmitInviteResponse{
+		Success: true,
+		Message: "信息已提交，感谢您的配合",
+	}, nil
+}
+
+// ScanUrgencyStatus 扫描限时任务更新紧迫状态
+func (s *Service) ScanUrgencyStatus(ctx context.Context) (int, error) {
+	return s.repo.ScanUrgencyStatus(ctx)
+}
+
+// UpdateCarouselActivation 更新轮播图激活状态
+func (s *Service) UpdateCarouselActivation(ctx context.Context) (int, error) {
+	return s.repo.UpdateCarouselActivation(ctx)
+}
+
+// CarouselRequest 创建/更新轮播图请求
+type CarouselRequest struct {
+	ImageURL  string     `json:"image_url" binding:"required"`
+	LinkURL   string     `json:"link_url"`
+	SortOrder int        `json:"sort_order"`
+	Active    bool       `json:"active"`
+	StartAt   *time.Time `json:"start_at"`
+	EndAt     *time.Time `json:"end_at"`
+}
+
+// CreateCarousel 创建轮播图（最多3张）
+func (s *Service) CreateCarousel(ctx context.Context, orgID int64, req *CarouselRequest) (*CarouselItem, error) {
+	item := &CarouselItem{
+		ImageURL:  req.ImageURL,
+		LinkURL:   req.LinkURL,
+		SortOrder: req.SortOrder,
+		Active:    req.Active,
+		StartAt:   req.StartAt,
+		EndAt:     req.EndAt,
+	}
+	item.OrgID = orgID
+	if err := s.repo.CreateCarousel(ctx, item); err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+// UpdateCarousel 更新轮播图
+func (s *Service) UpdateCarousel(ctx context.Context, orgID int64, id int64, req *CarouselRequest) error {
+	updates := map[string]interface{}{
+		"image_url": req.ImageURL,
+		"active":    req.Active,
+	}
+	if req.LinkURL != "" {
+		updates["link_url"] = req.LinkURL
+	}
+	if req.SortOrder > 0 {
+		updates["sort_order"] = req.SortOrder
+	}
+	if req.StartAt != nil {
+		updates["start_at"] = req.StartAt
+	}
+	if req.EndAt != nil {
+		updates["end_at"] = req.EndAt
+	}
+	return s.repo.UpdateCarousel(ctx, orgID, id, updates)
+}
+
+// DeleteCarousel 删除轮播图
+func (s *Service) DeleteCarousel(ctx context.Context, orgID int64, id int64) error {
+	return s.repo.DeleteCarousel(ctx, orgID, id)
+}
+
+// ListAllCarousels 查询所有轮播图（管理用）
+func (s *Service) ListAllCarousels(ctx context.Context, orgID int64) ([]CarouselItem, error) {
+	return s.repo.ListAllCarousels(ctx, orgID)
+}

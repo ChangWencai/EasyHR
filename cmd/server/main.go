@@ -25,6 +25,7 @@ import (
 	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/tax"
 	"github.com/wencai/easyhr/internal/todo"
+	"github.com/wencai/easyhr/internal/upload"
 	"github.com/wencai/easyhr/internal/user"
 	"github.com/wencai/easyhr/internal/wxmp"
 	"github.com/wencai/easyhr/pkg/sms"
@@ -94,6 +95,11 @@ func initApp() {
 		// 财务模块模型
 		&finance.Account{}, &finance.Period{}, &finance.Voucher{}, &finance.JournalEntry{},
 		&finance.Invoice{}, &finance.ExpenseReimbursement{}, &finance.ReportSnapshot{},
+
+		// 待办中心模型
+		&todo.TodoItem{},
+		&todo.CarouselItem{},
+		&todo.TodoInvite{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
 	}
@@ -278,6 +284,7 @@ func main() {
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 		dashboard.RegisterRouter(v1.Group("/dashboard"), authMiddleware, db)
 		todo.RegisterRouter(v1.Group(""), authMiddleware, db)
+		upload.RegisterRouter(v1.Group(""), "./uploads", "")
 		wxmp.RegisterWXMPRouter(v1, db, cfg.JWT.Secret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL, rdb, cfg.Crypto.AESKey, userSvc)
 
 		v1.GET("/health", func(c *gin.Context) {
@@ -309,6 +316,18 @@ func main() {
 			taxScheduler.Shutdown()
 		}
 	}()
+
+		// 待办中心定时任务（urgency scan + carousel activation + 任务生成）
+		todoRepo := todo.NewRepository(db)
+		todoSched, todoSchedErr := todo.NewScheduler(todoRepo, rdb, nil).Start()
+		if todoSchedErr != nil {
+			logger.Logger.Warn("todo scheduler start failed", zap.Error(todoSchedErr))
+		}
+		defer func() {
+			if todoSched != nil {
+				todoSched.Shutdown()
+			}
+		}()
 
 	// 初始化个税税率表种子数据（如果不存在）
 	if err := taxSvc.SeedDefaultBrackets(time.Now().Year()); err != nil {
