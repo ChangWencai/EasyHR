@@ -16,6 +16,7 @@ type Organization struct {
 	ContactName  string         `gorm:"column:contact_name;type:varchar(50);comment:联系人姓名" json:"contact_name"`
 	ContactPhone string         `gorm:"column:contact_phone;type:varchar(200);comment:联系人电话" json:"contact_phone"`
 	Status       string         `gorm:"column:status;type:varchar(20);default:active;comment:状态（active/inactive）" json:"status"`
+	SIPaymentChannel string    `gorm:"column:si_payment_channel;type:varchar(20);not null;default:self;comment:社保缴费渠道(self/agent_new/agent_existing)" json:"si_payment_channel"`
 	CreatedBy    int64          `gorm:"column:created_by;comment:创建人ID" json:"created_by"`
 	CreatedAt    time.Time      `gorm:"column:created_at;autoCreateTime;comment:创建时间" json:"created_at"`
 	UpdatedBy    int64          `gorm:"column:updated_by;comment:更新人ID" json:"updated_by"`

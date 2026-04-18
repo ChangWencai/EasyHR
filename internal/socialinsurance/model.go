@@ -1,8 +1,12 @@
 package socialinsurance
 
 import (
+	"time"
+
+	"github.com/shopspring/decimal"
 	"github.com/wencai/easyhr/internal/common/model"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // InsuranceItem 单个险种配置
@@ -91,4 +95,55 @@ func (ChangeHistory) TableName() string {
 // newJSONType 辅助函数：将 FiveInsurances 包装为 datatypes.JSONType
 func newJSONType(data FiveInsurances) datatypes.JSONType[FiveInsurances] {
 	return datatypes.NewJSONType(data)
+}
+
+// ========== 月度缴费记录（SIMonthlyPayment）==========
+
+// PaymentStatus 缴费状态类型（D-SI-01：月度独立追踪，不与参保生命周期 conflate）
+type PaymentStatus string
+
+const (
+	PaymentStatusNormal         PaymentStatus = "normal"          // 正常
+	PaymentStatusPending        PaymentStatus = "pending"         // 待缴
+	PaymentStatusOverdue        PaymentStatus = "overdue"         // 欠缴
+	PaymentStatusTransferred    PaymentStatus = "transferred"     // 已转出
+	PaymentStatusNotTransferred PaymentStatus = "not_transferred" // 未转出
+)
+
+// 缴费渠道常量
+const (
+	SIPayChannelSelf          = "self"            // 自主缴费
+	SIPayChannelAgentNew      = "agent_new"       // 代理缴费新客
+	SIPayChannelAgentExisting = "agent_existing"  // 代理缴费已合作
+)
+
+// SIMonthlyPayment 月度缴费记录（D-SI-01）
+// 每条记录代表某员工某月的社保公积金缴费状态，由 asynq 定时任务生成
+type SIMonthlyPayment struct {
+	model.BaseModel
+	EmployeeID     uint            `gorm:"column:employee_id;not null;index:idx_org_employee_month,priority:2;comment:员工ID" json:"employee_id"`
+	YearMonth      string          `gorm:"column:year_month;type:varchar(6);not null;index:idx_org_employee_month,priority:3;comment:年月YYYYMM" json:"year_month"`
+	Status         PaymentStatus   `gorm:"column:status;type:varchar(20);not null;default:pending;comment:缴费状态" json:"status"`
+	PaymentChannel string          `gorm:"column:payment_channel;type:varchar(20);not null;default:self;comment:缴费渠道" json:"payment_channel"`
+	CompanyAmount  decimal.Decimal `gorm:"column:company_amount;type:decimal(12,2);not null;default:0;comment:单位月缴" json:"company_amount"`
+	PersonalAmount decimal.Decimal `gorm:"column:personal_amount;type:decimal(12,2);not null;default:0;comment:个人月缴" json:"personal_amount"`
+	TotalAmount    decimal.Decimal `gorm:"column:total_amount;type:decimal(12,2);not null;default:0;comment:合计" json:"total_amount"`
+	DueDate        *time.Time      `gorm:"column:due_date;comment:应缴日期" json:"due_date"`
+	PaidAt         *time.Time      `gorm:"column:paid_at;comment:实缴时间" json:"paid_at"`
+}
+
+// TableName 指定表名
+func (SIMonthlyPayment) TableName() string {
+	return "si_monthly_payments"
+}
+
+// BeforeCreate GORM hook：创建前校验状态默认值
+func (p *SIMonthlyPayment) BeforeCreate(_ *gorm.DB) error {
+	if p.Status == "" {
+		p.Status = PaymentStatusPending
+	}
+	if p.PaymentChannel == "" {
+		p.PaymentChannel = SIPayChannelSelf
+	}
+	return nil
 }
