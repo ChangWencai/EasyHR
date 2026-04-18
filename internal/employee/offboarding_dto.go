@@ -18,6 +18,11 @@ type EmployeeResignRequest struct {
 	Reason          string `json:"reason" binding:"required,min=1,max=500"`
 }
 
+// RejectResignRequest 驳回离职申请请求
+type RejectResignRequest struct {
+	Reason string `json:"reason"` // 驳回原因（选填）
+}
+
 // UpdateChecklistRequest 更新交接清单请求
 type UpdateChecklistRequest struct {
 	ChecklistItems datatypes.JSON `json:"checklist_items" binding:"required"`

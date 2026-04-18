@@ -44,6 +44,7 @@ type ChecklistItem struct {
 const (
 	OffboardingStatusPending   = "pending"
 	OffboardingStatusApproved  = "approved"
+	OffboardingStatusRejected  = "rejected"
 	OffboardingStatusCompleted = "completed"
 )
 

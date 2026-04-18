@@ -166,6 +166,63 @@ func (s *OffboardingService) ApproveResign(orgID, approverID, offboardingID int6
 	return nil
 }
 
+// RejectResign 驳回离职申请
+// 1. 查找 Offboarding 记录
+// 2. 验证状态为 pending
+// 3. 更新 Offboarding 状态为 rejected
+// 4. 不更新 Employee 状态（驳回不撤销员工在职状态）
+func (s *OffboardingService) RejectResign(orgID, rejectorID, offboardingID int64, reason string) error {
+	ob, err := s.obRepo.FindByID(orgID, offboardingID)
+	if err != nil {
+		return fmt.Errorf("离职记录不存在")
+	}
+	if ob.Status != OffboardingStatusPending {
+		return fmt.Errorf("当前状态不可驳回（状态: %s）", ob.Status)
+	}
+
+	updates := map[string]interface{}{
+		"status":     OffboardingStatusRejected,
+		"reason":     reason,
+		"updated_by": rejectorID,
+	}
+	if err := s.obRepo.Update(orgID, offboardingID, updates); err != nil {
+		return fmt.Errorf("驳回离职失败: %w", err)
+	}
+
+	// 驳回不更新 Employee 状态（撤销离职流程）
+	return nil
+}
+
+// CompleteOffboardingFromSI 社保减员完成后自动更新离职状态为 completed
+// 此方法由社保模块停缴完成时调用，实现 EMP-12 自动更新离职状态
+func (s *OffboardingService) CompleteOffboardingFromSI(orgID, employeeID int64) error {
+	ob, err := s.obRepo.FindByEmployeeID(orgID, employeeID)
+	if err != nil {
+		return fmt.Errorf("该员工无离职记录: %w", err)
+	}
+	if ob.Status != OffboardingStatusApproved {
+		return fmt.Errorf("离职记录非审批通过状态，不可自动完成（状态: %s）", ob.Status)
+	}
+
+	now := time.Now()
+	updates := map[string]interface{}{
+		"status":       OffboardingStatusCompleted,
+		"completed_at": now,
+	}
+	if err := s.obRepo.Update(orgID, ob.ID, updates); err != nil {
+		return fmt.Errorf("社保减员后自动完成离职失败: %w", err)
+	}
+
+	if logger.Logger != nil {
+		logger.Logger.Info("offboarding auto-completed after SI stop",
+			zap.Int64("org_id", orgID),
+			zap.Int64("employee_id", employeeID),
+			zap.Int64("offboarding_id", ob.ID))
+	}
+
+	return nil
+}
+
 // UpdateChecklist 更新交接清单
 func (s *OffboardingService) UpdateChecklist(orgID, offboardingID int64, items datatypes.JSON) error {
 	ob, err := s.obRepo.FindByID(orgID, offboardingID)

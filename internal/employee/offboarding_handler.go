@@ -31,6 +31,8 @@ func (h *OffboardingHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware 
 	authGroup.POST("/employees/:id/resign/apply", h.EmployeeApplyResign)
 	// 审批离职申请 — OWNER/ADMIN
 	authGroup.PUT("/offboardings/:id/approve", middleware.RequireRole("owner", "admin"), h.ApproveResign)
+	// 驳回离职申请 — OWNER/ADMIN
+	authGroup.PUT("/offboardings/:id/reject", middleware.RequireRole("owner", "admin"), h.RejectResign)
 	// 完成交接 — OWNER/ADMIN
 	authGroup.PUT("/offboardings/:id/complete", middleware.RequireRole("owner", "admin"), h.CompleteOffboarding)
 	// 离职详情 — 所有角色
@@ -107,6 +109,29 @@ func (h *OffboardingHandler) ApproveResign(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "审批通过"})
+}
+
+// RejectResign 驳回离职申请
+func (h *OffboardingHandler) RejectResign(c *gin.Context) {
+	offboardingID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的离职记录ID")
+		return
+	}
+
+	var req RejectResignRequest
+	// reason 是选填的，不需要严格绑定错误处理
+	_ = c.ShouldBindJSON(&req)
+
+	orgID := c.GetInt64("org_id")
+	userID := c.GetInt64("user_id")
+
+	if err := h.svc.RejectResign(orgID, userID, offboardingID, req.Reason); err != nil {
+		response.Error(c, http.StatusBadRequest, 20210, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "已驳回"})
 }
 
 // CompleteOffboarding 完成交接
