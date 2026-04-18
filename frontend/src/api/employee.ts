@@ -45,6 +45,19 @@ export interface EmployeeListResponse {
   total: number
 }
 
+export interface EmployeeRosterItem {
+  id: number
+  name: string
+  status: string
+  position: string
+  department_id: number | null
+  department_name: string
+  phone: string
+  salary_amount: number
+  years_of_service: string
+  contract_expiry_days: number | null
+}
+
 export interface InvitationListResponse {
   list: Invitation[]
   total: number
@@ -156,9 +169,15 @@ export const employeeApi = {
   completeOffboarding: (id: number) =>
     request.put<void>(`/offboardings/${id}/complete`),
 
-  exportExcel: () =>
-    request.get('/employees/export', { responseType: 'blob' }),
+  exportExcel: (params?: Record<string, unknown>) =>
+    request.get('/employees/export', { params, responseType: 'blob' }),
 
   getDashboard: () =>
     request.get<EmployeeDashboard>('/dashboard/employee-dashboard'),
+
+  getRoster: (params: { page: number; page_size: number; search?: string; status?: string; department_id?: number }) =>
+    request.get<{ list: EmployeeRosterItem[]; total: number }>('/employees/roster', { params }),
+
+  getSensitiveInfo: (id: number) =>
+    request.get<Employee>(`/employees/${id}/sensitive`),
 }
