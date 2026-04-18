@@ -157,6 +157,13 @@ const routes: RouteRecordRaw[] = [
         name: 'mine',
         component: () => import('@/views/mine/MineView.vue'),
       },
+
+      // 待办中心
+      {
+        path: '/todo',
+        name: 'todo-list',
+        component: () => import('@/views/todo/TodoListView.vue'),
+      },
     ],
   },
 
@@ -205,7 +212,8 @@ router.beforeEach((to, _from) => {
     to.path.startsWith('/tool') ||
     to.path.startsWith('/finance') ||
     to.path.startsWith('/attendance') ||
-    to.path.startsWith('/mine')
+    to.path.startsWith('/mine') ||
+    to.path.startsWith('/todo')
 
   if (isProtectedRoute && !authStore.isLoggedIn) {
     return { path: '/login' }
