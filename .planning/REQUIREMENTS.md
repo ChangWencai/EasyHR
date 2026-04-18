@@ -159,7 +159,7 @@
 
 - [ ] **SI-19**: 社保关键节点红字提醒，展示社保政策通知
 - [ ] **SI-20**: 社保明细展示社保缴费城市/缴费基数/五险各项金额（单位+个人）/公积金（单位+个人）/其他缴费（滞纳金/残保金/漏缴/补缴）
-- [ ] **SI-21**: 社保列表支持 Excel 格式下载导出
+- [x] **SI-21**: 社保列表支持 Excel 格式下载导出
 
 ---
 
@@ -321,7 +321,7 @@
 | SI-18 | Phase 8 | Pending |
 | SI-19 | Phase 8 | Pending |
 | SI-20 | Phase 8 | Pending |
-| SI-21 | Phase 8 | Pending |
+| SI-21 | Phase 8 | Complete |
 | TODO-01 | Phase 9 | Pending |
 | TODO-02 | Phase 9 | Pending |
 | TODO-03 | Phase 9 | Pending |

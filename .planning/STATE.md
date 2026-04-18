@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: 产品功能全面优化（基于 PRD 1.1）
 status: in_progress
-stopped_at: Phase 08 Plan 03 completed
-last_updated: "2026-04-19T02:00:00Z"
+stopped_at: Phase 08 complete (all 4 plans done)
+last_updated: "2026-04-19T02:05:00Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 17
-  completed_plans: 16
-  percent: 84
+  completed_plans: 17
+  percent: 88
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 08 (社保公积金增强) -- In Progress
-Plan: 3 of 4 completed
-Status: Plan 03 completed (减员弹窗 + 参保记录增强 + 五险分项弹窗)
+Phase: 08 (社保公积金增强) -- Complete
+Plan: 4 of 4 completed
+Status: Plan 04 completed (Excel 导出含五险分项列)
 Last activity: 2026-04-19
 
-Progress: [██████████] 84%
+Progress: [█████████▊] 88%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████████] 84%
 | Phase 08 P01 | 10 | 3 tasks | 9 files |
 | Phase 08 P02 | 3 | 3 tasks | 3 files |
 | Phase 08 P03 | 3 | 3 tasks | 3 files |
+| Phase 08 P04 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,7 @@ Recent decisions affecting current work:
 - [Phase 07 P04]: 解锁降级：Redis 不可用时打印 fallback code 到日志，不阻塞解锁流程
 - [Phase 07 P04]: SalaryListHandler 和 PayrollHandler 路由分开（/salary/list vs /salary/payroll）避免重复注册
 - [Phase 08]: SIMonthlyPayment 月度缴费表（employee_id + year_month + status + payment_channel），asynq 定时任务流转状态，Organization.payment_channel 作为默认值
+- [Phase 08 P04]: Excel 导出 handler 直接调用 repo.ListRecords，export=full 控制含明细导出，写入 gin.Context.Data 避免双重 buffer
 
 ### Roadmap Evolution
 
@@ -115,6 +117,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-19T02:00:00Z
-Stopped at: Phase 08 Plan 03 completed (减员弹窗 + 参保记录增强 + 五险分项弹窗)
-Resume file: .planning/phases/08-社保公积金增强/08-PLAN-03-SUMMARY.md
+Last session: 2026-04-19T02:05:00Z
+Stopped at: Phase 08 complete (all 4 plans done)
+Resume file: .planning/phases/08-社保公积金增强/08-PLAN-04-SUMMARY.md
