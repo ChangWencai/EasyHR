@@ -62,6 +62,67 @@ export interface EmployeeDashboard {
   turnover_rate: number
 }
 
+export interface Registration {
+  id: number
+  employee_id: number | null
+  token: string
+  status: 'pending' | 'used' | 'expired'
+  expires_at: string
+  used_at: string | null
+  created_at: string
+  employee_name?: string
+  department_name?: string
+}
+
+export interface RegistrationListResponse {
+  list: Registration[]
+  total: number
+}
+
+export interface RegistrationDetail {
+  name: string
+  department_id: number | null
+  position: string
+  hire_date: string
+  status: string
+}
+
+export interface SubmitRegistrationData {
+  phone?: string
+  address?: string
+  id_card?: string
+  id_card_front_url?: string
+  id_card_back_url?: string
+  bank_account?: string
+  bank_name?: string
+  bank_card_front_url?: string
+  bank_card_back_url?: string
+  education_cert_url?: string
+  emergency_contact?: string
+  emergency_phone?: string
+  emergency_relation?: string
+}
+
+export const registrationApi = {
+  list: (params: { page: number; page_size: number; status?: string }) =>
+    request.get<RegistrationListResponse>('/registrations', { params }),
+
+  create: (data: {
+    employee_id?: number
+    name: string
+    department_id?: number
+    position: string
+    hire_date: string
+  }) => request.post<Registration>('/registrations', data),
+
+  delete: (id: number) => request.delete(`/registrations/${id}`),
+
+  getDetail: (token: string) => request.get<RegistrationDetail>(`/registrations/${token}`),
+
+  submit: (token: string, data: SubmitRegistrationData) =>
+    request.post(`/registrations/${token}/submit`, data),
+}
+
 export const employeeApi = {
   list: (params: { page: number; page_size?: number; search?: string }) =>
     request.get<EmployeeListResponse>('/employees', { params }),
