@@ -285,46 +285,217 @@ func (s *Service) GetSensitiveInfo(orgID, id int64) (*SensitiveInfoResponse, err
 	return resp, nil
 }
 
-// ExportExcel 导出员工列表为 Excel（敏感字段脱敏）
-func (s *Service) ExportExcel(orgID int64, query ListQueryParams) ([]byte, error) {
-	params := SearchParams{
-		Name:     query.Name,
-		Position: query.Position,
-		Phone:    query.Phone,
-		Status:   query.Status,
+// ListRoster 花名册查询（聚合薪资/年限/合同到期/部门/手机号）
+func (s *Service) ListRoster(orgID int64, params ListQueryParams) ([]EmployeeRosterItem, int64, error) {
+	page := params.Page
+	pageSize := params.PageSize
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
 	}
 
-	employees, err := s.repo.FindAllForExport(orgID, params)
+	employees, total, err := s.repo.ListRoster(orgID, params, page, pageSize)
+	if err != nil {
+		return nil, 0, fmt.Errorf("查询花名册失败: %w", err)
+	}
+
+	if len(employees) == 0 {
+		return []EmployeeRosterItem{}, total, nil
+	}
+
+	// 收集所有 employeeIDs
+	employeeIDs := make([]int64, 0, len(employees))
+	for _, emp := range employees {
+		employeeIDs = append(employeeIDs, emp.ID)
+	}
+
+	// 批量获取关联数据
+	salaryMap, _ := s.repo.GetSalaryAmounts(orgID, employeeIDs)
+	contractMap, _ := s.repo.GetContractExpiryDays(orgID, employeeIDs)
+
+	// 收集部门 IDs
+	deptIDSet := make(map[int64]bool)
+	for _, emp := range employees {
+		if emp.DepartmentID != nil {
+			deptIDSet[*emp.DepartmentID] = true
+		}
+	}
+	deptIDs := make([]int64, 0, len(deptIDSet))
+	for id := range deptIDSet {
+		deptIDs = append(deptIDs, id)
+	}
+	deptMap, _ := s.repo.GetDepartmentNames(orgID, deptIDs)
+
+	// 构建花名册项
+	aesKey := s.aesKey()
+	now := time.Now()
+	items := make([]EmployeeRosterItem, 0, len(employees))
+
+	for _, emp := range employees {
+		phone, _ := crypto.Decrypt(emp.PhoneEncrypted, aesKey)
+
+		// 计算在职年限
+		yearsOfService := calcYearsOfService(emp.HireDate, now)
+
+		// 部门名称
+		var deptName string
+		if emp.DepartmentID != nil {
+			deptName = deptMap[*emp.DepartmentID]
+		}
+
+		// 薪资
+		var salaryAmount float64
+		if amount, ok := salaryMap[emp.ID]; ok {
+			salaryAmount = amount
+		}
+
+		item := EmployeeRosterItem{
+			ID:                 emp.ID,
+			Name:               emp.Name,
+			Status:             emp.Status,
+			Position:           emp.Position,
+			DepartmentID:       emp.DepartmentID,
+			DepartmentName:     deptName,
+			Phone:              crypto.MaskPhone(phone),
+			SalaryAmount:       salaryAmount,
+			YearsOfService:     yearsOfService,
+			ContractExpiryDays: contractMap[emp.ID],
+		}
+		items = append(items, item)
+	}
+
+	return items, total, nil
+}
+
+// calcYearsOfService 计算在职年限，格式 "X年Y月"
+func calcYearsOfService(hireDate, now time.Time) string {
+	years := now.Year() - hireDate.Year()
+	months := int(now.Month()) - int(hireDate.Month())
+
+	if months < 0 {
+		years--
+		months += 12
+	}
+
+	// 如果当前日 < 入职日，月份再减1
+	if now.Day() < hireDate.Day() {
+		months--
+		if months < 0 {
+			years--
+			months += 12
+		}
+	}
+
+	if years < 0 {
+		return "0年0月"
+	}
+
+	return fmt.Sprintf("%d年%d月", years, months)
+}
+
+// ExportExcel 导出员工列表为 Excel（敏感字段脱敏，含新增列）
+func (s *Service) ExportExcel(orgID int64, query ListQueryParams) ([]byte, error) {
+	employees, err := s.repo.FindAllForRosterExport(orgID, query)
 	if err != nil {
 		return nil, fmt.Errorf("查询导出数据失败: %w", err)
 	}
 
 	f := excelize.NewFile()
-	sheet := "员工列表"
+	sheet := "员工花名册"
 	f.SetSheetName("Sheet1", sheet)
 
-	// 表头
-	headers := []string{"姓名", "手机号", "身份证号", "性别", "岗位", "入职日期", "状态"}
+	// 表头（含新增列）
+	headers := []string{"姓名", "状态", "部门", "岗位薪资", "在职年限", "合同到期", "手机号", "身份证号", "性别", "岗位", "入职日期"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
 	}
 
-	// 数据行
+	// 批量获取关联数据
+	employeeIDs := make([]int64, 0, len(employees))
+	for _, emp := range employees {
+		employeeIDs = append(employeeIDs, emp.ID)
+	}
+	salaryMap, _ := s.repo.GetSalaryAmounts(orgID, employeeIDs)
+	contractMap, _ := s.repo.GetContractExpiryDays(orgID, employeeIDs)
+
+	deptIDSet := make(map[int64]bool)
+	for _, emp := range employees {
+		if emp.DepartmentID != nil {
+			deptIDSet[*emp.DepartmentID] = true
+		}
+	}
+	deptIDs := make([]int64, 0, len(deptIDSet))
+	for id := range deptIDSet {
+		deptIDs = append(deptIDs, id)
+	}
+	deptMap, _ := s.repo.GetDepartmentNames(orgID, deptIDs)
+
+	// 创建红色字体样式（用于合同已过期）
+	redStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Color: "FF0000"},
+	})
+
+	now := time.Now()
 	aesKey := s.aesKey()
+
+	// 数据行
 	for i, emp := range employees {
 		row := i + 2
 
 		phone, _ := crypto.Decrypt(emp.PhoneEncrypted, aesKey)
 		idCard, _ := crypto.Decrypt(emp.IDCardEncrypted, aesKey)
 
+		// 部门名称
+		var deptName string
+		if emp.DepartmentID != nil {
+			deptName = deptMap[*emp.DepartmentID]
+		}
+
+		// 薪资格式
+		var salaryStr string
+		if amount, ok := salaryMap[emp.ID]; ok && amount > 0 {
+			salaryStr = fmt.Sprintf("%.2f", amount)
+		}
+
+		// 在职年限
+		yearsOfService := calcYearsOfService(emp.HireDate, now)
+
+		// 合同到期天数文本
+		var contractStr string
+		if days, ok := contractMap[emp.ID]; ok {
+			if days == nil {
+				contractStr = "无固定期限"
+			} else if *days > 0 {
+				contractStr = fmt.Sprintf("%d天", *days)
+			} else if *days == 0 {
+				contractStr = "今天到期"
+			} else {
+				contractStr = fmt.Sprintf("已过期%d天", -*days)
+			}
+		} else {
+			contractStr = "无合同"
+		}
+
 		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), emp.Name)
-		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), crypto.MaskPhone(phone))
-		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), crypto.MaskIDCard(idCard))
-		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), emp.Gender)
-		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), emp.Position)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), emp.HireDate.Format("2006-01-02"))
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), emp.Status)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), emp.Status)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), deptName)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), salaryStr)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), yearsOfService)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), contractStr)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), crypto.MaskPhone(phone))
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), crypto.MaskIDCard(idCard))
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), emp.Gender)
+		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), emp.Position)
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), emp.HireDate.Format("2006-01-02"))
+
+		// 合同到期天数为负数（已过期）时设置红色字体
+		if days, ok := contractMap[emp.ID]; ok && days != nil && *days < 0 {
+			cell, _ := excelize.CoordinatesToCellName(6, row)
+			f.SetCellStyle(sheet, cell, cell, redStyle)
+		}
 	}
 
 	// 冻结首行

@@ -61,10 +61,26 @@ type SensitiveInfoResponse struct {
 
 // ListQueryParams 员工列表查询参数
 type ListQueryParams struct {
-	Name     string `form:"name"`
-	Position string `form:"position"`
-	Phone    string `form:"phone"`
-	Status   string `form:"status"`
-	Page     int    `form:"page,default=1"`
-	PageSize int    `form:"page_size,default=20"`
+	Name         string `form:"name"`
+	Position     string `form:"position"`
+	Phone        string `form:"phone"`
+	Status       string `form:"status"`
+	Search       string `form:"search"`        // 花名册综合搜索（姓名/手机号/岗位）
+	DepartmentID *int64 `form:"department_id"` // 部门筛选
+	Page         int    `form:"page,default=1"`
+	PageSize     int    `form:"page_size,default=20"`
+}
+
+// EmployeeRosterItem 花名册列表项（聚合多表数据）
+type EmployeeRosterItem struct {
+	ID                 int64   `json:"id"`
+	Name               string  `json:"name"`
+	Status             string  `json:"status"`
+	Position           string  `json:"position"`
+	DepartmentID       *int64  `json:"department_id"`
+	DepartmentName     string  `json:"department_name"`
+	Phone              string  `json:"phone"`                // 脱敏后的手机号
+	SalaryAmount       float64 `json:"salary_amount"`        // 岗位薪资（月）
+	YearsOfService     string  `json:"years_of_service"`     // 在职年限（如 "2年3月"）
+	ContractExpiryDays *int    `json:"contract_expiry_days"` // 合同到期天数（nil=无合同/无固定期限）
 }

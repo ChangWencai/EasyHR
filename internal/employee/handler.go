@@ -29,6 +29,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 
 	authGroup.POST("/employees", middleware.RequireRole("owner", "admin"), h.CreateEmployee)
 	authGroup.GET("/employees", h.ListEmployees)
+	authGroup.GET("/employees/roster", h.ListRoster)
 	authGroup.GET("/employees/export", middleware.RequireRole("owner", "admin"), h.ExportExcel)
 	authGroup.GET("/employees/:id", h.GetEmployee)
 	authGroup.PUT("/employees/:id", middleware.RequireRole("owner", "admin"), h.UpdateEmployee)
@@ -149,6 +150,28 @@ func (h *Handler) DeleteEmployee(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "员工已删除"})
+}
+
+// ListRoster 花名册列表（聚合多列数据）
+func (h *Handler) ListRoster(c *gin.Context) {
+	var query ListQueryParams
+	if err := c.ShouldBindQuery(&query); err != nil {
+		logger.SugarLogger.Debugw("ListRoster: 参数错误", "error", err.Error())
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	logger.SugarLogger.Debugw("ListRoster: 查询", "org_id", orgID, "page", query.Page, "page_size", query.PageSize)
+
+	items, total, err := h.svc.ListRoster(orgID, query)
+	if err != nil {
+		logger.SugarLogger.Debugw("ListRoster: 失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 20107, "查询花名册失败")
+		return
+	}
+
+	response.PageSuccess(c, items, total, query.Page, query.PageSize)
 }
 
 // ExportExcel 导出员工列表为 Excel
