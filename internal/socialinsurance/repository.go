@@ -1,10 +1,14 @@
 package socialinsurance
 
 import (
+	"context"
 	"fmt"
+	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // ErrPolicyNotFound 政策未找到
@@ -225,4 +229,126 @@ func (r *Repository) ListChangeHistories(orgID, employeeID int64, page, pageSize
 	}
 
 	return histories, total, nil
+}
+
+// ========== 月度缴费记录 CRUD ==========
+
+// SIMonthlyPaymentRepository 月度缴费记录数据访问层
+type SIMonthlyPaymentRepository struct {
+	db *gorm.DB
+}
+
+// NewMonthlyPaymentRepository 创建月度缴费 Repository
+func NewMonthlyPaymentRepository(db *gorm.DB) *SIMonthlyPaymentRepository {
+	return &SIMonthlyPaymentRepository{db: db}
+}
+
+// Create 创建月度缴费记录
+func (r *SIMonthlyPaymentRepository) Create(ctx context.Context, tx *gorm.DB, payment *SIMonthlyPayment) error {
+	db := r.getDB(tx)
+	return db.WithContext(ctx).Create(payment).Error
+}
+
+// GetByOrgAndEmployee 根据组织、员工和年月查询月度缴费记录
+func (r *SIMonthlyPaymentRepository) GetByOrgAndEmployee(ctx context.Context, orgID int64, employeeID uint, yearMonth string) (*SIMonthlyPayment, error) {
+	var payment SIMonthlyPayment
+	err := r.db.WithContext(ctx).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("employee_id = ? AND year_month = ?", employeeID, yearMonth).
+		First(&payment).Error
+	if err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}
+
+// GetByOrgAndYearMonth 查询组织某月的所有缴费记录
+func (r *SIMonthlyPaymentRepository) GetByOrgAndYearMonth(ctx context.Context, orgID int64, yearMonth string) ([]SIMonthlyPayment, error) {
+	var payments []SIMonthlyPayment
+	err := r.db.WithContext(ctx).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("year_month = ?", yearMonth).
+		Find(&payments).Error
+	return payments, err
+}
+
+// GetOverdueByOrg 查询组织所有欠缴记录（含员工姓名）
+func (r *SIMonthlyPaymentRepository) GetOverdueByOrg(ctx context.Context, orgID int64) ([]SIMonthlyPayment, error) {
+	var payments []SIMonthlyPayment
+	err := r.db.WithContext(ctx).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("status = ?", PaymentStatusOverdue).
+		Order("year_month ASC").
+		Find(&payments).Error
+	return payments, err
+}
+
+// UpdateStatus 更新缴费状态（仅限 status 字段，per D-SI-09 INSERT ONLY 策略）
+func (r *SIMonthlyPaymentRepository) UpdateStatus(ctx context.Context, orgID, id int64, status PaymentStatus) error {
+	result := r.db.WithContext(ctx).
+		Model(&SIMonthlyPayment{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("id = ?", id).
+		Update("status", status)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
+
+// BatchUpsert 批量幂等写入月度缴费记录（D-SI-02：ON CONFLICT DO NOTHING）
+func (r *SIMonthlyPaymentRepository) BatchUpsert(ctx context.Context, tx *gorm.DB, payments []SIMonthlyPayment) error {
+	if len(payments) == 0 {
+		return nil
+	}
+	db := r.getDB(tx)
+	// PostgreSQL UPSERT：唯一约束 (org_id, employee_id, year_month) + soft delete
+	return db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "org_id"}, {Name: "employee_id"}, {Name: "year_month"}},
+		DoNothing: true,
+	}).Create(&payments).Error
+}
+
+// SumFieldByOrgAndYearMonth 聚合查询某字段总和（供 Dashboard 使用）
+func (r *SIMonthlyPaymentRepository) SumFieldByOrgAndYearMonth(ctx context.Context, orgID int64, yearMonth string, field string, statuses []PaymentStatus) (decimal.Decimal, error) {
+	var result decimal.Decimal
+	err := r.db.WithContext(ctx).
+		Model(&SIMonthlyPayment{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("year_month = ? AND status IN ?", yearMonth, statuses).
+		Select(fmt.Sprintf("COALESCE(SUM(%s), 0)", field)).
+		Scan(&result).Error
+	return result, err
+}
+
+// UpdateOverduePayments 批量将 pending 记录更新为 overdue（D-SI-03：>=26日未缴）
+func (r *SIMonthlyPaymentRepository) UpdateOverduePayments(ctx context.Context, orgID int64, yearMonth string) error {
+	return r.db.WithContext(ctx).
+		Model(&SIMonthlyPayment{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("year_month = ? AND status = ?", yearMonth, PaymentStatusPending).
+		Update("status", PaymentStatusOverdue).Error
+}
+
+// DeleteOlderThan 删除超过指定月数的过期记录（D-SI-02：>24个月）
+func (r *SIMonthlyPaymentRepository) DeleteOlderThan(ctx context.Context, orgID int64, cutoffYearMonth string) error {
+	cutoffTime, err := time.Parse("200601", cutoffYearMonth)
+	if err != nil {
+		return fmt.Errorf("invalid cutoff year_month: %w", err)
+	}
+	return r.db.WithContext(ctx).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("year_month < ?", cutoffTime.Format("200601")).
+		Delete(&SIMonthlyPayment{}).Error
+}
+
+// getDB 返回可用数据库连接（优先使用事务）
+func (r *SIMonthlyPaymentRepository) getDB(tx *gorm.DB) *gorm.DB {
+	if tx != nil {
+		return tx
+	}
+	return r.db
 }

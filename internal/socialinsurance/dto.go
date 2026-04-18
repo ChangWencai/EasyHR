@@ -170,3 +170,62 @@ type DeductionResponse struct {
 	Items         []DeductionItem `json:"items"`
 	TotalPersonal float64         `json:"total_personal"`
 }
+
+// ========== 社保数据看板 DTO（D-SI-05/D-SI-06）==========
+
+// SIDashboardResponse 社保看板响应
+type SIDashboardResponse struct {
+	Stats        []SIStatItem  `json:"stats"`
+	OverdueItems []OverdueItem `json:"overdue_items"` // D-SI-10 欠缴列表
+}
+
+// SIStatItem 社保看板单个指标
+type SIStatItem struct {
+	Label          string   `json:"label"`            // 指标名称
+	Value          string   `json:"value"`            // 格式化后的金额
+	TrendPercent   *string  `json:"trend_percent"`    // 环比百分比，无上月数据时为 nil
+	TrendDirection string   `json:"trend_direction"`  // up/down/neutral
+}
+
+// OverdueItem 欠缴列表项（D-SI-10 横幅数据）
+type OverdueItem struct {
+	ID           int64  `json:"id"`
+	EmployeeID   uint   `json:"employee_id"`
+	EmployeeName string `json:"employee_name"`
+	City         string `json:"city"`
+	YearMonth    string `json:"year_month"`
+	Amount       string `json:"amount"` // 格式 "¥X,XXX.XX"
+}
+
+// ========== 增减员操作 DTO（Phase 8 新增）==========
+
+// EnrollRequest 增员请求（SI-05~SI-08）
+type EnrollRequest struct {
+	EmployeeID     int64   `json:"employee_id" binding:"required"`
+	StartYearMonth string  `json:"start_year_month"`                          // 可选近3个月，默认当月
+	CityID         int     `json:"city_id" binding:"required"`
+	SIBase         float64 `json:"si_base" binding:"required,gt=0"`           // 社保基数
+	HFBase         float64 `json:"hf_base"`                                    // 公积金基数（可选，默认与社保同步）
+	HFRatio        float64 `json:"hf_ratio"`                                   // 公积金比例（可选）
+}
+
+// StopRequest 减员请求（SI-09~SI-13）
+type StopRequest struct {
+	EmployeeID    int64  `json:"employee_id" binding:"required"`
+	StopYearMonth string `json:"stop_year_month" binding:"required"` // 不可早于当月
+	Reason        string `json:"reason" binding:"required,oneof=跳槽 退休 其他"` // 三选一
+	TransferDate  string `json:"transfer_date"`                       // 转出社保日期
+	HFFreezeDate  string `json:"hf_freeze_date"`                      // 封存公积金日期
+}
+
+// PaymentCallbackRequest 代理缴费 webhook 请求（SI-16）
+type PaymentCallbackRequest struct {
+	PaymentID int64  `json:"payment_id" binding:"required"`
+	Status    string `json:"status" binding:"required,oneof=success failed"`
+	Amount    string `json:"amount,omitempty"`
+}
+
+// ConfirmPaymentRequest 自主缴费确认请求（SI-15）
+type ConfirmPaymentRequest struct {
+	PaymentID int64 `json:"payment_id" binding:"required"`
+}
