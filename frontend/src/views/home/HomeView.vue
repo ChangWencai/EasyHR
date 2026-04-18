@@ -28,6 +28,9 @@
       </div>
     </div>
 
+    <!-- 轮播图公告 -->
+    <HomeCarousel />
+
     <!-- 待办事项（全宽） -->
     <div class="section todo-section">
       <div class="section-header">
@@ -142,6 +145,7 @@ import {
 import { useDashboardStore } from '@/stores/dashboard'
 import type { TodoItem } from '@/api/dashboard'
 import TodoRingChart from './components/TodoRingChart.vue'
+import HomeCarousel from './components/HomeCarousel.vue'
 
 const store = useDashboardStore()
 const router = useRouter()
