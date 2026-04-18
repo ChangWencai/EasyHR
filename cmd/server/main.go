@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
 
-	"context"
-
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/wencai/easyhr/internal/attendance"
 	"github.com/wencai/easyhr/internal/audit"
@@ -191,6 +191,12 @@ func main() {
 	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto)
 	salaryDashboardSvc := salary.NewDashboardService(db)
 	salaryHandler := salary.NewHandler(salarySvc, salaryDashboardSvc)
+	taxUploadHandler := salary.NewTaxUploadHandler(salarySvc)
+
+	// 工资条发送模块依赖注入（asynq）
+	salarySlipSendSvc := salary.NewSlipSendService(salarySvc, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+	salarySlipSendHandler := salary.NewSlipSendHandler(salarySlipSendSvc)
+	salary.RegisterGlobalSlipSendService(salarySlipSendSvc)
 
 	// 调薪模块依赖注入
 	salaryAdjustmentRepo := salary.NewAdjustmentRepository(db)
@@ -249,8 +255,10 @@ func main() {
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
+		salarySlipSendHandler.RegisterRoutes(v1, authMiddleware)
 		salaryAdjustmentHandler.RegisterRoutes(v1, authMiddleware)
 		salaryPerformanceHandler.RegisterRoutes(v1, authMiddleware)
+		taxUploadHandler.RegisterRoutes(v1, authMiddleware)
 		attendanceHandler.RegisterRoutes(v1, authMiddleware)
 		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
@@ -297,6 +305,20 @@ func main() {
 	if err := salarySvc.SeedTemplateItems(); err != nil {
 		logger.Logger.Warn("salary template seed failed", zap.Error(err))
 	}
+
+	// asynq Worker 启动（工资条批量发送队列）
+	asynqServer := asynq.NewServer(
+		asynq.RedisClientOpt{Addr: fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)},
+		asynq.Config{Concurrency: 10},
+	)
+	asynqMux := asynq.NewServeMux()
+	asynqMux.HandleFunc(salary.TypeSlipSend, salary.HandleSlipSendTask)
+	go func() {
+		if err := asynqServer.Run(asynqMux); err != nil {
+			logger.Logger.Error("asynq worker failed", zap.Error(err))
+		}
+	}()
+	logger.Logger.Info("asynq worker started")
 
 	// 初始化病假系数策略种子数据（北上广深）
 	if err := salarySickLeavePolicySvc.SeedInitialPolicies(); err != nil {
