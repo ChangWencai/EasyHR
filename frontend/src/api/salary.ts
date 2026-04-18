@@ -103,6 +103,43 @@ export interface PerformanceCoefficient {
   coefficient: number
 }
 
+// ========== 个税上传接口 ==========
+
+export interface TaxUploadRow {
+  row_number: number
+  name: string
+  employee_id: number
+  employee_name: string
+  tax_amount: number
+  adjustment: number
+}
+
+export interface UnmatchedRow {
+  row_number: number
+  name: string
+  reason: string
+}
+
+export interface TaxUploadResult {
+  total_rows: number
+  matched_count: number
+  matched_rows: TaxUploadRow[]
+  unmatched_rows: UnmatchedRow[]
+}
+
+// ========== 工资条发送接口 ==========
+
+export interface SlipSendLog {
+  id: number
+  payroll_record_id: number
+  employee_id: number
+  channel: 'miniapp' | 'sms' | 'h5'
+  status: 'pending' | 'sending' | 'sent' | 'failed'
+  error_message?: string
+  sent_at?: string
+  created_at: string
+}
+
 export const salaryApi = {
   template: () => request.get<SalaryTemplate>('/salary/template'),
 
@@ -169,4 +206,21 @@ export const salaryApi = {
 
   setPerformance: (data: { coefficients: { employee_id: number; coefficient: number }[]; year: number; month: number }) =>
     request.put('/salary/performance', data),
+
+  // 个税上传
+  uploadTax: (year: number, month: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request.post<TaxUploadResult>('/salary/tax-upload', form, { params: { year, month } })
+  },
+
+  confirmTaxUpload: (data: { year: number; month: number; matched_rows: TaxUploadRow[] }) =>
+    request.post('/salary/tax-upload/confirm', data),
+
+  // 工资条发送
+  sendSlipAll: (data: { year: number; month: number; employee_ids?: number[]; channel?: string }) =>
+    request.post('/salary/slip/send-all', data),
+
+  getSlipLogs: (params: { year?: number; month?: number; page?: number; page_size?: number }) =>
+    request.get<{ logs: SlipSendLog[]; total: number }>('/salary/slip/logs', { params }),
 }

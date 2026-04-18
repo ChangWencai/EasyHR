@@ -132,6 +132,30 @@
           </el-form>
         </el-card>
       </el-tab-pane>
+
+      <!-- Tab 4: 个税上传 -->
+      <el-tab-pane label="个税上传" name="tax-upload">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span>个税上传</span>
+            </div>
+          </template>
+          <TaxUpload />
+        </el-card>
+      </el-tab-pane>
+
+      <!-- Tab 5: 工资条发送 -->
+      <el-tab-pane label="工资条发送" name="slip-send">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span>工资条发送</span>
+            </div>
+          </template>
+          <SalarySlipSend />
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -140,6 +164,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { salaryApi } from '@/api/salary'
 import { ElMessage } from 'element-plus'
+import TaxUpload from './TaxUpload.vue'
+import SalarySlipSend from './SalarySlipSend.vue'
 
 const activeTab = ref('template')
 

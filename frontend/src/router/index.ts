@@ -100,6 +100,16 @@ const routes: RouteRecordRaw[] = [
         name: 'tool-tax',
         component: () => import('@/views/tool/TaxTool.vue'),
       },
+      {
+        path: '/tool/salary/slip-send',
+        name: 'tool-salary-slip-send',
+        component: () => import('@/views/tool/SalarySlipSend.vue'),
+      },
+      {
+        path: '/tool/salary/tax-upload',
+        name: 'tool-salary-tax-upload',
+        component: () => import('@/views/tool/TaxUpload.vue'),
+      },
 
       // 财务（嵌套子路由）
       {
@@ -166,6 +176,12 @@ const routes: RouteRecordRaw[] = [
     name: 'register',
     component: () => import('@/views/employee/RegisterPage.vue'),
   },
+  // H5 工资条查看（无需登录）
+  {
+    path: '/salary/slip/:token',
+    name: 'salary-slip-h5',
+    component: () => import('@/views/tool/SalarySlipH5.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -177,8 +193,8 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
-  // /login, /onboarding/org-setup 和 /register 不做守卫检查
-  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register')) {
+  // /login, /onboarding/org-setup, /register 和 /salary/slip/ 不做守卫检查
+  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/')) {
     return
   }
 
