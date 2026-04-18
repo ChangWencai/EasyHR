@@ -13,12 +13,13 @@ import (
 
 // Handler 工资核算 HTTP 端点
 type Handler struct {
-	svc *Service
+	svc          *Service
+	dashboardSvc *SalaryDashboardService
 }
 
 // NewHandler 创建工资核算 Handler
-func NewHandler(svc *Service) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc *Service, dashboardSvc *SalaryDashboardService) *Handler {
+	return &Handler{svc: svc, dashboardSvc: dashboardSvc}
 }
 
 // RegisterRoutes 注册路由
@@ -40,6 +41,9 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 		salary.POST("/payroll/calculate", middleware.RequireRole("owner", "admin"), h.CalculatePayroll)
 		salary.PUT("/payroll/confirm", middleware.RequireRole("owner", "admin"), h.ConfirmPayroll)
 		salary.PUT("/payroll/:id/pay", middleware.RequireRole("owner", "admin"), h.RecordPayment)
+
+		// 薪资看板
+		salary.GET("/dashboard", h.GetDashboard)
 
 		// 考勤导入
 		salary.POST("/attendance/import", middleware.RequireRole("owner", "admin"), h.ImportAttendance)

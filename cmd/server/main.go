@@ -181,7 +181,8 @@ func main() {
 	salarySIAdapter := salary.NewSIAdapter(siSvc)
 	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
 	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, nil, cfg.Crypto)
-	salaryHandler := salary.NewHandler(salarySvc)
+	salaryDashboardSvc := salary.NewDashboardService(db)
+	salaryHandler := salary.NewHandler(salarySvc, salaryDashboardSvc)
 
 	// 考勤模块依赖注入
 	attendanceRepo := attendance.NewAttendanceRepository(db)
