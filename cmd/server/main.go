@@ -72,6 +72,7 @@ func initApp() {
 		&socialinsurance.SocialInsurancePolicy{},
 		&socialinsurance.SocialInsuranceRecord{},
 		&socialinsurance.ChangeHistory{},
+			&socialinsurance.SIMonthlyPayment{},
 		&tax.TaxBracket{},
 		&tax.SpecialDeduction{},
 		&tax.TaxRecord{},
@@ -161,7 +162,9 @@ func main() {
 	siReminderRepo := socialinsurance.NewReminderRepository(db)
 	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
 	siSvc := socialinsurance.NewService(siRepo, empAdapter, siReminderRepo)
-	siHandler := socialinsurance.NewHandler(siSvc)
+	siPaymentRepo := socialinsurance.NewMonthlyPaymentRepository(db)
+	siDashboardSvc := socialinsurance.NewSIDashboardService(db, siPaymentRepo, siRepo)
+	siHandler := socialinsurance.NewHandler(siSvc, siDashboardSvc, siPaymentRepo)
 
 	// 合同管理模块依赖注入（前置，供个税模块使用）
 	contractRepo := employee.NewContractRepository(db)

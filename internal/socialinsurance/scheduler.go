@@ -2,12 +2,131 @@ package socialinsurance
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
+	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
+	"github.com/shopspring/decimal"
 )
+
+// asynq 任务类型常量（D-SI-02/D-SI-03）
+const (
+	TypeGenerateMonthlyPayments = "si:generate_monthly" // 生成下月缴费记录
+	TypeCheckPaymentStatus      = "si:check_status"     // 状态流转检查
+)
+
+// MonthlyPaymentPayload 月度记录生成任务载荷
+type MonthlyPaymentPayload struct {
+	OrgID int64  `json:"org_id"`
+	Month string `json:"month"` // YYYYMM
+}
+
+// CheckStatusPayload 状态流转检查任务载荷
+type CheckStatusPayload struct {
+	OrgID int64  `json:"org_id"`
+	Month string `json:"month"` // YYYYMM
+}
+
+// NewGenerateMonthlyPaymentsTask 创建月度记录生成任务
+func NewGenerateMonthlyPaymentsTask(orgID int64, month string) (*asynq.Task, error) {
+	payload, err := json.Marshal(MonthlyPaymentPayload{OrgID: orgID, Month: month})
+	if err != nil {
+		return nil, fmt.Errorf("marshal payload: %w", err)
+	}
+	return asynq.NewTask(TypeGenerateMonthlyPayments, payload), nil
+}
+
+// NewCheckPaymentStatusTask 创建状态流转检查任务
+func NewCheckPaymentStatusTask(orgID int64, month string) (*asynq.Task, error) {
+	payload, err := json.Marshal(CheckStatusPayload{OrgID: orgID, Month: month})
+	if err != nil {
+		return nil, fmt.Errorf("marshal payload: %w", err)
+	}
+	return asynq.NewTask(TypeCheckPaymentStatus, payload), nil
+}
+
+// MonthlyPaymentWorker 月度缴费记录 asynq Worker
+type MonthlyPaymentWorker struct {
+	paymentRepo *SIMonthlyPaymentRepository
+	recordRepo  *Repository
+}
+
+// NewMonthlyPaymentWorker 创建月度缴费 Worker
+func NewMonthlyPaymentWorker(paymentRepo *SIMonthlyPaymentRepository, recordRepo *Repository) *MonthlyPaymentWorker {
+	return &MonthlyPaymentWorker{paymentRepo: paymentRepo, recordRepo: recordRepo}
+}
+
+// HandleGenerateMonthlyPayments 处理月度记录生成任务（D-SI-02）
+// 每天凌晨 02:00 触发，生成下月 SIMonthlyPayment 记录
+func (w *MonthlyPaymentWorker) HandleGenerateMonthlyPayments(ctx context.Context, t *asynq.Task) error {
+	var payload MonthlyPaymentPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("unmarshal payload: %w", err)
+	}
+
+	// 1. 查询该组织所有 active 参保记录
+	records, _, err := w.recordRepo.ListRecords(payload.OrgID, SIStatusActive, "", 1, 1000)
+	if err != nil {
+		return fmt.Errorf("query active records: %w", err)
+	}
+
+	if len(records) == 0 {
+		return nil
+	}
+
+	// 2. 为每个 active 员工生成下月缴费记录
+	payments := make([]SIMonthlyPayment, 0, len(records))
+	for _, r := range records {
+		payment := SIMonthlyPayment{
+			EmployeeID:     uint(r.EmployeeID),
+			YearMonth:      payload.Month,
+			Status:         PaymentStatusPending,
+			PaymentChannel: SIPayChannelSelf,
+			CompanyAmount:  decimal.NewFromFloat(r.TotalCompany),
+			PersonalAmount: decimal.NewFromFloat(r.TotalPersonal),
+			TotalAmount:    decimal.NewFromFloat(r.TotalCompany + r.TotalPersonal),
+		}
+		payment.OrgID = payload.OrgID
+		payments = append(payments, payment)
+	}
+
+	// 3. 幂等 UPSERT（D-SI-02：ON CONFLICT DO NOTHING）
+	if err := w.paymentRepo.BatchUpsert(ctx, nil, payments); err != nil {
+		return fmt.Errorf("batch upsert monthly payments: %w", err)
+	}
+
+	return nil
+}
+
+// HandleCheckPaymentStatus 处理状态流转检查任务（D-SI-03）
+// 每天凌晨 02:05 触发
+// >=26日：pending -> overdue
+// <26日：已确认支付 -> normal
+func (w *MonthlyPaymentWorker) HandleCheckPaymentStatus(ctx context.Context, t *asynq.Task) error {
+	var payload CheckStatusPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("unmarshal payload: %w", err)
+	}
+
+	cstZone := time.FixedZone("CST", 8*3600)
+	today := time.Now().In(cstZone)
+
+	// D-SI-03 决策：每月26日为状态更新分界点（与各地实际截止日无关）
+	cutoffDay := 26
+
+	if today.Day() >= cutoffDay {
+		// >=26日：所有 pending 且未缴的 -> overdue
+		if err := w.paymentRepo.UpdateOverduePayments(ctx, payload.OrgID, payload.Month); err != nil {
+			return fmt.Errorf("update overdue payments: %w", err)
+		}
+	}
+	// <26日：不做自动流转，等用户确认或 webhook 回调
+
+	return nil
+}
 
 // redisLocker 基于 Redis 的分布式锁实现 gocron.Locker 接口
 type redisLocker struct {
