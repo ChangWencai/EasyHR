@@ -106,6 +106,35 @@ func (s *Service) CreateTodo(ctx context.Context, item *TodoItem) error {
 	return s.repo.CreateTodo(ctx, item)
 }
 
+// CreateTodoFromEmployee implements employee.TodoCreator interface.
+// Creates a todo item from employee/contract module triggers.
+func (s *Service) CreateTodoFromEmployee(
+	orgID int64,
+	title string,
+	todoType string,
+	employeeID *int64,
+	employeeName string,
+	deadline *time.Time,
+	sourceType string,
+	sourceID *int64,
+) error {
+	ctx := context.Background()
+	item := &TodoItem{}
+	item.OrgID = orgID
+	item.Title = title
+	item.Type = todoType
+	item.EmployeeID = employeeID
+	item.EmployeeName = employeeName
+	item.Deadline = deadline
+	item.IsTimeLimited = true
+	item.Status = TodoStatusPending
+	item.UrgencyStatus = UrgencyNormal
+	item.SourceType = sourceType
+	item.SourceID = sourceID
+	item.CreatorName = "系统"
+	return s.CreateTodo(ctx, item)
+}
+
 // ListCarousels 查询启用的轮播图
 func (s *Service) ListCarousels(ctx context.Context, orgID int64) ([]CarouselItem, error) {
 	return s.repo.ListCarousels(ctx, orgID)

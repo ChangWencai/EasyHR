@@ -17,6 +17,7 @@ type ContractService struct {
 	empRepo      *Repository
 	db           *gorm.DB // 用于查询 Organization 信息
 	cryptoCfg    config.CryptoConfig
+	todoSvc      TodoCreator // interface to avoid circular import
 }
 
 // NewContractService 创建合同 Service
@@ -25,12 +26,14 @@ func NewContractService(
 	empRepo *Repository,
 	db *gorm.DB,
 	cryptoCfg config.CryptoConfig,
+	todoSvc TodoCreator,
 ) *ContractService {
 	return &ContractService{
 		contractRepo: contractRepo,
 		empRepo:      empRepo,
 		db:           db,
 		cryptoCfg:    cryptoCfg,
+		todoSvc:      todoSvc,
 	}
 }
 
@@ -346,4 +349,53 @@ func (s *ContractService) toContractResponse(c *Contract, empName string) *Contr
 		CreatedAt:       c.CreatedAt,
 	}
 	return resp
+}
+
+// CheckContractRenewalReminders scans contracts expiring within 30 days and creates renewal todos.
+// Called by todo scheduler daily at 02:05 CST.
+func (s *ContractService) CheckContractRenewalReminders(ctx context.Context) error {
+	now := time.Now()
+	deadline := now.AddDate(0, 1, 0) // 30 days ahead
+
+	contracts, err := s.FindContractsExpiringSoon(ctx, now, deadline)
+	if err != nil {
+		return fmt.Errorf("find expiring contracts: %w", err)
+	}
+
+	for _, contract := range contracts {
+		if s.todoSvc != nil {
+			contractID := contract.ID
+			emp, _ := s.empRepo.FindByID(contract.OrgID, contract.EmployeeID)
+			empName := ""
+			var empID *int64
+			if emp != nil {
+				empName = emp.Name
+				id := emp.ID
+				empID = &id
+			}
+
+			_ = s.todoSvc.CreateTodoFromEmployee(
+				contract.OrgID,
+				fmt.Sprintf("员工 %s 的劳动合同即将到期（%s），请及时处理续签", empName, contract.EndDate.Format("2006-01-02")),
+				"contract_renew",
+				empID,
+				empName,
+				contract.EndDate,
+				"contract",
+				&contractID,
+			)
+		}
+	}
+
+	return nil
+}
+
+// FindContractsExpiringSoon finds contracts expiring within the given date range.
+func (s *ContractService) FindContractsExpiringSoon(ctx context.Context, now, deadline time.Time) ([]Contract, error) {
+	var contracts []Contract
+	err := s.db.Model(&Contract{}).
+		Where("status = ? AND end_date IS NOT NULL AND end_date >= ? AND end_date <= ?",
+			ContractStatusActive, now, deadline).
+		Find(&contracts).Error
+	return contracts, err
 }

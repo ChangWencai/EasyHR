@@ -164,6 +164,11 @@ const routes: RouteRecordRaw[] = [
         name: 'todo-list',
         component: () => import('@/views/todo/TodoListView.vue'),
       },
+      {
+        path: '/carousel/manage',
+        name: 'carousel-manage',
+        component: () => import('@/views/todo/CarouselManagePage.vue'),
+      },
     ],
   },
 
@@ -189,6 +194,12 @@ const routes: RouteRecordRaw[] = [
     name: 'salary-slip-h5',
     component: () => import('@/views/tool/SalarySlipH5.vue'),
   },
+  // 协办填写页（无需登录）
+  {
+    path: '/todo/:id/invite',
+    name: 'todo-invite',
+    component: () => import('@/views/todo/InviteFillPage.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -200,8 +211,8 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
-  // /login, /onboarding/org-setup, /register 和 /salary/slip/ 不做守卫检查
-  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/')) {
+  // /login, /onboarding/org-setup, /register, /salary/slip/ and /todo/*/invite 不做守卫检查
+  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/') || to.path.includes('/invite')) {
     return
   }
 
@@ -213,7 +224,8 @@ router.beforeEach((to, _from) => {
     to.path.startsWith('/finance') ||
     to.path.startsWith('/attendance') ||
     to.path.startsWith('/mine') ||
-    to.path.startsWith('/todo')
+    to.path.startsWith('/todo') ||
+    to.path.startsWith('/carousel')
 
   if (isProtectedRoute && !authStore.isLoggedIn) {
     return { path: '/login' }

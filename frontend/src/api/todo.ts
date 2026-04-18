@@ -80,3 +80,26 @@ export function exportTodos(): void {
       window.URL.revokeObjectURL(objectUrl)
     })
 }
+
+export interface InviteResult {
+  url: string
+}
+
+export interface VerifyResult {
+  valid: boolean
+  expired: boolean
+  title: string
+  todo_id: number
+}
+
+export function inviteTodo(todoId: number): Promise<InviteResult> {
+  return request.post(`/todos/${todoId}/invite`).then((res) => res.data)
+}
+
+export function terminateTodo(todoId: number): Promise<void> {
+  return request.put(`/todos/${todoId}/terminate`).then((res) => res.data)
+}
+
+export function verifyInviteToken(token: string): Promise<VerifyResult> {
+  return request.get(`/todos/invite/${token}`).then((res) => res.data)
+}

@@ -127,6 +127,29 @@
             />
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="140" fixed="right">
+          <template #default="{ row }">
+            <el-dropdown trigger="click" @command="(cmd: string) => handleAction(cmd, row)">
+              <el-button type="primary" link size="small">
+                更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="invite" :disabled="row.status === 'terminated'">
+                    <el-icon><Message /></el-icon> 邀请协办
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="row.status !== 'terminated' && row.status !== 'completed'"
+                    command="terminate"
+                  >
+                    <el-icon style="color: #FF5630"><Close /></el-icon>
+                    <span style="color: #FF5630">终止任务</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 分页 -->
@@ -147,9 +170,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Download, Star, StarFilled, Loading } from '@element-plus/icons-vue'
-import { listTodos, pinTodo, exportTodos as triggerExport, type TodoItem } from '@/api/todo'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Download, Star, StarFilled, Loading, ArrowDown, Message, Close } from '@element-plus/icons-vue'
+import { listTodos, pinTodo, exportTodos as triggerExport, inviteTodo, terminateTodo, type TodoItem } from '@/api/todo'
 
 const loading = ref(false)
 const items = ref<TodoItem[]>([])
@@ -212,6 +235,31 @@ function handleReset() {
 
 function handleExport() {
   triggerExport()
+}
+
+async function handleAction(cmd: string, row: TodoItem) {
+  if (cmd === 'invite') {
+    try {
+      const result = await inviteTodo(row.id)
+      await navigator.clipboard.writeText(result.url)
+      ElMessage.success('邀请链接已复制到剪贴板')
+    } catch {
+      ElMessage.error('邀请失败')
+    }
+  } else if (cmd === 'terminate') {
+    try {
+      await ElMessageBox.confirm(
+        '终止后可在筛选中查看，数据保留',
+        '确认终止此待办？',
+        { confirmButtonText: '确认终止', cancelButtonText: '取消', type: 'warning' }
+      )
+      await terminateTodo(row.id)
+      ElMessage.success('任务已终止')
+      loadData()
+    } catch {
+      // user cancelled or error
+    }
+  }
 }
 
 function formatDate(dateStr: string): string {

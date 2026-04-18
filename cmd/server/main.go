@@ -144,9 +144,13 @@ func main() {
 	userSvc := user.NewService(userRepo, rdb, smsClient, cfg.JWT, cfg.Crypto)
 	userHandler := user.NewHandler(userSvc)
 
+	// 待办模块前置创建（供员工/合同模块注入）
+	todoRepoForDI := todo.NewRepository(db)
+	todoSvcForDI := todo.NewService(todoRepoForDI)
+
 	// 员工模块依赖注入
 	empRepo := employee.NewRepository(db)
-	empSvc := employee.NewService(empRepo, cfg.Crypto)
+	empSvc := employee.NewService(empRepo, cfg.Crypto, todoSvcForDI)
 	empHandler := employee.NewHandler(empSvc)
 
 	// 邀请模块依赖注入
@@ -175,7 +179,7 @@ func main() {
 
 	// 合同管理模块依赖注入（前置，供个税模块使用）
 	contractRepo := employee.NewContractRepository(db)
-	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto)
+	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto, todoSvcForDI)
 	contractHandler := employee.NewContractHandler(contractSvc)
 
 	// 个税模块依赖注入
@@ -319,7 +323,7 @@ func main() {
 
 		// 待办中心定时任务（urgency scan + carousel activation + 任务生成）
 		todoRepo := todo.NewRepository(db)
-		todoSched, todoSchedErr := todo.NewScheduler(todoRepo, rdb, nil).Start()
+		todoSched, todoSchedErr := todo.NewScheduler(todoRepo, rdb, contractSvc).Start()
 		if todoSchedErr != nil {
 			logger.Logger.Warn("todo scheduler start failed", zap.Error(todoSchedErr))
 		}

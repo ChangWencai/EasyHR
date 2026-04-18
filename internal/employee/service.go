@@ -12,15 +12,22 @@ import (
 
 // Service 员工业务逻辑层
 type Service struct {
-	repo     *Repository
+	repo      *Repository
 	cryptoCfg config.CryptoConfig
+	todoSvc   TodoCreator // interface to avoid circular import
+}
+
+// TodoCreator interface for creating todo items (avoids circular import from todo package)
+type TodoCreator interface {
+	CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error
 }
 
 // NewService 创建员工 Service
-func NewService(repo *Repository, cryptoCfg config.CryptoConfig) *Service {
+func NewService(repo *Repository, cryptoCfg config.CryptoConfig, todoSvc TodoCreator) *Service {
 	return &Service{
-		repo:     repo,
+		repo:      repo,
 		cryptoCfg: cryptoCfg,
+		todoSvc:   todoSvc,
 	}
 }
 
@@ -101,7 +108,7 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 	emp.Address = req.Address
 	emp.Remark = req.Remark
 
-	if err := s.repo.Create(emp); err != nil {
+ if err := s.repo.Create(emp); err != nil {
 		if err == ErrPhoneDuplicate {
 			return nil, fmt.Errorf("该手机号已存在")
 		}
@@ -109,6 +116,23 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 			return nil, fmt.Errorf("该身份证号已存在")
 		}
 		return nil, fmt.Errorf("创建员工失败: %w", err)
+	}
+
+	// 创建合同新签限时待办（入职30日内截止）
+	if s.todoSvc != nil {
+		hireDate := emp.HireDate
+		contractDeadline := hireDate.AddDate(0, 0, 30)
+		empID := emp.ID
+		_ = s.todoSvc.CreateTodoFromEmployee(
+			orgID,
+			fmt.Sprintf("员工 %s 入职30日内请完成劳动合同签署", emp.Name),
+			"contract_new",
+			&empID,
+			emp.Name,
+			&contractDeadline,
+			"employee",
+			&empID,
+		)
 	}
 
 	return s.toResponse(emp)
