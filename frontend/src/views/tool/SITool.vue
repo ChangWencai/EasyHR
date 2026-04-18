@@ -47,6 +47,30 @@
 
       <!-- Tab 2: 参保操作 -->
       <el-tab-pane label="参保操作" name="enroll">
+        <!-- 红色欠缴横幅 -->
+        <div v-if="overdueItems.length > 0" class="overdue-banner">
+          <el-icon class="banner-icon"><WarningFilled /></el-icon>
+          <div class="banner-content">
+            <div class="banner-headline">存在欠缴记录，请及时处理</div>
+            <div class="banner-detail">
+              最大欠缴：{{ overdueItems[0].employeeName }} {{ overdueItems[0].city }} {{ overdueItems[0].yearMonth }} 欠缴 ¥{{ overdueItems[0].amount }}
+            </div>
+            <div v-if="visibleOverdueItems.length > 1" class="banner-scroll-list">
+              <div
+                v-for="item in visibleOverdueItems.slice(1)"
+                :key="item.id"
+                class="overdue-item"
+              >
+                {{ item.employeeName }} {{ item.city }} {{ item.yearMonth }} ¥{{ item.amount }}
+              </div>
+            </div>
+            <div v-if="overdueItems.length > 5" class="banner-more">
+              还有 {{ overdueItems.length - 5 }} 项
+            </div>
+          </div>
+          <el-icon class="close-btn" @click="dismissBanner"><Close /></el-icon>
+        </div>
+
         <el-card>
           <template #header>
             <div class="card-header">
@@ -95,6 +119,7 @@
             <el-form-item>
               <el-button type="primary" :loading="previewing" @click="previewEnroll">参保预览</el-button>
               <el-button type="success" :loading="enrolling" @click="handleEnroll">确认参保</el-button>
+              <el-button type="primary" @click="showEnrollDialog = true">增员</el-button>
               <el-button type="danger" :loading="stopping" @click="showStopDialog = true">批量停缴</el-button>
             </el-form-item>
           </el-form>
@@ -162,6 +187,12 @@
       </el-tab-pane>
     </el-tabs>
 
+    <!-- 增员弹窗 -->
+    <EnrollDialog
+      v-model="showEnrollDialog"
+      @success="onEnrollSuccess"
+    />
+
     <!-- 批量停缴对话框 -->
     <el-dialog v-model="showStopDialog" title="批量停缴" width="400px">
       <el-form :model="stopForm" label-width="100px">
@@ -194,12 +225,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { siApi } from '@/api/socialinsurance'
 import { employeeApi } from '@/api/employee'
 import { ElMessage } from 'element-plus'
+import { WarningFilled, Close } from '@element-plus/icons-vue'
+import EnrollDialog from '@/components/socialinsurance/EnrollDialog.vue'
+import axios from '@/api/request'
+
+interface OverdueItem {
+  id: number
+  employeeName: string
+  city: string
+  yearMonth: string
+  amount: string
+}
 
 const activeTab = ref('policy')
+
+// Overdue items
+const overdueItems = ref<OverdueItem[]>([])
+
+const visibleOverdueItems = computed(() =>
+  overdueItems.value.slice(0, 5)
+)
+
+function dismissBanner(): void {
+  overdueItems.value = []
+}
+
+async function loadOverdueItems(): Promise<void> {
+  try {
+    const res = await axios.get('/api/v1/socialinsurance/dashboard')
+    const responseData = (res as { data?: Record<string, unknown> })?.data ?? res
+    const dashboard = responseData as Record<string, unknown>
+    if (Array.isArray(dashboard.overdueItems)) {
+      overdueItems.value = dashboard.overdueItems as OverdueItem[]
+    }
+  } catch {
+    // Dashboard loading failure should not block the page
+  }
+}
 
 // Policy
 const loadingPolicy = ref(false)
@@ -224,7 +290,7 @@ function selectPolicy(policy: any) {
   activeTab.value = 'enroll'
 }
 
-// Enroll
+// Enroll (legacy form)
 const previewing = ref(false)
 const enrolling = ref(false)
 const previewResults = ref<any[]>([])
@@ -289,6 +355,14 @@ async function handleEnroll() {
   }
 }
 
+// EnrollDialog
+const showEnrollDialog = ref(false)
+
+function onEnrollSuccess(): void {
+  loadRecords()
+  loadOverdueItems()
+}
+
 // Records
 const loadingRecords = ref(false)
 const siRecords = ref<any[]>([])
@@ -339,6 +413,7 @@ async function handleStop() {
 onMounted(() => {
   loadPolicies()
   loadEmployees()
+  loadOverdueItems()
 })
 </script>
 
@@ -346,6 +421,7 @@ onMounted(() => {
 .si-tool {
   padding: 8px;
 }
+
 .card-header {
   display: flex;
   align-items: center;
@@ -353,16 +429,82 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .preview-section {
   margin-top: 16px;
 }
+
 .preview-title {
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;
   color: #333;
 }
+
 .mt-4 {
   margin-top: 16px;
+}
+
+// 红色欠缴横幅
+.overdue-banner {
+  background: #ff563015;
+  border-left: 3px solid #ff5630;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #ff5630;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.banner-icon {
+  font-size: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.banner-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-headline {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.banner-detail {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.banner-scroll-list {
+  max-height: 80px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.overdue-item {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.banner-more {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.close-btn {
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+
+  &:hover {
+    opacity: 0.7;
+  }
 }
 </style>
