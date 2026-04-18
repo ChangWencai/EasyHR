@@ -189,6 +189,11 @@ func main() {
 	salaryAdjustmentSvc := salary.NewAdjustmentService(salaryAdjustmentRepo)
 	salaryAdjustmentHandler := salary.NewAdjustmentHandler(salaryAdjustmentSvc)
 
+	// 绩效系数模块依赖注入
+	salaryPerformanceRepo := salary.NewPerformanceRepository(db)
+	salaryPerformanceSvc := salary.NewPerformanceService(salaryPerformanceRepo)
+	salaryPerformanceHandler := salary.NewPerformanceHandler(salaryPerformanceSvc)
+
 	// 考勤模块依赖注入
 	attendanceRepo := attendance.NewAttendanceRepository(db)
 	attendanceSvc := attendance.NewAttendanceService(attendanceRepo)
@@ -237,6 +242,7 @@ func main() {
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
 		salaryAdjustmentHandler.RegisterRoutes(v1, authMiddleware)
+		salaryPerformanceHandler.RegisterRoutes(v1, authMiddleware)
 		attendanceHandler.RegisterRoutes(v1, authMiddleware)
 		financeHandler.RegisterRoutes(v1.Group(""), authMiddleware)
 		city.NewHandler().RegisterRoutes(v1)
