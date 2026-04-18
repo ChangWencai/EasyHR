@@ -1,7 +1,12 @@
 <template>
   <div class="salary-tool">
     <el-tabs v-model="activeTab">
-      <!-- Tab 1: 薪资模板 -->
+      <!-- Tab 1: 数据看板 -->
+      <el-tab-pane label="数据看板" name="dashboard">
+        <SalaryDashboard />
+      </el-tab-pane>
+
+      <!-- Tab 2: 薪资模板 -->
       <el-tab-pane label="薪资模板" name="template">
         <el-card>
           <template #header>
@@ -30,7 +35,7 @@
         </el-card>
       </el-tab-pane>
 
-      <!-- Tab 2: 工资核算 -->
+      <!-- Tab 3: 工资核算 -->
       <el-tab-pane label="工资核算" name="payroll">
         <el-card>
           <template #header>
@@ -105,7 +110,12 @@
         </el-card>
       </el-tab-pane>
 
-      <!-- Tab 3: 导出 -->
+      <!-- Tab 4: 调薪管理 -->
+      <el-tab-pane label="调薪管理" name="adjustment">
+        <SalaryAdjustment />
+      </el-tab-pane>
+
+      <!-- Tab 5: 导出 -->
       <el-tab-pane label="导出" name="export">
         <el-card>
           <template #header>
@@ -133,41 +143,30 @@
         </el-card>
       </el-tab-pane>
 
-      <!-- Tab 4: 个税上传 -->
+      <!-- Tab 6: 个税上传 -->
       <el-tab-pane label="个税上传" name="tax-upload">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>个税上传</span>
-            </div>
-          </template>
-          <TaxUpload />
-        </el-card>
+        <TaxUpload />
       </el-tab-pane>
 
-      <!-- Tab 5: 工资条发送 -->
+      <!-- Tab 7: 工资条发送 -->
       <el-tab-pane label="工资条发送" name="slip-send">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>工资条发送</span>
-            </div>
-          </template>
-          <SalarySlipSend />
-        </el-card>
+        <SalarySlipSend />
       </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { salaryApi } from '@/api/salary'
 import { ElMessage } from 'element-plus'
+import SalaryDashboard from './SalaryDashboard.vue'
+import SalaryAdjustment from './SalaryAdjustment.vue'
+import SalaryList from './SalaryList.vue'
 import TaxUpload from './TaxUpload.vue'
 import SalarySlipSend from './SalarySlipSend.vue'
 
-const activeTab = ref('template')
+const activeTab = ref('dashboard')
 
 // Template
 const loadingTemplate = ref(false)
