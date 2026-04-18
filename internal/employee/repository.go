@@ -166,6 +166,29 @@ func (r *Repository) FindByUserID(orgID int64, userID int64) (*Employee, error) 
 	return &emp, nil
 }
 
+// ListAllByOrg 获取指定企业全部在职/试用期员工（用于组织架构树构建）
+// 仅选择 ID/Name/Position/DepartmentID 字段，避免加载加密数据
+func (r *Repository) ListAllByOrg(orgID int64) ([]Employee, error) {
+	var employees []Employee
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("status IN ?", []string{StatusActive, StatusProbation}).
+		Select("id", "name", "position", "department_id").
+		Find(&employees).Error
+	if err != nil {
+		return nil, fmt.Errorf("list all employees by org: %w", err)
+	}
+	return employees, nil
+}
+
+// CountByDepartment 统计指定部门下的员工数量
+func (r *Repository) CountByDepartment(orgID, departmentID int64) (int64, error) {
+	var count int64
+	err := r.db.Model(&Employee{}).Scopes(middleware.TenantScope(orgID)).
+		Where("department_id = ?", departmentID).
+		Count(&count).Error
+	return count, err
+}
+
 // applySearchFilters 应用搜索过滤条件
 func (r *Repository) applySearchFilters(q *gorm.DB, params SearchParams) *gorm.DB {
 	if params.Name != "" {
