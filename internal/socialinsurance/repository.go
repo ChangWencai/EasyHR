@@ -314,6 +314,10 @@ func (r *SIMonthlyPaymentRepository) BatchUpsert(ctx context.Context, tx *gorm.D
 
 // SumFieldByOrgAndYearMonth 聚合查询某字段总和（供 Dashboard 使用）
 func (r *SIMonthlyPaymentRepository) SumFieldByOrgAndYearMonth(ctx context.Context, orgID int64, yearMonth string, field string, statuses []PaymentStatus) (decimal.Decimal, error) {
+	allowedFields := map[string]bool{"total_amount": true, "company_amount": true, "personal_amount": true}
+	if !allowedFields[field] {
+		return decimal.Zero, fmt.Errorf("invalid aggregation field: %s", field)
+	}
 	var result decimal.Decimal
 	err := r.db.WithContext(ctx).
 		Model(&SIMonthlyPayment{}).

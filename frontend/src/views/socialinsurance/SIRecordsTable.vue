@@ -195,7 +195,7 @@ async function fetchRecords(p = 1): Promise<void> {
   page.value = p
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/socialinsurance/records', {
+    const res = await axios.get('/api/v1/social-insurance/monthly-records', {
       params: { page: p, page_size: pageSize.value },
     })
     const responseData = (res as { data?: { list: SIRecordRow[]; total: number } })?.data ?? res
@@ -230,7 +230,7 @@ async function doExport(): Promise<void> {
       ? { export: 'full', page_size: 9999 }
       : { page: page.value, page_size: pageSize.value }
 
-    const res = await axios.get('/api/v1/socialinsurance/records/export', {
+    const res = await axios.get('/api/v1/social-insurance/records/export', {
       params,
       responseType: 'blob',
     })

@@ -53,7 +53,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	authGroup.GET("/social-insurance/dashboard", h.SIDashboard)
 	authGroup.POST("/social-insurance/enroll/single", middleware.RequireRole("owner", "admin"), h.Enroll)
 	authGroup.POST("/social-insurance/stop/single", middleware.RequireRole("owner", "admin"), h.Stop)
-	authGroup.POST("/social-insurance/payment-callback", h.PaymentCallback)
+	authGroup.POST("/social-insurance/payment-callback", middleware.RequireRole("owner", "admin"), h.PaymentCallback)
 	authGroup.GET("/social-insurance/monthly-records", h.GetMonthlyRecords)
 	authGroup.GET("/social-insurance/monthly-records/:id", h.GetMonthlyRecordDetail)
 	authGroup.POST("/social-insurance/confirm-payment", middleware.RequireRole("owner", "admin"), h.ConfirmPayment)
@@ -381,6 +381,9 @@ func (h *Handler) SIDashboard(c *gin.Context) {
 		// 默认当月
 		now := time.Now()
 		yearMonth = fmt.Sprintf("%04d%02d", now.Year(), now.Month())
+	} else if len(yearMonth) != 6 {
+		response.BadRequest(c, "year_month 格式错误，应为 YYYYMM")
+		return
 	}
 
 	logger.SugarLogger.Debugw("SIDashboard: 查询", "org_id", orgID, "year_month", yearMonth)
@@ -408,11 +411,14 @@ func (h *Handler) Enroll(c *gin.Context) {
 	userID := c.GetInt64("user_id")
 	logger.SugarLogger.Debugw("Enroll: 增员", "org_id", orgID, "employee_id", req.EmployeeID)
 
-	// 转换为 BatchEnrollRequest 复用现有逻辑
+	// 转换为 BatchEnrollRequest 复用现有逻辑，传入社保基数
 	batchReq := &BatchEnrollRequest{
 		EmployeeIDs: []int64{req.EmployeeID},
 		CityID:      req.CityID,
 		StartMonth:  req.StartYearMonth,
+		Salary:      req.SIBase,
+		HFBase:      req.HFBase,
+		HFRatio:     req.HFRatio,
 	}
 
 	result, err := h.svc.BatchEnroll(orgID, userID, batchReq)
@@ -630,7 +636,7 @@ func (h *Handler) ExportSIRecords(c *gin.Context) {
 
 	if includeDetails {
 		params.Page = 1
-		params.PageSize = 9999
+		params.PageSize = 5000
 	} else {
 		if params.Page == 0 {
 			params.Page = 1

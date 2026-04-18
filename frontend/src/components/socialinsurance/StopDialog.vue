@@ -52,9 +52,9 @@
 
       <el-form-item label="减员原因" prop="reason">
         <el-select v-model="form.reason" placeholder="请选择减员原因" style="width: 100%">
-          <el-option label="跳槽" value="job_change" />
-          <el-option label="退休" value="retirement" />
-          <el-option label="其他" value="other" />
+          <el-option label="跳槽" value="跳槽" />
+          <el-option label="退休" value="退休" />
+          <el-option label="其他" value="其他" />
         </el-select>
       </el-form-item>
 
@@ -244,7 +244,7 @@ async function handleSubmit(): Promise<void> {
 
   submitting.value = true
   try {
-    await axios.post('/api/v1/socialinsurance/stop', {
+    await axios.post('/api/v1/social-insurance/stop/single', {
       employeeID: form.employeeID,
       stopYearMonth: form.stopYearMonth,
       reason: form.reason,

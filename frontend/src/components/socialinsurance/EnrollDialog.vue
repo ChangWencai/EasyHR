@@ -212,7 +212,7 @@ async function handleSubmit(): Promise<void> {
 
   submitting.value = true
   try {
-    await axios.post('/api/v1/socialinsurance/enroll', {
+    await axios.post('/api/v1/social-insurance/enroll/single', {
       employeeID: form.employeeID,
       startYearMonth: form.startYearMonth,
       cityCode: form.cityCode,

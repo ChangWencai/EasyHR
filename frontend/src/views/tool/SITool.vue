@@ -256,11 +256,11 @@ function dismissBanner(): void {
 
 async function loadOverdueItems(): Promise<void> {
   try {
-    const res = await axios.get('/api/v1/socialinsurance/dashboard')
+    const res = await axios.get('/api/v1/social-insurance/dashboard')
     const responseData = (res as { data?: Record<string, unknown> })?.data ?? res
     const dashboard = responseData as Record<string, unknown>
-    if (Array.isArray(dashboard.overdueItems)) {
-      overdueItems.value = dashboard.overdueItems as OverdueItem[]
+    if (Array.isArray(dashboard.overdue_items)) {
+      overdueItems.value = dashboard.overdue_items as OverdueItem[]
     }
   } catch {
     // Dashboard loading failure should not block the page

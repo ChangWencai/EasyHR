@@ -64,6 +64,9 @@ type BatchEnrollRequest struct {
 	EmployeeIDs []int64 `json:"employee_ids" binding:"required,min=1"`
 	CityID      int     `json:"city_id" binding:"required"`
 	StartMonth  string  `json:"start_month" binding:"required"`
+	Salary      float64 `json:"salary"`    // 社保基数（单个增员时传入）
+	HFBase      float64 `json:"hf_base"`   // 公积金基数
+	HFRatio     float64 `json:"hf_ratio"`  // 公积金比例
 }
 
 // EnrollPreviewRequest 参保预览请求

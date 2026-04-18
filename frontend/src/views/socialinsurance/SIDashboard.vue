@@ -49,6 +49,22 @@ interface DashboardData {
   overdue_trend_percent: number | null
 }
 
+interface SIDashboardStat {
+  label: string
+  value: string
+  trend_percent: string | null
+  trend_direction: string
+}
+
+interface OverdueItem {
+  id: number
+  employee_id: number
+  employee_name: string
+  city: string
+  year_month: string
+  amount: string
+}
+
 interface StatCard {
   label: string
   value: string
@@ -62,6 +78,13 @@ interface StatCard {
 const loading = ref(false)
 const error = ref(false)
 const data = ref<DashboardData | null>(null)
+const overdueItems = ref<OverdueItem[]>([])
+
+function parseTrendPercent(val: string | null | undefined): number | null {
+  if (val === null || val === undefined) return null
+  const n = parseFloat(val)
+  return isNaN(n) ? null : n
+}
 
 const statCards = computed<StatCard[]>(() => {
   if (!data.value) {
@@ -122,9 +145,20 @@ async function loadDashboard() {
   loading.value = true
   error.value = false
   try {
-    const res = await axios.get('/api/v1/socialinsurance/dashboard')
-    const responseData = (res as { data?: DashboardData })?.data ?? (res as DashboardData)
-    data.value = responseData as DashboardData
+    const res = await axios.get('/api/v1/social-insurance/dashboard')
+    const raw = (res as { data?: { stats?: SIDashboardStat[]; overdue_items?: OverdueItem[] } })?.data ?? res
+    const stats = (raw as { stats?: SIDashboardStat[] }).stats || []
+    data.value = {
+      total: stats[0]?.value ?? '0.00',
+      total_trend_percent: parseTrendPercent(stats[0]?.trend_percent),
+      company: stats[1]?.value ?? '0.00',
+      company_trend_percent: parseTrendPercent(stats[1]?.trend_percent),
+      personal: stats[2]?.value ?? '0.00',
+      personal_trend_percent: parseTrendPercent(stats[2]?.trend_percent),
+      overdue: stats[3]?.value ?? '0.00',
+      overdue_trend_percent: parseTrendPercent(stats[3]?.trend_percent),
+    }
+    overdueItems.value = (raw as { overdue_items?: OverdueItem[] }).overdue_items || []
   } catch {
     error.value = true
     ElMessage.error('加载社保数据失败，请刷新页面重试')
