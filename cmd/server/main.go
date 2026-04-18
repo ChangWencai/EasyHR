@@ -186,7 +186,9 @@ func main() {
 	salaryTaxAdapter := salary.NewTaxAdapter(taxSvc)
 	salarySIAdapter := salary.NewSIAdapter(siSvc)
 	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
-	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, nil, cfg.Crypto)
+	salaryAttendanceProvider := attendance.NewAttendanceProvider(db)
+	salarySickLeavePolicySvc := salary.NewSickLeavePolicyService(db)
+	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto)
 	salaryDashboardSvc := salary.NewDashboardService(db)
 	salaryHandler := salary.NewHandler(salarySvc, salaryDashboardSvc)
 
@@ -297,8 +299,7 @@ func main() {
 	}
 
 	// 初始化病假系数策略种子数据（北上广深）
-	sickLeavePolicySvc := salary.NewSickLeavePolicyService(db)
-	if err := sickLeavePolicySvc.SeedInitialPolicies(); err != nil {
+	if err := salarySickLeavePolicySvc.SeedInitialPolicies(); err != nil {
 		logger.Logger.Warn("sick leave policy seed failed", zap.Error(err))
 	}
 

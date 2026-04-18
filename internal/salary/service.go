@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wencai/easyhr/internal/attendance"
 	"github.com/wencai/easyhr/internal/common/config"
 	"gorm.io/gorm"
 )
@@ -18,6 +19,8 @@ type Service struct {
 	siProvider         SIDeductionProvider
 	empProvider        EmployeeProvider
 	baseAdjustProvider BaseAdjustmentProvider
+	attendanceProvider attendance.AttendanceProvider
+	sickLeavePolicySvc *SickLeavePolicyService
 	smsClient          interface{}
 	cryptoCfg          config.CryptoConfig
 }
@@ -30,6 +33,8 @@ func NewService(
 	siProvider SIDeductionProvider,
 	empProvider EmployeeProvider,
 	baseAdjustProvider BaseAdjustmentProvider,
+	attendanceProvider attendance.AttendanceProvider,
+	sickLeavePolicySvc *SickLeavePolicyService,
 	smsClient interface{},
 	cryptoCfg config.CryptoConfig,
 ) *Service {
@@ -40,6 +45,8 @@ func NewService(
 		siProvider:         siProvider,
 		empProvider:        empProvider,
 		baseAdjustProvider: baseAdjustProvider,
+		attendanceProvider: attendanceProvider,
+		sickLeavePolicySvc: sickLeavePolicySvc,
 		smsClient:          smsClient,
 		cryptoCfg:          cryptoCfg,
 	}
@@ -301,6 +308,81 @@ func (s *Service) CalculatePayroll(orgID, userID int64, year, month int) (*Batch
 			}
 		}
 
+		// 考勤联动：获取月度考勤数据
+		var billingDays float64
+		var overtimePay float64
+		var sickDeduction float64
+
+		if s.attendanceProvider != nil {
+			ma, attErr := s.attendanceProvider.GetMonthlyAttendance(orgID, rec.EmployeeID, monthStr)
+			if attErr == nil && ma != nil {
+				// 计薪天数 = 实际出勤 + 法定节假日 + 带薪假
+				billingDays = CalculateBillingDays(ma.ActualDays, ma.LegalHolidayDays, ma.PaidLeaveDays)
+
+				// 按计薪天数调整基本工资
+				if ma.ShouldAttend > 0 && billingDays > 0 {
+					for j := range inputs {
+						if inputs[j].ItemName == "基本工资" && inputs[j].ItemType == "income" {
+							inputs[j].Amount = CalculateSalaryByBillingDays(
+								inputs[j].Amount, ma.ShouldAttend, billingDays,
+							)
+							break
+						}
+					}
+				}
+
+				// 加班费
+				if ma.OvertimeWeekdayHours > 0 || ma.OvertimeWeekendHours > 0 || ma.OvertimeHolidayHours > 0 {
+					// 从 inputs 中找基本工资作为加班费基数
+					baseSalary := float64(0)
+					for _, inp := range inputs {
+						if inp.ItemName == "基本工资" && inp.ItemType == "income" {
+							baseSalary = inp.Amount
+							break
+						}
+					}
+					if baseSalary > 0 && ma.ShouldAttend > 0 {
+						overtimePay = CalculateOvertimePay(
+							baseSalary, ma.ShouldAttend,
+							ma.OvertimeWeekdayHours, ma.OvertimeWeekendHours, ma.OvertimeHolidayHours,
+						)
+						if overtimePay > 0 {
+							inputs = append(inputs, PayrollItemInput{
+								ItemName: "加班费",
+								ItemType: "income",
+								Amount:   overtimePay,
+							})
+						}
+					}
+				}
+
+				// 病假扣款
+				if ma.SickLeaveDays > 0 && s.sickLeavePolicySvc != nil {
+					baseSalary := float64(0)
+					for _, inp := range inputs {
+						if inp.ItemName == "基本工资" && inp.ItemType == "income" {
+							baseSalary = inp.Amount
+							break
+						}
+					}
+					if baseSalary > 0 {
+						// 获取病假系数（需要城市和工龄，这里用默认系数）
+						coeff := s.getSickLeaveCoefficient(orgID, rec.EmployeeID)
+						sickDeduction = CalculateSickLeaveDeduction(
+							baseSalary, ma.ShouldAttend, ma.SickLeaveDays, coeff,
+						)
+						if sickDeduction > 0 {
+							inputs = append(inputs, PayrollItemInput{
+								ItemName: "病假扣款",
+								ItemType: "deduction",
+								Amount:   sickDeduction,
+							})
+						}
+					}
+				}
+			}
+		}
+
 		siDeduction := float64(0)
 		if s.siProvider != nil {
 			if deduction, err := s.siProvider.GetPersonalDeduction(orgID, rec.EmployeeID, monthStr); err == nil {
@@ -363,6 +445,31 @@ func (s *Service) CalculatePayroll(orgID, userID int64, year, month int) (*Batch
 		TotalEmployees: len(records),
 		TotalNetIncome: roundTo2Salary(totalNetIncome),
 	}, nil
+}
+
+// getSickLeaveCoefficient 获取员工的病假系数
+func (s *Service) getSickLeaveCoefficient(orgID, employeeID int64) float64 {
+	if s.sickLeavePolicySvc == nil {
+		return 1.0
+	}
+
+	// 获取员工信息（城市和入职时间用于计算工龄）
+	emp, err := s.empProvider.GetEmployee(orgID, employeeID)
+	if err != nil || emp == nil {
+		return 1.0
+	}
+
+	// 计算工龄月数
+	tenureMonths := int(time.Since(emp.HireDate).Hours() / (24 * 30))
+	if tenureMonths < 0 {
+		tenureMonths = 0
+	}
+
+	// 获取城市（默认取一线城市的默认系数）
+	city := "北京" // 默认城市，后续可从员工档案获取
+	coeff := s.sickLeavePolicySvc.GetSickLeaveCoefficient(city, tenureMonths)
+	result, _ := coeff.Float64()
+	return result
 }
 
 // GetPayrollList 查询工资表列表
