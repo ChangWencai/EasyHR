@@ -11,7 +11,7 @@ progress:
   completed_phases: 3
   total_plans: 13
   completed_plans: 13
-  percent: 100
+  percent: 60
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 4 of 4
 Status: Plan 07-04 complete
 Last activity: 2026-04-18
 
-Progress: [██████████] 100%
+Progress: [███████---] 60% 100%
 
 ## Performance Metrics
 
