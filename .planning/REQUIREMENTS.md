@@ -177,10 +177,10 @@
 
 ### 员工信息登记
 
-- [ ] **EMP-05**: 管理员可创建员工信息登记表（必填：姓名/部门/岗位/入职日期，可检索已有员工）
-- [ ] **EMP-06**: 管理员填写或转发员工填写：手机号码/住址/身份证正反面/银行卡正反面/学历证书/紧急联系人
-- [ ] **EMP-07**: 员工信息登记支持重新创建已入库员工的信息（以手机号或身份证号匹配，以最新版为准）
-- [ ] **EMP-08**: 员工信息登记提交后，数据更新到员工个人信息
+- [x] **EMP-05**: 管理员可创建员工信息登记表（必填：姓名/部门/岗位/入职日期，可检索已有员工）
+- [x] **EMP-06**: 管理员填写或转发员工填写：手机号码/住址/身份证正反面/银行卡正反面/学历证书/紧急联系人
+- [x] **EMP-07**: 员工信息登记支持重新创建已入库员工的信息（以手机号或身份证号匹配，以最新版为准）
+- [x] **EMP-08**: 员工信息登记提交后，数据更新到员工个人信息
 
 ### 办离职优化
 
@@ -249,10 +249,10 @@
 | EMP-02 | Phase 5 | Pending |
 | EMP-03 | Phase 5 | Pending |
 | EMP-04 | Phase 5 | Pending |
-| EMP-05 | Phase 5 | Pending |
-| EMP-06 | Phase 5 | Pending |
-| EMP-07 | Phase 5 | Pending |
-| EMP-08 | Phase 5 | Pending |
+| EMP-05 | Phase 5 | Complete |
+| EMP-06 | Phase 5 | Complete |
+| EMP-07 | Phase 5 | Complete |
+| EMP-08 | Phase 5 | Complete |
 | EMP-09 | Phase 5 | Pending |
 | EMP-10 | Phase 5 | Pending |
 | EMP-11 | Phase 5 | Pending |
