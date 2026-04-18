@@ -65,3 +65,58 @@ type ScheduleResponse struct {
 	ShiftID    *int64 `json:"shift_id"`
 	ShiftName  string `json:"shift_name,omitempty"`
 }
+
+// === ClockRecord DTO ===
+
+type ClockRecordResponse struct {
+	EmployeeID     int64  `json:"employee_id"`
+	EmployeeName   string `json:"employee_name"`
+	DepartmentName string `json:"department_name,omitempty"`
+	WorkDate       string `json:"work_date"`
+	ClockInTime    string `json:"clock_in_time"`
+	ClockOutTime   string `json:"clock_out_time"`
+	ClockType      string `json:"clock_type,omitempty"`
+	Status         string `json:"status"` // normal/late/absent/no_schedule/not_clocked_in
+	ShiftName      string `json:"shift_name,omitempty"`
+	PhotoURL       string `json:"photo_url,omitempty"`
+}
+
+type ClockLiveResponse struct {
+	Date     string                `json:"date"`
+	Records  []ClockRecordResponse `json:"records"`
+	Total    int64                 `json:"total"`
+	Page     int                   `json:"page"`
+	PageSize int                   `json:"page_size"`
+}
+
+type CreateClockRecordRequest struct {
+	EmployeeID int64  `json:"employee_id" binding:"required"`
+	ClockTime  string `json:"clock_time" binding:"required"` // ISO 8601
+	ClockType  string `json:"clock_type" binding:"required,oneof=in out"`
+	PhotoURL   string `json:"photo_url"`
+}
+
+// === LeaveStats DTO ===
+
+type LeaveStatsResponse struct {
+	EmployeeID     int64   `json:"employee_id"`
+	EmployeeName   string  `json:"employee_name"`
+	YearMonth      string  `json:"year_month"`
+	LeaveDays      float64 `json:"leave_days"`
+	BusinessDays   float64 `json:"business_days"`
+	OutsideDays    float64 `json:"outside_days"`
+	MakeupCount    int     `json:"makeup_count"`
+	ShiftSwapCount int     `json:"shift_swap_count"`
+	OvertimeHours  float64 `json:"overtime_hours"`
+	PendingDays    float64 `json:"pending_days"`
+	ApprovedDays   float64 `json:"approved_days"`
+}
+
+type UpdateLeaveStatsRequest struct {
+	LeaveDays      *float64 `json:"leave_days"`
+	BusinessDays   *float64 `json:"business_days"`
+	OutsideDays    *float64 `json:"outside_days"`
+	MakeupCount    *int     `json:"makeup_count"`
+	ShiftSwapCount *int     `json:"shift_swap_count"`
+	OvertimeHours  *float64 `json:"overtime_hours"`
+}

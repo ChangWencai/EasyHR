@@ -3,6 +3,7 @@ package attendance
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/response"
@@ -36,6 +37,12 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	// 排班管理
 	g.GET("/schedules", h.ListSchedules)
 	g.POST("/schedules", h.BatchUpsertSchedules)
+
+	// 打卡实况
+	g.GET("/clock-live", h.GetClockLive)
+	g.POST("/clock-records", h.CreateClockRecord)
+	g.GET("/leave-stats", h.GetLeaveStats)
+	g.PUT("/leave-stats/:employee_id", h.UpdateLeaveStats)
 }
 
 func getOrgID(c *gin.Context) int64  { return c.GetInt64("org_id") }
@@ -148,4 +155,90 @@ func (h *Handler) BatchUpsertSchedules(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "排班保存成功"})
+}
+
+// GetClockLive 获取今日打卡实况
+func (h *Handler) GetClockLive(c *gin.Context) {
+	date := c.Query("date")
+	if date == "" {
+		date = time.Now().Format("2006-01-02")
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 50
+	}
+
+	var departmentID *int64
+	if deptIDStr := c.Query("department_id"); deptIDStr != "" {
+		if id, err := strconv.ParseInt(deptIDStr, 10, 64); err == nil {
+			departmentID = &id
+		}
+	}
+
+	result, err := h.svc.GetClockLive(c.Request.Context(), getOrgID(c), date, departmentID, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// CreateClockRecord 创建打卡记录（管理员代打/邀请点签）
+func (h *Handler) CreateClockRecord(c *gin.Context) {
+	var req CreateClockRecordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+	record, err := h.svc.CreateClockRecord(c.Request.Context(), getOrgID(c), getUserID(c), &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": record})
+}
+
+// GetLeaveStats 获取假勤统计
+func (h *Handler) GetLeaveStats(c *gin.Context) {
+	employeeIDStr := c.Query("employee_id")
+	yearMonth := c.DefaultQuery("year_month", time.Now().Format("2006-01"))
+	if employeeIDStr == "" {
+		response.BadRequest(c, "employee_id required")
+		return
+	}
+	employeeID, err := strconv.ParseInt(employeeIDStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "employee_id 格式错误")
+		return
+	}
+	stats, err := h.svc.GetLeaveStats(c.Request.Context(), getOrgID(c), employeeID, yearMonth)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": stats})
+}
+
+// UpdateLeaveStats 手动修正假勤统计数据
+func (h *Handler) UpdateLeaveStats(c *gin.Context) {
+	employeeID, err := strconv.ParseInt(c.Param("employee_id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "employee_id 格式错误")
+		return
+	}
+	yearMonth := c.DefaultQuery("year_month", time.Now().Format("2006-01"))
+	var req UpdateLeaveStatsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+	if err := h.svc.UpdateLeaveStats(c.Request.Context(), getOrgID(c), getUserID(c), employeeID, yearMonth, &req); err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
 }

@@ -93,3 +93,113 @@ func (r *AttendanceRepository) BatchUpsertSchedules(orgID int64, schedules []Sch
 	}
 	return r.db.Save(&schedules).Error
 }
+
+// --- ClockRecord ---
+
+// ListClockRecordsByDate 获取指定日期的打卡记录
+func (r *AttendanceRepository) ListClockRecordsByDate(orgID int64, workDate string) ([]ClockRecord, error) {
+	var records []ClockRecord
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("work_date = ?", workDate).
+		Order("clock_time ASC").
+		Find(&records).Error
+	return records, err
+}
+
+// GetClockRecordsByEmployee 获取员工指定日期范围的打卡记录
+func (r *AttendanceRepository) GetClockRecordsByEmployee(orgID int64, employeeID int64, startDate, endDate string) ([]ClockRecord, error) {
+	var records []ClockRecord
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("employee_id = ? AND work_date >= ? AND work_date <= ?", employeeID, startDate, endDate).
+		Order("work_date ASC, clock_time ASC").
+		Find(&records).Error
+	return records, err
+}
+
+// CreateClockRecord 创建打卡记录
+func (r *AttendanceRepository) CreateClockRecord(record *ClockRecord) error {
+	return r.db.Create(record).Error
+}
+
+// BatchCreateClockRecords 批量创建打卡记录
+func (r *AttendanceRepository) BatchCreateClockRecords(records []ClockRecord) error {
+	if len(records) == 0 {
+		return nil
+	}
+	return r.db.Create(&records).Error
+}
+
+// GetClockRecordByEmployeeDateType 查询员工某日某类型的打卡记录
+func (r *AttendanceRepository) GetClockRecordByEmployeeDateType(orgID int64, employeeID int64, workDate, clockType string) (*ClockRecord, error) {
+	var record ClockRecord
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("employee_id = ? AND work_date = ? AND clock_type = ?", employeeID, workDate, clockType).
+		First(&record).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return &record, err
+}
+
+// --- Employee JOIN 查询 ---
+
+// EmployeeBrief 员工简要信息（用于 JOIN 查询）
+type EmployeeBrief struct {
+	ID             int64  `json:"id"`
+	Name           string `json:"name"`
+	DepartmentID   *int64 `json:"department_id"`
+	DepartmentName string `json:"department_name"`
+}
+
+// ListEmployeesByIDs 批量查询员工信息（JOIN departments 获取部门名称）
+func (r *AttendanceRepository) ListEmployeesByIDs(orgID int64, ids []int64) ([]EmployeeBrief, error) {
+	var emps []EmployeeBrief
+	if len(ids) == 0 {
+		return emps, nil
+	}
+	err := r.db.Table("employees").
+		Select("employees.id, employees.name, employees.department_id, COALESCE(departments.name, '') as department_name").
+		Joins("LEFT JOIN departments ON departments.id = employees.department_id AND departments.deleted_at IS NULL").
+		Where("employees.org_id = ? AND employees.id IN ? AND employees.deleted_at IS NULL", orgID, ids).
+		Find(&emps).Error
+	return emps, err
+}
+
+// ListAllActiveEmployees 获取所有在职员工（用于打卡实况全员列表）
+func (r *AttendanceRepository) ListAllActiveEmployees(orgID int64) ([]EmployeeBrief, error) {
+	var emps []EmployeeBrief
+	err := r.db.Table("employees").
+		Select("employees.id, employees.name, employees.department_id, COALESCE(departments.name, '') as department_name").
+		Joins("LEFT JOIN departments ON departments.id = employees.department_id AND departments.deleted_at IS NULL").
+		Where("employees.org_id = ? AND employees.status IN ? AND employees.deleted_at IS NULL", orgID, []string{"active", "probation"}).
+		Order("employees.name ASC").
+		Find(&emps).Error
+	return emps, err
+}
+
+// --- AttendanceManualStats ---
+
+// GetManualStats 获取员工手动修正的假勤统计
+func (r *AttendanceRepository) GetManualStats(orgID int64, employeeID int64, yearMonth string) (*AttendanceManualStats, error) {
+	var stats AttendanceManualStats
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("employee_id = ? AND year_month = ?", employeeID, yearMonth).
+		First(&stats).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return &stats, err
+}
+
+// UpsertManualStats 创建或更新手动修正的假勤统计
+func (r *AttendanceRepository) UpsertManualStats(stats *AttendanceManualStats) error {
+	existing, err := r.GetManualStats(stats.OrgID, stats.EmployeeID, stats.YearMonth)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		stats.ID = existing.ID
+		return r.db.Save(stats).Error
+	}
+	return r.db.Create(stats).Error
+}

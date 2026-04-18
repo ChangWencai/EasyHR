@@ -43,12 +43,37 @@ type Schedule struct {
 	Date       time.Time `gorm:"column:date;type:date;not null;index:idx_schedule_emp_date,unique;comment:归属工作日 D-12"`
 }
 
+// ClockRecord 打卡记录（work_date 与 clock_time 分离 per D-14）
+type ClockRecord struct {
+	model.BaseModel
+	EmployeeID int64     `gorm:"column:employee_id;not null;index;comment:员工ID"`
+	WorkDate   time.Time `gorm:"column:work_date;type:date;not null;index;comment:归属工作日 D-12 D-14"`
+	ClockTime  time.Time `gorm:"column:clock_time;not null;comment:实际打卡时间 D-14"`
+	ClockType  string    `gorm:"column:clock_type;type:varchar(10);not null;comment:in=上班 out=下班"`
+	PhotoURL   string    `gorm:"column:photo_url;type:varchar(500);comment:打卡照片"`
+}
+
+// AttendanceManualStats 手动修正假勤统计数据（ATT-08: 管理员可手动修改 per must_haves）
+type AttendanceManualStats struct {
+	model.BaseModel
+	EmployeeID     int64     `gorm:"column:employee_id;not null;uniqueIndex:idx_manual_emp_month"`
+	YearMonth      string    `gorm:"column:year_month;type:varchar(7);not null;uniqueIndex:idx_manual_emp_month"`
+	LeaveDays      *float64  `gorm:"column:leave_days;default:0"`
+	BusinessDays   *float64  `gorm:"column:business_days;default:0"`
+	OutsideDays    *float64  `gorm:"column:outside_days;default:0"`
+	MakeupCount    *int      `gorm:"column:makeup_count;default:0"`
+	ShiftSwapCount *int      `gorm:"column:shift_swap_count;default:0"`
+	OvertimeHours  *float64  `gorm:"column:overtime_hours;default:0"`
+}
+
 // TableName 设置表名
-func (AttendanceRule) TableName() string { return "attendance_rules" }
-func (Shift) TableName() string          { return "attendance_shifts" }
-func (Schedule) TableName() string       { return "attendance_schedules" }
+func (AttendanceRule) TableName() string          { return "attendance_rules" }
+func (Shift) TableName() string                    { return "attendance_shifts" }
+func (Schedule) TableName() string                 { return "attendance_schedules" }
+func (ClockRecord) TableName() string              { return "attendance_clock_records" }
+func (AttendanceManualStats) TableName() string    { return "attendance_manual_stats" }
 
 // AutoMigrateTables 注册 GORM AutoMigrate（由 main.go 调用）
 func AutoMigrateTables(db *gorm.DB) error {
-	return db.AutoMigrate(&AttendanceRule{}, &Shift{}, &Schedule{})
+	return db.AutoMigrate(&AttendanceRule{}, &Shift{}, &Schedule{}, &ClockRecord{}, &AttendanceManualStats{})
 }
