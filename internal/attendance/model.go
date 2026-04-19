@@ -87,6 +87,22 @@ type Approval struct {
 	CCUserIDs    string     `gorm:"column:cc_user_ids;type:text;comment:抄送人ID列表 JSON"`
 }
 
+// AttendanceMonthly 月度考勤汇总
+type AttendanceMonthly struct {
+	EmployeeID      int64   `gorm:"column:employee_id;not null;primaryKey;comment:员工ID"`
+	YearMonth      string  `gorm:"column:year_month;type:varchar(7);not null;primaryKey;comment:年月 2026-04"`
+	OrgID          int64   `gorm:"column:org_id;not null;index;comment:企业ID"`
+	RequiredDays   float64 `gorm:"column:required_days;default:0;comment:应出勤天数"`
+	ActualDays     float64 `gorm:"column:actual_days;default:0;comment:实际出勤天数"`
+	AbsentDays     float64 `gorm:"column:absent_days;default:0;comment:缺勤天数"`
+	LateCount      int     `gorm:"column:late_count;default:0;comment:迟到次数"`
+	EarlyLeaveCount int    `gorm:"column:early_leave_count;default:0;comment:早退次数"`
+	LeaveDays      float64 `gorm:"column:leave_days;default:0;comment:请假天数"`
+	OvertimeHours  float64 `gorm:"column:overtime_hours;default:0;comment:加班小时数"`
+	BusinessDays   float64 `gorm:"column:business_days;default:0;comment:出差天数"`
+	Status         string  `gorm:"column:status;type:varchar(20);default:pending;comment:状态 pending/confirmed"`
+}
+
 // 审批状态常量
 const (
 	ApprovalStatusDraft     = "draft"
