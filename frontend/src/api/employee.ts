@@ -134,6 +134,9 @@ export const registrationApi = {
 
   submit: (token: string, data: SubmitRegistrationData) =>
     request.post(`/registrations/${token}/submit`, data),
+
+  sendSms: (token: string, phone: string) =>
+    request.post('/registrations/send-sms', { token, phone }),
 }
 
 export const employeeApi = {

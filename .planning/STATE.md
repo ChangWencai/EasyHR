@@ -133,3 +133,21 @@ Recent decisions affecting current work:
 Last session: 2026-04-19T08:10:24.615Z
 Stopped at: context exhaustion at 91% (2026-04-19)
 Resume file: None
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-04-20:
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | auth-me-org-id-mismatch | fixed |
+| debug | dashboard-expiry-date-column | fixed |
+| debug | dashboard-invalid-org-id-type | fixed |
+| debug | dashboard-payment-month-missing | fixed |
+| debug | login-success-no-redirect | fixed |
+| debug | onboarding-redirect-fails | fixed |
+| debug | org-onboarding-null-org-id | fixed |
+| debug | orgs-current-404 | fixed |
+| debug | register-calls-login-api | fixed |
+| debug | register-error-message-concat | fixed |
+

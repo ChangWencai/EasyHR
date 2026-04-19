@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: fixed
 trigger: "GET /api/v1/orgs/current 返回 404 Not Found，从未成功过（新接口）"
 created: 2026-04-11T00:00:00+08:00
 updated: 2026-04-11T00:00:00+08:00

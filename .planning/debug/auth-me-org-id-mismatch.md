@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: fixed
 trigger: "GET /api/v1/auth/me 返回 10013，用户存在但查不到"
 created: 2026-04-11T00:00:00+08:00
 updated: 2026-04-11T00:00:00+08:00

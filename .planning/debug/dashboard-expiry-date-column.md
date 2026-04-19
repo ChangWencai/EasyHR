@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: fixed
 trigger: "GET /api/v1/dashboard 返回 500，错误为 column \"expiry_date\" does not exist (SQLSTATE 42703)，位于 internal/dashboard/repository.go:182"
 created: 2026-04-11T00:00:00+08:00
 updated: 2026-04-11T00:00:00+08:00

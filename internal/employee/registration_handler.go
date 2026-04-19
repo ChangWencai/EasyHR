@@ -1,22 +1,25 @@
 package employee
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
+	"github.com/wencai/easyhr/pkg/sms"
 )
 
 // RegistrationHandler 员工信息登记 HTTP 端点
 type RegistrationHandler struct {
-	svc *RegistrationService
+	svc      *RegistrationService
+	smsClient *sms.Client
 }
 
 // NewRegistrationHandler 创建登记 Handler
-func NewRegistrationHandler(svc *RegistrationService) *RegistrationHandler {
-	return &RegistrationHandler{svc: svc}
+func NewRegistrationHandler(svc *RegistrationService, smsClient *sms.Client) *RegistrationHandler {
+	return &RegistrationHandler{svc: svc, smsClient: smsClient}
 }
 
 // RegisterRoutes 注册路由（公开接口 + 认证接口混合）
@@ -27,6 +30,7 @@ func (h *RegistrationHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware
 	// 公开接口（无需认证）— 员工填写信息
 	rg.GET("/registrations/:token", h.GetRegistrationDetail)
 	rg.POST("/registrations/:token/submit", h.SubmitRegistration)
+	rg.POST("/registrations/send-sms", h.SendRegistrationSms)
 
 	// 管理接口（需要认证）
 	authGroup.POST("/registrations", middleware.RequireRole("owner", "admin"), h.CreateRegistration)
@@ -146,4 +150,24 @@ func (h *RegistrationHandler) DeleteRegistration(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{"message": "登记表已删除"})
+}
+
+// SendRegistrationSms 发送登记链接短信（公开接口）
+func (h *RegistrationHandler) SendRegistrationSms(c *gin.Context) {
+	var req struct {
+		Token string `json:"token" binding:"required"`
+		Phone string `json:"phone" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	registrationUrl := fmt.Sprintf("%s/#/register/%s", c.Request.Host, req.Token)
+	if err := h.smsClient.SendTemplateSMS(c.Request.Context(), req.Phone, fmt.Sprintf(`{"url":"%s"}`, registrationUrl)); err != nil {
+		response.Error(c, http.StatusInternalServerError, 20308, "短信发送失败")
+		return
+	}
+
+	response.Success(c, gin.H{"message": "短信已发送"})
 }

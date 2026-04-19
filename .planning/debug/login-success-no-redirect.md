@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: fixed
 trigger: "登录接口正确返回，但页面不跳转"
 created: 2026-04-11T00:00:00+08:00
 updated: 2026-04-11T00:00:00+08:00

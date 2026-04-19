@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: fixed
 trigger: "Dashboard 接口报错 'column payment_month does not exist'"
 created: 2026-04-11T00:00:00Z
 updated: 2026-04-11T00:10:00Z

@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: fixed
 trigger: "点击注册按钮，调用了 POST /api/v1/auth/login (401 Unauthorized)，而不是注册接口"
 created: 2026-04-11T00:00:00+08:00
 updated: 2026-04-11T00:00:00+08:00

@@ -1,12 +1,12 @@
 ---
-status: awaiting_human_verify
+status: fixed
 trigger: "注册接口返回消息被拼接：expected '该手机号已注册，请直接登录', actual '登录已过期，请重新登录，该手机号已注册，请直接登录'"
 created: 2026-04-11T14:00:00+08:00
 updated: 2026-04-11T14:15:00+08:00
 ---
 
 ## Current Focus
-status: awaiting_human_verify
+status: fixed
 
 ## Symptoms
 expected: "注册接口返回 {\"code\": 10014, \"message\": \"该手机号已注册，请直接登录\"}，前端显示该消息"

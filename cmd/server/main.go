@@ -163,7 +163,7 @@ func main() {
 	// 员工信息登记模块依赖注入
 	regRepo := employee.NewRegistrationRepository(db)
 	regSvc := employee.NewRegistrationService(regRepo, empRepo, cfg.Crypto)
-	regHandler := employee.NewRegistrationHandler(regSvc)
+	regHandler := employee.NewRegistrationHandler(regSvc, smsClient)
 
 	// 部门模块依赖注入
 	deptRepo := department.NewRepository(db)

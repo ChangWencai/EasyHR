@@ -42,6 +42,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import QRCode from 'qrcode'
+import { registrationApi } from '@/api/employee'
 
 const props = defineProps<{
   visible: boolean
@@ -103,7 +104,7 @@ async function handleSendSms() {
   if (!smsPhone.value) return
   sendingSms.value = true
   try {
-    // TODO: 调用后端 SMS API 发送登记链接短信
+    await registrationApi.sendSms(props.token, smsPhone.value)
     ElMessage.success(`短信已发送至 ${smsPhone.value}`)
   } catch {
     ElMessage.error('短信发送失败')

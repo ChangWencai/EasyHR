@@ -101,6 +101,11 @@ func (c *Client) SendCode(ctx context.Context, phone, code string) error {
 	return nil
 }
 
+// SendTemplateSMS 发送模板短信（复用 config 中配置的 template_code）
+func (c *Client) SendTemplateSMS(ctx context.Context, phone, templateParam string) error {
+	return c.SendTemplateMessage(ctx, phone, c.cfg.TemplateCode, templateParam)
+}
+
 // SendTemplateMessage 发送自定义模板短信
 func (c *Client) SendTemplateMessage(ctx context.Context, phone, templateCode, templateParam string) error {
 	if c.cfg.TestMode {
