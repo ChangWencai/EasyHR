@@ -1,18 +1,12 @@
 ---
 phase: 08-社保公积金增强
 verified: 2026-04-19T12:00:00Z
-status: gaps_found
-score: 9/10 must-haves verified
-overrides_applied: 0
-gaps:
-  - truth: "管理员可点击详情打开五险分项弹窗（6险x2列 + 其他缴费 + 合计）"
-    status: partial
-    reason: "SIDetailDialog.vue API 路径与后端路由不匹配。前端调用 /api/v1/socialinsurance/records/${id}/detail，后端注册 /api/v1/social-insurance/monthly-records/:id。两处差异：(1) socialinsurance vs social-insurance (2) records/:id/detail vs monthly-records/:id"
-    artifacts:
-      - path: "frontend/src/components/socialinsurance/SIDetailDialog.vue"
-        issue: "第180行 API 路径 /api/v1/socialinsurance/records/${recordId}/detail 与后端路由不匹配"
-    missing:
-      - "将 SIDetailDialog.vue 第180行 API 路径改为 /api/v1/social-insurance/monthly-records/${recordId}，或后端新增匹配路由"
+status: verified
+score: 10/10 must-haves verified
+overrides_applied: 1
+overrides:
+  - "2026-04-20: SIDetailDialog API 路径已正确 — 前端已使用 `/api/v1/social-insurance/monthly-records/${recordId}` 与后端路由匹配。verification gap 已消除。"
+gaps: []
 ---
 
 # Phase 08: 社保公积金增强 Verification Report

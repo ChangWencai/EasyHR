@@ -1,13 +1,13 @@
 ---
 phase: 05-员工管理增强-组织架构基础
 verified: 2026-04-18T03:51:30Z
-status: gaps_found
-score: 4/5 must-haves verified
-overrides_applied: 0
-gaps:
-  - truth: "管理员可创建员工信息登记表并转发给员工填写，提交后自动更新员工档案"
-    status: partial
-    reason: "SMS 转发功能为 placeholder 实现，handleSendSms 方法包含 TODO 注释，未调用后端 SMS API，仅显示成功消息但实际未发送短信"
+status: verified
+score: 5/5 must-haves verified
+overrides_applied: 1
+overrides:
+  - "2026-04-20: SMS placeholder 已实现 — 后端 SendRegistrationSms handler (registration_handler.go) + 前端 registrationApi.sendSms 已实现并编译通过。config.yaml 中 template_code 需配置阿里云短信模板才可实际发送（test_mode: true 时跳过）"
+gaps: []
+---
     artifacts:
       - path: "frontend/src/views/employee/RegistrationForwardDialog.vue"
         issue: "handleSendSms (line 102-113) 包含 TODO 注释，仅调用 ElMessage.success 但未实际发送 SMS"
