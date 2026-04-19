@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -29,6 +30,10 @@ type mockContractTodoCreator struct{}
 
 func (m *mockContractTodoCreator) CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error {
 	return nil
+}
+
+func (m *mockContractTodoCreator) ExistsBySource(ctx context.Context, orgID int64, sourceType string, sourceID *int64) (bool, error) {
+	return false, nil
 }
 
 // setupContractTestService 创建合同测试 Service

@@ -365,6 +365,10 @@ func (s *ContractService) CheckContractRenewalReminders(ctx context.Context) err
 	for _, contract := range contracts {
 		if s.todoSvc != nil {
 			contractID := contract.ID
+			exists, _ := s.todoSvc.ExistsBySource(ctx, contract.OrgID, "contract", &contractID)
+			if exists {
+				continue
+			}
 			emp, _ := s.empRepo.FindByID(contract.OrgID, contract.EmployeeID)
 			empName := ""
 			var empID *int64

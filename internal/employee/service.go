@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -20,6 +21,7 @@ type Service struct {
 // TodoCreator interface for creating todo items (avoids circular import from todo package)
 type TodoCreator interface {
 	CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error
+	ExistsBySource(ctx context.Context, orgID int64, sourceType string, sourceID *int64) (bool, error)
 }
 
 // NewService 创建员工 Service

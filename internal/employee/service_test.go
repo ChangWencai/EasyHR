@@ -1,6 +1,7 @@
 package employee
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -31,6 +32,10 @@ type mockTodoCreator struct{}
 
 func (m *mockTodoCreator) CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error {
 	return nil
+}
+
+func (m *mockTodoCreator) ExistsBySource(ctx context.Context, orgID int64, sourceType string, sourceID *int64) (bool, error) {
+	return false, nil
 }
 
 func newTestService(db *gorm.DB) *Service {

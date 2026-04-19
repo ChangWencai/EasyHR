@@ -135,6 +135,15 @@ func (s *Service) CreateTodoFromEmployee(
 	return s.CreateTodo(ctx, item)
 }
 
+// ExistsBySource checks if a todo already exists for a given source (idempotency guard).
+func (s *Service) ExistsBySource(ctx context.Context, orgID int64, sourceType string, sourceID *int64) (bool, error) {
+	var sid int64
+	if sourceID != nil {
+		sid = *sourceID
+	}
+	return s.repo.ExistsBySource(ctx, orgID, sourceType, sid)
+}
+
 // ListCarousels 查询启用的轮播图
 func (s *Service) ListCarousels(ctx context.Context, orgID int64) ([]CarouselItem, error) {
 	return s.repo.ListCarousels(ctx, orgID)

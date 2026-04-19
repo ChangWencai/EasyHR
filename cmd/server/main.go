@@ -288,7 +288,7 @@ func main() {
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 		dashboard.RegisterRouter(v1.Group("/dashboard"), authMiddleware, db)
 		todo.RegisterRouter(v1.Group(""), authMiddleware, db)
-		upload.RegisterRouter(v1.Group(""), "./uploads", "")
+		upload.RegisterRouter(v1.Group(""), authMiddleware, "./uploads", "")
 		wxmp.RegisterWXMPRouter(v1, db, cfg.JWT.Secret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL, rdb, cfg.Crypto.AESKey, userSvc)
 
 		v1.GET("/health", func(c *gin.Context) {
