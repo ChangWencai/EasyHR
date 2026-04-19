@@ -6,7 +6,7 @@ status: defining
 last_updated: "2026-04-20"
 last_activity: 2026-04-20
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,25 +20,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 09 — 待办中心
+**Current focus:** Phase 10 -- UX 基础 - 流程简化与引导体系
 
 ## Current Position
 
-Phase: 09 (待办中心) -- Complete (all 3 plans done)
-Plan: 3 of 3 planned
-Status: Complete
-Last activity: 2026-04-19
+Phase: 10 (UX 基础 - 流程简化与引导体系)
+Plan: 0 of TBD planned
+Status: Not started
+Last activity: 2026-04-20
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
-## Phase 09 Key Decisions
+## v1.4 Phase Overview
 
-- **环形图**: ECharts + HomeView 顶部
-- **限时任务**: 扩展 TodoItem 字段（deadline/is_time_limited/urgency_status），1-7天超期=超时，15天+=失效
-- **轮播图**: CarouselItem 表，管理员配置 1-3 张
-- **快捷入口**: 保留现有 6 个 + 追加 3 个新入口
-- **协办邀请**: 复用 Token 机制，纯填写，无登录
-- **终止任务**: 保留数据，状态改为"已终止"
+| Phase | Goal | Requirements |
+|-------|------|--------------|
+| 10 | UX 基础 - 流程简化与引导体系 | UX-01~09 (9个) |
+| 11 | 合同合规 | COMP-01~04 (4个) |
+| 12 | 考勤合规报表 | COMP-05~08 (4个) |
+| 13 | 工资合规 | COMP-09~11 (3个) |
 
 ## Performance Metrics
 
@@ -113,6 +113,7 @@ Recent decisions affecting current work:
 - [Phase 08]: SIMonthlyPayment 月度缴费表（employee_id + year_month + status + payment_channel），asynq 定时任务流转状态，Organization.payment_channel 作为默认值
 - [Phase 08 P04]: Excel 导出 handler 直接调用 repo.ListRecords，export=full 控制含明细导出，写入 gin.Context.Data 避免双重 buffer
 - [Phase 09]: TodoItem 扩展 deadline/is_time_limited/urgency_status 字段，不新建表；环形图 ECharts + HomeView 顶部；CarouselItem 表存轮播图配置；协办复用 Token 机制，纯填写无需登录；终止保留数据+标记状态
+- [v1.4 Phase 10]: UX 增强统一前端基础设施，不涉及后端 API 变更（除必要的数据结构支持）
 
 ### Roadmap Evolution
 
@@ -120,22 +121,25 @@ Recent decisions affecting current work:
 - v1.1: H5 管理后台基础框架
 - v1.2: H5 管理后台 UI 重构
 - v1.3: 产品功能全面优化（待办/考勤/薪资/社保/员工管理）
+- v1.4: 用户体验优化（流程简化/引导/错误处理）+ 合规增强（合同/考勤报表/工资条回执）
 
 ### Blockers/Concerns
 
 - [v1.3 research]: 薪资计算公式变更可能覆盖历史数据 -- 已确认月份强制只读保护（D-SAL-DATA-01 已实现）
 - [v1.3 research]: 病假系数按城市配置 -- 初期只支持一线城市（北上广深）
 - [v1.3 research]: 个税 Excel 模板需标准化 -- 非标准格式容错策略待 Phase 7 细化
+- [v1.4]: 合同 PDF 生成依赖模板格式，需确认 PDF 库选型（go-pdf/fpdf 或 excelize 导出）
+- [v1.4]: 员工签署短信验证码依赖阿里云 SMS，需确认模板 ID 配置
 
 ## Session Continuity
 
-Last session: 2026-04-19T08:10:24.615Z
-Stopped at: context exhaustion at 91% (2026-04-19)
+Last session: 2026-04-20T00:00:00.000Z
+Stopped at: v1.4 roadmap created
 Resume file: None
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on 2026-04-20:
+Items acknowledged and deferred at milestone close on milestone completion:
 
 | Category | Item | Status |
 |----------|------|--------|
