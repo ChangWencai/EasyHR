@@ -10,69 +10,76 @@
 
 **简单、好用、省时间** — 老板打开APP第一时间知道要做什么，3步完成核心人事操作，无需专业知识。
 
-## Current Milestone: v1.3 产品功能全面优化（基于 PRD 1.1）
+## Current State
 
-**Goal:** 根据 PRD 1.1 对现有产品进行功能优化和补全，新增待办中心、考勤管理、完善薪资/社保/员工管理模块，仅 H5 管理后台。
+**v1.3 shipped (2026-04-19)** — H5 管理后台功能全面优化
 
-**Target features:**
-- 待办中心：事项汇总、快捷办事、限时任务、完成率环形图
-- 考勤管理：打卡设置（3种模式）、今日打卡、审批流（7种假类型）、出勤月报
-- 薪资管理：数据看板、调薪/普调、个税上传、绩效系数、发工资条
-- 社保公积金：数据看板、增减员优化、缴费渠道、欠缴状态管理
-- 员工管理：数据看板、组织架构可视化、员工信息登记、办离职优化、花名册增强
+已交付：待办中心、考勤管理（打卡/审批流/出勤月报）、薪资增强（调薪/个税/绩效/工资条）、社保增强（增减员/渠道/状态）、员工管理增强（看板/架构/登记/离职）
 
-**Scope:** 仅 H5 管理后台（Vue 3），后端 API 配合新增
+技术栈：Go 1.25 + Gin v1.12 + GORM + PostgreSQL + Vue 3 + Element Plus + ECharts + asynq + gocron
+
+详见：[.planning/milestones/v1.3-ROADMAP.md](.planning/milestones/v1.3-ROADMAP.md)
 
 ## Active Requirements
 
-(None yet — will be defined in step 9)
+(None yet — run `/gsd-new-milestone` to define next milestone requirements)
 
 ## Validated Requirements
 
-- [x] **UI-01**: 登录页重构为左右分栏布局，蓝色渐变背景+品牌区+表单区 (Phase 01)
-- [x] **UI-13**: AppLayout 侧边栏按原型风格优化（折叠/展开/Logo/菜单） (Phase 01)
+### v1.0 MVP (shipped 2026-04-11)
 
-### In This Milestone (v1.2)
+- [x] 用户注册/登录（H5+APP）
+- [x] 员工管理 CRUD
+- [x] 社保管理（城市/基数/参保城市/增减员）
+- [x] 个税计算（税率表配置/算税引擎）
+- [x] 工资核算（应发/实发/工资条/导出）
+- [x] 财务记账（收支/余额/对账）
+- [x] 首页工作台（统计卡片/快捷入口）
+- [x] 员工微信小程序（工资条/合同/社保）
 
-- [ ] **UI-02**: 首页重构为仪表盘布局：4统计卡片+图表+待办事项+数据表格
-- [ ] **UI-03**: 员工管理列表重构为筛选栏+表格卡片风格
-- [ ] **UI-04**: 员工详情页重构为左侧信息卡+右侧详情面板
-- [ ] **UI-05**: 新增员工表单重构为3步骤条引导
-- [ ] **UI-06**: 薪资管理页重构：汇总行+工资表卡片
-- [ ] **UI-07**: 薪资配置页重构为双栏配置表单
-- [ ] **UI-08**: 薪资明细页重构：月份导航+员工明细+实发卡片
-- [ ] **UI-09**: 社保管理页重构：警告横幅+多行布局
-- [ ] **UI-10**: 考勤管理页重构：统计行+日历表格
-- [ ] **UI-11**: 审批管理页重构：Tab切换+审批列表
-- [ ] **UI-12**: 审批详情页重构：状态徽章+详情卡
-- [ ] **UI-13**: AppLayout 侧边栏按原型风格优化（折叠/展开/Logo/菜单）
-- [ ] **UI-14**: 工具首页、个人中心等未覆盖页面按原型风格补充设计
+### v1.1 (shipped 2026-04-13)
 
----
+- [x] **UI-01**: 登录页左右分栏布局 (#1A2D6B → #4F6EF7 → #7B9FFF 渐变)
+- [x] **UI-13**: AppLayout 侧边栏（折叠/展开/Logo/菜单）
 
-*Last updated: 2026-04-14 — Phase 01 complete, UI-01/UI-13 validated*
+### v1.2 (shipped 2026-04-14)
 
-### Out of Scope
+- [x] 员工管理/薪资/社保/考勤/审批 H5 页面按原型图重构
+- [x] 工具首页、个人中心等补充页面
 
-- 考勤管理（打卡设备对接/手机定位打卡） — V2.0
-- 电子签API自动签署 — V2.0（V1.0降级为PDF模板+手动签署）
-- 社保对接第三方数据服务商 — V2.0（V1.0自建政策库）
-- 社保在线办理对接政务接口 — V3.0
-- 发票OCR识别 + 税务局查验接口 — V2.0（V1.0手动录入）
-- 个税一键申报对接 — V2.0（V1.0手动提交至自然人电子税务局）
-- 招聘模块 — V3.0
-- 付费增值服务（人事咨询、社保代办、合规服务） — V3.0
-- 深色模式 — 后续迭代
-- 人事报表/数据分析 — V2.0
+### v1.3 (shipped 2026-04-19)
+
+- [x] **EMP-05~12**: 员工信息登记（Token/加密/转发）、离职审批优化（行内按钮/跳转减员）
+- [x] **SAL-01~19**: 薪资看板(errgroup)/调薪(INSERT ONLY)/个税上传/绩效系数/考勤联动/病假/加班/工资条
+- [x] **SI-21**: 社保记录 Excel 导出（五险分项列）
+
+## Out of Scope
+
+| 功能 | 原因 |
+|------|------|
+| 手机定位打卡/GPS打卡 | 需要 APP 端支持，v1.3 仅做 H5 |
+| 电子签API自动签署 | V2.0 范围，v1.0 降级为 PDF 模板+手动签署 |
+| 社保对接第三方数据服务商 | V2.0 范围 |
+| 社保在线办理对接政务接口 | V3.0 范围 |
+| 发票OCR识别 | V2.0 范围 |
+| 个税一键申报对接 | V2.0 范围 |
+| 招聘模块 | V3.0 范围 |
+| 付费增值服务 | V3.0 范围 |
+| 深色模式 | 后续迭代 |
+| 微信小程序员工端审批 | 员工端后续迭代 |
+| 多级审批流 | 小微企业只需老板审批，单级足够 |
+| HMAC webhook 签名验证 | Phase 08 已知技术债，待 V2.0 前端安全加固 |
+| SMS 转发（阿里云模板配置） | Phase 05 已知技术债，待短信服务配置 |
 
 ## Context
 
 - **市场背景**：钉钉/飞书以工作协同为核心，人事功能非专门化、操作复杂，小微企业老板难以使用
 - **目标用户特征**：无专业HR知识、时间精力有限、对成本敏感、追求高效便捷
 - **次要用户**：兼职人事/行政，需快速完成基础操作
-- **商业模式**：V1.0-V2.0核心功能完全免费，通过免费获客沉淀数据；V3.0起通过增值服务和付费模块变现
+- **商业模式**：V1.0-V2.0 核心功能完全免费，通过免费获客沉淀数据；V3.0 起通过增值服务和付费模块变现
 - **技术架构**：模块化单体（Go + PostgreSQL），逻辑多租户（org_id），前端原生APP + 微信小程序 + H5管理后台
 - **数据安全**：敏感字段AES-256-GCM加密 + SHA-256哈希索引，符合《个人信息保护法》《劳动合同法》
+- **代码规模**：~50+ Go packages, ~30+ Vue 组件，v1.3 新增 5 个模块（attendance/department/todo/salary/socialinsurance dashboard）
 
 ## Constraints
 
@@ -89,30 +96,25 @@
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 模块化单体架构（非微服务） | V1.0用户量小，降低运维复杂度；按业务边界划分模块，后续可拆 | — Pending |
-| 逻辑多租户（org_id） | 单DB共享降低成本，org_id隔离满足数据安全要求 | — Pending |
-| 原生APP（Kotlin + Swift） | 性能和用户体验优先，目标用户对流畅度敏感 | — Pending |
-| 所有第三方依赖设计降级方案 | 核心业务不依赖外部接口可用性，降低风险 | — Pending |
-| V1.0 自建社保政策库 | 30+城市数据，管理员手动更新，避免V1.0对接成本 | — Pending |
-| Go + PostgreSQL 后端 | 高性能、编译为单二进制、ACID事务保障、JSONB灵活存储 | — Pending |
-| RBAC三级权限 | OWNER/ADMIN/MEMBER，简单明确，满足小微企业需求 | — Pending |
+| 模块化单体架构（非微服务） | V1.0用户量小，降低运维复杂度；按业务边界划分模块，后续可拆 | ✅ V1.3 验证，attendance/department/todo 等独立模块工作良好 |
+| 逻辑多租户（org_id） | 单DB共享降低成本，org_id隔离满足数据安全要求 | ✅ 继续 |
+| 原生APP（Kotlin + Swift） | 性能和用户体验优先，目标用户对流畅度敏感 | ⏳ v1.3 聚焦 H5，APP 端待 V2.0 |
+| 所有第三方依赖设计降级方案 | 核心业务不依赖外部接口可用性，降低风险 | ✅ asynq/gocron 定时任务均有 fallback；Redis 不可用时解锁不阻塞 |
+| V1.0 自建社保政策库 | 30+城市数据，管理员手动更新，避免V1.0对接成本 | ✅ 继续 |
+| Go + PostgreSQL 后端 | 高性能、编译为单二进制、ACID事务保障、JSONB灵活存储 | ✅ v1.3 继续使用，GORM AutoMigrate 够用 |
+| RBAC三级权限 | OWNER/ADMIN/MEMBER，简单明确，满足小微企业需求 | ✅ 继续 |
+| H5 UI 重构遵循 EasyHR-web.pen 原型 | 统一视觉风格，主色调 #4F6EF7，卡片圆角 12px | ✅ v1.2+v1.3 遵循 |
+| 审批流使用 qmuntal/stateless 状态机 | 11种审批类型需要状态机管理流转 | ✅ Phase 06 |
+| 组织架构复用 ECharts tree 图表 | 部门→岗位→员工三层结构树 | ✅ Phase 05 |
+| 调薪 INSERT ONLY，禁止 UPDATE 历史 | 薪资历史数据不可篡改 | ✅ Phase 07 |
+| 考勤班次模型必须包含 workDateOffset | 跨天班次（如22:00-06:00）需要日期偏移 | ✅ Phase 06 |
+| SIMonthlyPayment 月度缴费表独立建模 | 月度状态流转（正常→待缴→欠缴→已转出）独立于参保生命周期 | ✅ Phase 08 |
+| TodoItem 扩展字段而非新建表 | 限时任务字段（deadline/is_time_limited/urgency_status）扩展到现有 TodoItem | ✅ Phase 09 |
+| 协办邀请复用 Token 机制 | 纯填写无需登录，和 Registration 模块共享 generateToken 模式 | ✅ Phase 09 |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd:transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd:complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
-
 ---
-*Last updated: 2026-04-17 — v1.3 milestone started*
+*Last updated: 2026-04-19 — v1.3 shipped (shipped 2026-04-19)*
