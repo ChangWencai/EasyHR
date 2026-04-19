@@ -6,6 +6,23 @@ status: completed
 stopped_at: context exhaustion at 90% (2026-04-19)
 last_updated: "2026-04-19T04:38:50.043Z"
 last_activity: 2026-04-19
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-04-19:
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | auth-me-org-id-mismatch | verifying |
+| debug | dashboard-expiry-date-column | verifying |
+| debug | dashboard-invalid-org-id-type | verifying |
+| debug | dashboard-payment-month-missing | awaiting_human_verify |
+| debug | login-success-no-redirect | verifying |
+| debug | orgs-current-404 | verifying |
+| debug | register-calls-login-api | verifying |
+| debug | register-error-message-concat | awaiting_human_verify |
+| verification | Phase 05: SMS forwarding placeholder | gaps_found |
+| verification | Phase 08: SIDetailDialog API path mismatch | gaps_found |
 progress:
   total_phases: 5
   completed_phases: 5
