@@ -26,10 +26,17 @@ func setupServiceTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// mockTodoCreator is a no-op TodoCreator for testing
+type mockTodoCreator struct{}
+
+func (m *mockTodoCreator) CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error {
+	return nil
+}
+
 func newTestService(db *gorm.DB) *Service {
 	repo := NewRepository(db)
 	cfg := config.CryptoConfig{AESKey: testAESKey}
-	return NewService(repo, cfg)
+	return NewService(repo, cfg, &mockTodoCreator{})
 }
 
 // createTestEmployeeViaService 通过 Service 创建测试员工
