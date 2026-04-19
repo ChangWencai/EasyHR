@@ -20,9 +20,17 @@
 
 详见：[.planning/milestones/v1.3-ROADMAP.md](.planning/milestones/v1.3-ROADMAP.md)
 
-## Active Requirements
+## Current Milestone: v1.4 用户体验 + 合规增强
 
-(None yet — run `/gsd-new-milestone` to define next milestone requirements)
+**Goal:** 优化操作体验（精简步骤/完善提示/帮助引导）并增强合规能力（合同电子签/考勤报表/工资条签收）
+
+**Target features:**
+- 操作步骤精简：核心功能 ≤ 3 步完成
+- 错误提示完善：友好错误消息 + 解决方案引导
+- 帮助引导：首次使用引导、空状态提示、操作提示
+- 劳动合同电子签：电子合同生成 + 签署流程
+- 考勤合规报表：加班/请假/出勤统计合规报表
+- 工资条签收确认：员工确认收到工资条
 
 ## Validated Requirements
 
