@@ -5,7 +5,7 @@ export const statusMap: Record<string, string> = {
   archived: '归档',
 }
 
-export const statusTagType: Record<string, string> = {
+export const statusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   active: 'success',
   probation: 'warning',
   resigned: 'info',
@@ -19,7 +19,7 @@ export const invitationStatusMap: Record<string, string> = {
   cancelled: '已取消',
 }
 
-export const invitationStatusTagType: Record<string, string> = {
+export const invitationStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   pending: 'warning',
   used: 'success',
   expired: 'info',
@@ -33,7 +33,7 @@ export const offboardingStatusMap: Record<string, string> = {
   completed: '已完成',
 }
 
-export const offboardingStatusTagType: Record<string, string> = {
+export const offboardingStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   pending: 'warning',
   approved: 'primary',
   rejected: 'danger',

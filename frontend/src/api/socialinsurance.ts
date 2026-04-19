@@ -68,16 +68,16 @@ export interface EnrollPreview {
 
 export const siApi = {
   policies: (params?: { city?: string; year?: number }) =>
-    request.get<SIPolicy[]>('/social-insurance/policies', { params }),
+    request.get<SIPolicy[]>('/social-insurance/policies', { params }).then(r => r.data),
 
   calculate: (data: { city: string; year: number; salary_base: number }) =>
     request.post<SICalculateResult>('/social-insurance/calculate', data),
 
-  records: (params?: { page?: number; employee_id?: number; status?: string }) =>
-    request.get<{ list: SIRecord[]; total: number }>('/social-insurance/records', { params }),
+  records: (params?: { page?: number; page_size?: number; employee_id?: number; status?: string }) =>
+    request.get<{ list: SIRecord[]; total: number }>('/social-insurance/records', { params }).then(r => r.data),
 
   enrollPreview: (data: { employee_ids: number[]; policy_id: number; salary_base: number }) =>
-    request.post<EnrollPreview[]>('/social-insurance/enroll/preview', data),
+    request.post<EnrollPreview[]>('/social-insurance/enroll/preview', data).then(r => r.data),
 
   enroll: (data: { employee_ids: number[]; policy_id: number; start_month: string; salary_base: number }) =>
     request.post<void>('/social-insurance/enroll', data),

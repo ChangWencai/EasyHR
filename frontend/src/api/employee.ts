@@ -118,7 +118,7 @@ export interface SubmitRegistrationData {
 
 export const registrationApi = {
   list: (params: { page: number; page_size: number; status?: string }) =>
-    request.get<RegistrationListResponse>('/registrations', { params }),
+    request.get<RegistrationListResponse>('/registrations', { params }).then(r => r.data),
 
   create: (data: {
     employee_id?: number
@@ -130,7 +130,7 @@ export const registrationApi = {
 
   delete: (id: number) => request.delete(`/registrations/${id}`),
 
-  getDetail: (token: string) => request.get<RegistrationDetail>(`/registrations/${token}`),
+  getDetail: (token: string) => request.get<RegistrationDetail>(`/registrations/${token}`).then(r => r.data),
 
   submit: (token: string, data: SubmitRegistrationData) =>
     request.post(`/registrations/${token}/submit`, data),
@@ -138,9 +138,9 @@ export const registrationApi = {
 
 export const employeeApi = {
   list: (params: { page: number; page_size?: number; search?: string }) =>
-    request.get<EmployeeListResponse>('/employees', { params }),
+    request.get<EmployeeListResponse>('/employees', { params }).then(r => r.data),
 
-  get: (id: number) => request.get<Employee>(`/employees/${id}`),
+  get: (id: number) => request.get<Employee>(`/employees/${id}`).then(r => r.data),
 
   create: (data: Partial<Employee>) => request.post<Employee>('/employees', data),
 
@@ -150,15 +150,15 @@ export const employeeApi = {
   delete: (id: number) => request.delete(`/employees/${id}`),
 
   invitations: (params?: { page: number; page_size?: number }) =>
-    request.get<InvitationListResponse>('/invitations', { params }),
+    request.get<InvitationListResponse>('/invitations', { params }).then(r => r.data),
 
   createInvitation: (data: { name: string; phone: string }) =>
-    request.post<{ invite_url: string }>('/invitations', data),
+    request.post<{ invite_url: string }>('/invitations', data).then(r => r.data),
 
   cancelInvitation: (id: number) => request.delete(`/invitations/${id}`),
 
   offboardings: (params?: { page: number; page_size?: number; status?: string }) =>
-    request.get<OffboardingListResponse>('/offboardings', { params }),
+    request.get<OffboardingListResponse>('/offboardings', { params }).then(r => r.data),
 
   approveOffboarding: (id: number) =>
     request.put<void>(`/offboardings/${id}/approve`),
@@ -169,15 +169,15 @@ export const employeeApi = {
   completeOffboarding: (id: number) =>
     request.put<void>(`/offboardings/${id}/complete`),
 
-  exportExcel: (params?: Record<string, unknown>) =>
-    request.get('/employees/export', { params, responseType: 'blob' }),
+  exportExcel: (params?: Record<string, unknown>): Promise<Blob> =>
+    request.get('/employees/export', { params, responseType: 'blob' }).then(r => r.data as Blob),
 
   getDashboard: () =>
-    request.get<EmployeeDashboard>('/dashboard/employee-dashboard'),
+    request.get<EmployeeDashboard>('/dashboard/employee-dashboard').then(r => r.data),
 
   getRoster: (params: { page: number; page_size: number; search?: string; status?: string; department_id?: number }) =>
-    request.get<{ list: EmployeeRosterItem[]; total: number }>('/employees/roster', { params }),
+    request.get<{ list: EmployeeRosterItem[]; total: number }>('/employees/roster', { params }).then(r => r.data),
 
   getSensitiveInfo: (id: number) =>
-    request.get<Employee>(`/employees/${id}/sensitive`),
+    request.post<Employee>(`/employees/${id}/sensitive`).then(r => r.data),
 }

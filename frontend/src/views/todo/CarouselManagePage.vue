@@ -158,6 +158,7 @@ const dialogVisible = ref(false)
 const dialogMode = ref<'add' | 'edit'>('add')
 const editingId = ref<number | null>(null)
 const formRef = ref()
+void formRef // used in template
 
 const form = reactive({
   image_url: '',

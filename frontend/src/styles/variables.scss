@@ -9,10 +9,11 @@
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f5f5;
+  background: #FAFBFC;
+  scroll-behavior: smooth;
 }
 
 .app-container {
@@ -22,59 +23,264 @@ body {
 
 // === 设计 Token ===
 :root {
-  // Primary 调色板
-  --primary: #4F6EF7;
-  --primary-hover: #6B84F9;
-  --primary-dark: #3651D9;
-  --primary-light: #EEF1FF;
+  // Primary 调色板 - 现代紫色系
+  --primary: #7C3AED;
+  --primary-hover: #8B5CF6;
+  --primary-dark: #5B21B6;
+  --primary-light: #A78BFA;
 
   // 背景色
-  --bg-page: #F0F2F5;
-  --bg-sidebar: #0D1B2A;
-  --bg-sidebar-hover: #1A2D42;
-  --bg-sidebar-active: #4F6EF7;
+  --bg-page: #FAFBFC;
+  --bg-sidebar: linear-gradient(180deg, #1F2937 0%, #111827 100%);
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --bg-sidebar-active: #7C3AED;
   --bg-surface: #FFFFFF;
 
   // 边框
-  --border: #E8ECF0;
-  --border-sidebar: rgba(255, 255, 255, 0.08);
+  --border: #E5E7EB;
+  --border-sidebar: rgba(255, 255, 255, 0.1);
 
   // 文字色
-  --text-primary: #172B4D;
-  --text-secondary: #5E6C84;
-  --text-tertiary: #97A0AF;
-  --text-sidebar: #CDD3E0;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+  --text-sidebar: rgba(255, 255, 255, 0.7);
   --text-sidebar-active: #FFFFFF;
 
   // 状态色
-  --danger: #FF5630;
-  --success: #36B37E;
-  --warning: #FFAB00;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
 
-  // 圆角
-  --radius-lg: 12px;
-  --radius-md: 8px;
+  // 圆角 - 现代化渐进式
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  // 阴影
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(124, 58, 237, 0.3);
 
   // 间距
-  --spacing-lg: 24px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
   --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
 
   // 安全区
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-// Element Plus 颜色覆盖
+// === Element Plus 颜色覆盖 ===
 :root {
-  --el-color-primary: #4F6EF7;
-  --el-color-primary-light-3: #7B9FFF;
-  --el-color-primary-light-5: #A3BFFF;
-  --el-color-primary-light-7: #C5D5FF;
-  --el-color-primary-light-8: #DCE2FF;
-  --el-color-primary-light-9: #EEF1FF;
-  --el-color-primary-dark-2: #3651D9;
-  --el-color-success: #36B37E;
-  --el-color-danger: #FF5630;
+  --el-color-primary: #7C3AED;
+  --el-color-primary-light-3: #A78BFA;
+  --el-color-primary-light-5: #C4B5FD;
+  --el-color-primary-light-7: #DDD6FE;
+  --el-color-primary-light-8: #EDE9FE;
+  --el-color-primary-light-9: #F5F3FF;
+  --el-color-primary-dark-2: #5B21B6;
+  --el-color-success: #10B981;
+  --el-color-danger: #EF4444;
+  --el-color-warning: #F59E0B;
   --el-font-size-base: 14px;
   --el-font-size-medium: 16px;
   --el-font-size-large: 18px;
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 9999px;
 }
+
+// === 滚动条美化 ===
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+}
+
+// === 选中文字样式 ===
+::selection {
+  background: rgba(124, 58, 237, 0.2);
+  color: #5B21B6;
+}
+
+// === 焦点样式 ===
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+// === 链接样式 ===
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--primary-hover);
+  }
+}
+
+// === 按钮过渡 ===
+button,
+.el-button {
+  transition: all 0.2s ease;
+}
+
+// === 卡片悬停效果 ===
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+// === 动画关键帧 ===
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+// === Element Plus 菜单全局覆盖 ===
+.el-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.el-menu-item,
+.el-sub-menu__title {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  &:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+  }
+}
+
+.el-menu-item.is-active {
+  background: rgba(124, 58, 237, 0.3) !important;
+  color: #fff !important;
+}
+
+.el-sub-menu .el-menu {
+  background: rgba(255, 255, 255, 0.05) !important;
+  .el-menu-item {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    &:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: #fff !important;
+    }
+    &.is-active {
+      background: rgba(124, 58, 237, 0.35) !important;
+      color: #fff !important;
+    }
+  }
+}
+
+// === 全局页面布局 ===
+.page-view {
+  padding: 24px 32px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-page);
+  min-height: 100vh;
+}
+
+// 页面头部
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+
+  .el-button {
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    .el-icon { font-size: 16px; }
+  }
+}
+
+// === 响应式断点 ===
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1536px;

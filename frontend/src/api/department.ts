@@ -7,6 +7,17 @@ export interface Department {
   sort_order: number
 }
 
+export interface PaginatedResponse<T> {
+  code: number
+  message: string
+  data: T
+  meta: {
+    total: number
+    page: number
+    page_size: number
+  }
+}
+
 export interface TreeNode {
   id: number
   name: string
@@ -17,7 +28,7 @@ export interface TreeNode {
 }
 
 export const departmentApi = {
-  list: () => request.get<Department[]>('/departments'),
+  list: () => request.get<Department[]>('/departments').then(r => r.data),
 
   getTree: () => request.get<TreeNode[]>('/departments/tree'),
 

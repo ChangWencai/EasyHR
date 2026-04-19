@@ -189,7 +189,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { taxApi } from '@/api/tax'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 
 const activeTab = ref('deduction')
 
@@ -208,7 +208,7 @@ const taxStatusMap: Record<string, string> = {
   declared: '已申报',
   paid: '已缴纳',
 }
-const taxStatusTagType: Record<string, string> = {
+const taxStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   pending: 'warning',
   declared: 'primary',
   paid: 'success',
@@ -237,7 +237,7 @@ const deductionRules: FormRules = {
 async function loadDeductions() {
   loadingDeductions.value = true
   try {
-    deductions.value = await taxApi.deductions({ year: deductionForm.year })
+    deductions.value = (await taxApi.deductions({ year: deductionForm.year })) ?? []
   } catch {
     ElMessage.error('加载失败')
   } finally {

@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -10,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/crypto"
+	"github.com/wencai/easyhr/internal/common/logger"
 	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/pkg/jwt"
 	"github.com/wencai/easyhr/pkg/sms"
@@ -227,6 +229,7 @@ func (s *Service) CompleteOnboarding(ctx context.Context, userID int64, req *Com
 		ContactName:  req.ContactName,
 		ContactPhone: encryptedPhone,
 		Status:       "active",
+		CreatedBy:   userID,
 	}
 	if err := s.repo.CreateOrg(org); err != nil {
 		return nil, fmt.Errorf("创建企业失败: %w", err)
@@ -384,7 +387,7 @@ func (s *Service) GetMe(ctx context.Context, userID, orgID int64) (*MeResponse, 
 				CreditCode:   org.CreditCode,
 				City:         org.City,
 				ContactName:  org.ContactName,
-				ContactPhone: org.ContactPhone,
+				ContactPhone: decryptContactPhone(org.ContactPhone, s.crypto.AESKey),
 			}
 			if org.Status == "inactive" {
 				resp.OnboardingRequired = true
@@ -424,10 +427,15 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, req *ChangeP
 
 // UpdateOrg 更新企业信息
 func (s *Service) UpdateOrg(ctx context.Context, orgID int64, req *UpdateOrgRequest) error {
-	encryptedPhone, _ := crypto.Encrypt(req.ContactPhone, []byte(s.crypto.AESKey))
+	encryptedPhone, err := crypto.Encrypt(req.ContactPhone, []byte(s.crypto.AESKey))
+	if err != nil {
+		logger.SugarLogger.Warnw("UpdateOrg: encrypt failed", "error", err.Error(), "contact_phone", req.ContactPhone)
+		return fmt.Errorf("加密手机号失败: %w", err)
+	}
+	logger.SugarLogger.Debugw("UpdateOrg: encrypted", "contact_phone", req.ContactPhone, "encrypted", encryptedPhone)
 	return s.repo.UpdateOrg(orgID, map[string]interface{}{
 		"name":          req.Name,
-		"credit_code":  req.CreditCode,
+		"credit_code":   req.CreditCode,
 		"city":          req.City,
 		"contact_name":  req.ContactName,
 		"contact_phone": encryptedPhone,
@@ -442,4 +450,21 @@ func (s *Service) UpdateAvatar(ctx context.Context, userID int64, avatar string)
 // UpdateName 更新用户姓名
 func (s *Service) UpdateName(ctx context.Context, userID int64, name string) error {
 	return s.repo.UpdateUserName(userID, name)
+}
+
+func decryptContactPhone(encrypted, aesKey string) string {
+	if encrypted == "" {
+		return ""
+	}
+	phone, err := crypto.Decrypt(encrypted, []byte(aesKey))
+	if err != nil {
+		// 明文存储（兼容老数据）—— 部分生产数据可能在加密引入前以明文存储
+		if _, parseErr := base64.StdEncoding.DecodeString(encrypted); parseErr != nil {
+			logger.SugarLogger.Warnw("contact_phone not encrypted, returning as plaintext", "value", encrypted)
+			return encrypted
+		}
+		logger.SugarLogger.Warnw("contact_phone decrypt failed", "error", err.Error())
+		return ""
+	}
+	return phone
 }

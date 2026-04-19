@@ -135,7 +135,7 @@ const slipStatusMap: Record<string, string> = {
   viewed: '已查看',
   signed: '已签收',
 }
-const slipStatusTagType: Record<string, string> = {
+const slipStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   sent: 'info',
   viewed: 'warning',
   signed: 'success',
@@ -154,7 +154,7 @@ async function loadSlip() {
   errorMsg.value = ''
   try {
     const data = await request.get<SlipDetail>(`/salary/slip/${token}`)
-    slip.value = data
+    slip.value = data as unknown as SlipDetail
   } catch (e: any) {
     const status = e?.response?.status
     if (status === 404) {

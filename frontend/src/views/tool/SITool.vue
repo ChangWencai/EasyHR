@@ -256,11 +256,10 @@ function dismissBanner(): void {
 
 async function loadOverdueItems(): Promise<void> {
   try {
-    const res = await axios.get('/api/v1/social-insurance/dashboard')
-    const responseData = (res as { data?: Record<string, unknown> })?.data ?? res
-    const dashboard = responseData as Record<string, unknown>
-    if (Array.isArray(dashboard.overdue_items)) {
-      overdueItems.value = dashboard.overdue_items as OverdueItem[]
+    const res = await axios.get('/social-insurance/dashboard')
+    const dashboard = (res as { data?: { overdue_items?: OverdueItem[] } })?.data
+    if (Array.isArray(dashboard?.overdue_items)) {
+      overdueItems.value = dashboard.overdue_items
     }
   } catch {
     // Dashboard loading failure should not block the page
@@ -276,7 +275,7 @@ const yearFilter = ref(new Date().getFullYear())
 async function loadPolicies() {
   loadingPolicy.value = true
   try {
-    policies.value = await siApi.policies({ city: cityFilter.value || undefined, year: yearFilter.value })
+    policies.value = (await siApi.policies({ city: cityFilter.value || undefined, year: yearFilter.value })) ?? []
   } catch {
     ElMessage.error('加载政策库失败')
   } finally {
@@ -305,7 +304,7 @@ const enrollForm = reactive({
 
 async function loadEmployees() {
   try {
-    const res = await employeeApi.list({ page: 1, page_size: 100 })
+    const res = await employeeApi.list({ page: 1, page_size: 100 }) as { list: any[] }
     employeeOptions.value = res.list
   } catch {
     // ignore
@@ -319,11 +318,11 @@ async function previewEnroll() {
   }
   previewing.value = true
   try {
-    previewResults.value = await siApi.enrollPreview({
+    previewResults.value = (await siApi.enrollPreview({
       employee_ids: enrollForm.employee_ids,
       policy_id: enrollForm.policy_id,
       salary_base: enrollForm.salary_base,
-    })
+    }))
   } catch {
     ElMessage.error('预览失败')
   } finally {

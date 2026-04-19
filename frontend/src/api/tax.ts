@@ -50,9 +50,15 @@ export const taxApi = {
     request.get<TaxBracket[]>('/tax/brackets', { params }),
 
   deductions: (params?: { year?: number; employee_id?: number }) =>
-    request.get<TaxDeduction[]>('/tax/deductions', { params }),
+    request.get<TaxDeduction[]>('/tax/deductions', { params }).then(r => r.data),
 
-  createDeduction: (data: Partial<TaxDeduction>) =>
+  createDeduction: (data: {
+    type: string
+    name: string
+    amount: number
+    max_amount: number
+    year: number
+  }) =>
     request.post<TaxDeduction>('/tax/deductions', data),
 
   updateDeduction: (id: number, data: Partial<TaxDeduction>) =>
@@ -70,5 +76,5 @@ export const taxApi = {
     request.post<TaxCalculateResult>('/tax/calculate', data),
 
   records: (params?: { page?: number; year?: number }) =>
-    request.get<{ list: TaxRecord[]; total: number }>('/tax/records', { params }),
+    request.get<{ list: TaxRecord[]; total: number }>('/tax/records', { params }).then(r => r.data),
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -356,6 +358,17 @@ func main() {
 		}
 	}()
 	logger.Logger.Info("asynq worker started")
+
+	// 等待中断信号优雅关闭（与 r.Run 并行运行）
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-quit
+		logger.Logger.Info("shutting down server...")
+		asynqServer.Shutdown()
+		logger.Logger.Info("server exited")
+		os.Exit(0)
+	}()
 
 	// 初始化病假系数策略种子数据（北上广深）
 	if err := salarySickLeavePolicySvc.SeedInitialPolicies(); err != nil {

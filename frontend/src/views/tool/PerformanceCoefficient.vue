@@ -11,7 +11,7 @@
               placeholder="选择月份"
               value-format="YYYY-MM"
               style="width: 160px"
-              @change="loadData"
+              @change="() => loadData()"
             />
             <el-button type="primary" :loading="saving" :disabled="!hasDirty" @click="saveCoefficients">
               保存系数
@@ -23,11 +23,10 @@
       <!-- 筛选栏 -->
       <el-form inline @submit.prevent>
         <el-form-item label="搜索员工">
-          <el-input v-model="searchKeyword" placeholder="搜索员工姓名" clearable style="width: 160px" @input="loadEmployees" />
+          <el-input v-model="searchKeyword" placeholder="搜索员工姓名" clearable style="width: 160px" @input="() => loadEmployees()" />
         </el-form-item>
         <el-form-item label="部门">
-          <el-select v-model="selectedDeptId" placeholder="全部部门" clearable style="width: 160px" @change="loadEmployees">
-            <el-option label="全部部门" :value="undefined" />
+          <el-select v-model="selectedDeptId" placeholder="全部部门" clearable style="width: 160px" @change="() => loadEmployees()">
             <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id" />
           </el-select>
         </el-form-item>
@@ -134,8 +133,7 @@ async function loadData() {
 
 async function loadDepartments() {
   try {
-    const res = await departmentApi.list()
-    departments.value = (res as any[]).map((d) => ({ id: d.id, name: d.name }))
+    departments.value = await departmentApi.list()
   } catch {
     // ignore
   }
@@ -153,7 +151,7 @@ async function loadEmployees(p = 1) {
     // Load performance coefficients
     const coeffRes = await salaryApi.getPerformance(year, month)
     const coeffMap: Record<number, number> = {}
-    ;(coeffRes as any[] || []).forEach((c) => {
+    ;(coeffRes || []).forEach((c) => {
       coeffMap[c.employee_id] = c.coefficient
     })
 

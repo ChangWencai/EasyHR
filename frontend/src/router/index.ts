@@ -77,8 +77,8 @@ const routes: RouteRecordRaw[] = [
       // 工具
       {
         path: '/tool',
-        name: 'tool',
-        component: () => import('@/views/tool/ToolHome.vue'),
+        name: 'tool-overview',
+        component: () => import('@/views/tool/ToolOverview.vue'),
       },
       {
         path: '/tool/salary',
@@ -91,16 +91,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/tool/SalaryDashboard.vue'),
       },
       {
-        path: '/tool/socialinsurance',
-        name: 'tool-socialinsurance',
-        component: () => import('@/views/tool/SITool.vue'),
-      },
-      {
-        path: '/tool/tax',
-        name: 'tool-tax',
-        component: () => import('@/views/tool/TaxTool.vue'),
-      },
-      {
         path: '/tool/salary/slip-send',
         name: 'tool-salary-slip-send',
         component: () => import('@/views/tool/SalarySlipSend.vue'),
@@ -110,45 +100,52 @@ const routes: RouteRecordRaw[] = [
         name: 'tool-salary-tax-upload',
         component: () => import('@/views/tool/TaxUpload.vue'),
       },
+      {
+        path: '/tool/socialinsurance',
+        name: 'tool-socialinsurance',
+        component: () => import('@/views/tool/SITool.vue'),
+      },
+      {
+        path: '/tool/tax',
+        name: 'tool-tax',
+        component: () => import('@/views/tool/TaxTool.vue'),
+      },
 
-      // 财务（嵌套子路由）
+      // 财务
       {
         path: '/finance',
         name: 'finance',
         redirect: '/finance/vouchers',
-        component: () => import('@/views/finance/FinanceHome.vue'),
-        children: [
-          {
-            path: '/finance/accounts',
-            name: 'finance-accounts',
-            component: () => import('@/views/finance/AccountTree.vue'),
-          },
-          {
-            path: '/finance/vouchers',
-            name: 'finance-vouchers',
-            component: () => import('@/views/finance/VoucherList.vue'),
-          },
-          {
-            path: '/finance/vouchers/create',
-            name: 'finance-voucher-create',
-            component: () => import('@/views/finance/VoucherCreate.vue'),
-          },
-          {
-            path: '/finance/invoices',
-            name: 'finance-invoices',
-            component: () => import('@/views/finance/InvoiceList.vue'),
-          },
-          {
-            path: '/finance/expenses',
-            name: 'finance-expenses',
-            component: () => import('@/views/finance/ExpenseApproval.vue'),
-          },
-          {
-            path: '/finance/reports',
-            name: 'finance-reports',
-            component: () => import('@/views/finance/BookReport.vue'),
-          },
-        ],
+      },
+      {
+        path: '/finance/accounts',
+        name: 'finance-accounts',
+        component: () => import('@/views/finance/AccountTree.vue'),
+      },
+      {
+        path: '/finance/vouchers',
+        name: 'finance-vouchers',
+        component: () => import('@/views/finance/VoucherList.vue'),
+      },
+      {
+        path: '/finance/vouchers/create',
+        name: 'finance-voucher-create',
+        component: () => import('@/views/finance/VoucherCreate.vue'),
+      },
+      {
+        path: '/finance/invoices',
+        name: 'finance-invoices',
+        component: () => import('@/views/finance/InvoiceList.vue'),
+      },
+      {
+        path: '/finance/expenses',
+        name: 'finance-expenses',
+        component: () => import('@/views/finance/ExpenseApproval.vue'),
+      },
+      {
+        path: '/finance/reports',
+        name: 'finance-reports',
+        component: () => import('@/views/finance/BookReport.vue'),
       },
 
       // 我的

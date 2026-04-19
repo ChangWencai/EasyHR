@@ -45,4 +45,4 @@ sms:
   test_mode: true  # 测试模式：跳过短信发送，固定验证码 123456
 
 crypto:
-  aes_key: "AES_KEY"  # 32字节 hex，从环境变量 AES_KEY 读取
+  aes_key: "32-byte-long-key-for-test-ok!!"  # 32字节，从环境变量 AES_KEY 读取

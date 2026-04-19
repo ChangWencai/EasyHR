@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { employeeApi } from '@/api/employee'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { invitationStatusMap, invitationStatusTagType } from './statusMap'
 
 const loading = ref(false)

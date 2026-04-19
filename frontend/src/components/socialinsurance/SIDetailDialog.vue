@@ -157,8 +157,9 @@ function formatCurrency(value: number | string | undefined): string {
   return Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function getSummary({ columns, data }: { columns: { property: string }[]; data: InsuranceItem[] }): (string | never[])[] {
-  const sums: (string | never[])[] = []
+function getSummary(param: { columns: { property: string }[]; data: InsuranceItem[] }): string[] {
+  const { columns, data } = param
+  const sums: string[] = []
   columns.forEach((column, index) => {
     if (index === 0) {
       sums[index] = '合计'

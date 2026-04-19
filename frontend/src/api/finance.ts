@@ -78,8 +78,6 @@ export const financeApi = {
     request.get('/reports/balance-sheet', { params: { period_id: periodId } }),
   incomeStatement: (periodId: number) =>
     request.get('/reports/income-statement', { params: { period_id: periodId } }),
-  taxDeclaration: (year: number, month: number) =>
-    request.get('/reports/tax-declaration', { params: { year, month } }),
   taxExport: (year: number, month: number) =>
     request.get('/reports/tax-declaration/export', { params: { year, month }, responseType: 'blob' }),
 

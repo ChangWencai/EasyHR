@@ -27,10 +27,13 @@ func NewScheduler(repo *Repository, rdb *redis.Client, contractSvc ContractServi
 	return &Scheduler{repo: repo, rdb: rdb, contractService: contractSvc}
 }
 
+// cstZone 定义中国时区（+08:00）
+var cstZone = time.FixedZone("CST", 8*3600)
+
 // Start 启动调度器
 func (s *Scheduler) Start() (gocron.Scheduler, error) {
 	opts := []gocron.SchedulerOption{
-		gocron.WithLocation(time.FixedZone("CST", 8*3600)),
+		gocron.WithLocation(cstZone),
 	}
 
 	// Redis 可用时启用分布式锁

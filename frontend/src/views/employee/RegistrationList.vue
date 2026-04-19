@@ -89,7 +89,7 @@ const statusMap: Record<string, string> = {
   expired: '已过期',
 }
 
-const statusTagType: Record<string, string> = {
+const statusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   pending: 'info',
   used: 'success',
   expired: 'danger',

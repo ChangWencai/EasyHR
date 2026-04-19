@@ -1,94 +1,219 @@
 <template>
   <div class="employee-create">
     <!-- 页面头部 -->
-    <div class="header">
+    <header class="page-header">
       <button class="back-btn" @click="$router.back()" aria-label="返回">
         <el-icon :size="20"><ArrowLeft /></el-icon>
       </button>
-      <h1 class="header-title">{{ isEdit ? '编辑员工' : '新增员工' }}</h1>
-      <div style="width: 36px" /> <!-- 占位平衡 -->
-    </div>
+      <div class="header-title-group">
+        <h1 class="header-title">{{ isEdit ? '编辑员工' : '新增员工' }}</h1>
+        <p class="header-subtitle">{{ isEdit ? '修改员工信息' : '完善员工基本信息' }}</p>
+      </div>
+      <div style="width: 36px" />
+    </header>
 
-    <el-card class="form-card" v-loading="saving" element-loading-text="保存中…">
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+    <!-- 表单卡片 -->
+    <div class="form-container">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-position="top"
+        class="modern-form"
+        v-loading="saving"
+        element-loading-text="保存中..."
+      >
         <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="section-label">
-            <el-icon :size="14" color="#0F766E"><UserFilled /></el-icon>
-            基本信息
+        <div class="form-section glass-card">
+          <div class="section-header">
+            <div class="section-icon section-icon--user">
+              <el-icon><UserFilled /></el-icon>
+            </div>
+            <div class="section-title-group">
+              <h3 class="section-title">基本信息</h3>
+              <p class="section-desc">员工的个人基本资料</p>
+            </div>
           </div>
-          <el-form-item label="姓名" prop="name">
-            <el-input v-model="form.name" placeholder="请输入员工姓名" maxlength="50" clearable />
-          </el-form-item>
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11" clearable />
-          </el-form-item>
-          <el-form-item label="身份证号" prop="id_number">
-            <el-input v-model="form.id_number" placeholder="请输入18位身份证号" maxlength="18" clearable />
-          </el-form-item>
-          <el-form-item label="岗位" prop="position">
-            <el-input v-model="form.position" placeholder="请输入岗位名称" maxlength="100" clearable />
-          </el-form-item>
-          <el-form-item label="入职日期" prop="entry_date">
-            <el-date-picker
-              v-model="form.entry_date"
-              type="date"
-              placeholder="选择入职日期"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
-            />
-          </el-form-item>
+          <div class="form-grid">
+            <el-form-item label="姓名" prop="name" class="form-item">
+              <el-input
+                v-model="form.name"
+                placeholder="请输入员工姓名"
+                maxlength="50"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><User /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="手机号" prop="phone" class="form-item">
+              <el-input
+                v-model="form.phone"
+                placeholder="请输入手机号"
+                maxlength="11"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Phone /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="身份证号" prop="id_number" class="form-item form-item--full">
+              <el-input
+                v-model="form.id_number"
+                placeholder="请输入18位身份证号"
+                maxlength="18"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Postcard /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="岗位" prop="position" class="form-item">
+              <el-input
+                v-model="form.position"
+                placeholder="请输入岗位名称"
+                maxlength="100"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Briefcase /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="入职日期" prop="entry_date" class="form-item">
+              <el-date-picker
+                v-model="form.entry_date"
+                type="date"
+                placeholder="选择入职日期"
+                value-format="YYYY-MM-DD"
+                size="large"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </div>
         </div>
 
         <!-- 薪资信息 -->
-        <div class="form-section">
-          <div class="section-label">
-            <el-icon :size="14" color="#F59E0B"><Coin /></el-icon>
-            薪资信息
-          </div>
-          <el-form-item label="正式薪资（元/月）" prop="salary">
-            <el-input-number v-model="form.salary" :min="0" :precision="2" placeholder="税前薪资" style="width: 100%" controls-position="right" />
-          </el-form-item>
-          <el-form-item label="试用期薪资（元/月）" prop="probation_salary">
-            <el-input-number v-model="form.probation_salary" :min="0" :precision="2" placeholder="试用期薪资（可选）" style="width: 100%" controls-position="right" />
-            <div class="form-tip">
-              <el-icon :size="12"><InfoFilled /></el-icon>
-              试用期薪资通常为正式薪资的 80%
+        <div class="form-section glass-card">
+          <div class="section-header">
+            <div class="section-icon section-icon--salary">
+              <el-icon><Coin /></el-icon>
             </div>
-          </el-form-item>
-          <el-form-item label="工资卡号" prop="bank_card">
-            <el-input v-model="form.bank_card" placeholder="银行卡号（可选）" maxlength="30" clearable />
-          </el-form-item>
+            <div class="section-title-group">
+              <h3 class="section-title">薪资信息</h3>
+              <p class="section-desc">设置员工的薪资结构</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <el-form-item label="正式薪资（元/月）" prop="salary" class="form-item">
+              <el-input-number
+                v-model="form.salary"
+                :min="0"
+                :precision="2"
+                :controls="false"
+                placeholder="税前薪资"
+                size="large"
+                style="width: 100%"
+              >
+                <template #prefix>
+                  <span class="currency-prefix">¥</span>
+                </template>
+              </el-input-number>
+            </el-form-item>
+            <el-form-item label="试用期薪资（元/月）" prop="probation_salary" class="form-item">
+              <el-input-number
+                v-model="form.probation_salary"
+                :min="0"
+                :precision="2"
+                :controls="false"
+                placeholder="试用期薪资（可选）"
+                size="large"
+                style="width: 100%"
+              >
+                <template #prefix>
+                  <span class="currency-prefix">¥</span>
+                </template>
+              </el-input-number>
+              <div class="form-tip">
+                <el-icon><InfoFilled /></el-icon>
+                试用期薪资通常为正式薪资的 80%
+              </div>
+            </el-form-item>
+            <el-form-item label="工资卡号" prop="bank_card" class="form-item form-item--full">
+              <el-input
+                v-model="form.bank_card"
+                placeholder="银行卡号（可选）"
+                maxlength="30"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Postcard /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+          </div>
         </div>
 
         <!-- 紧急联系人 -->
-        <div class="form-section">
-          <div class="section-label">
-            <el-icon :size="14" color="#EF4444"><Phone /></el-icon>
-            紧急联系人
+        <div class="form-section glass-card">
+          <div class="section-header">
+            <div class="section-icon section-icon--emergency">
+              <el-icon><Phone /></el-icon>
+            </div>
+            <div class="section-title-group">
+              <h3 class="section-title">紧急联系人</h3>
+              <p class="section-desc">紧急情况下的联系方式</p>
+            </div>
           </div>
-          <el-form-item label="联系人姓名" prop="emergency_contact">
-            <el-input v-model="form.emergency_contact" placeholder="紧急联系人姓名（可选）" maxlength="50" clearable />
-          </el-form-item>
-          <el-form-item label="联系人电话" prop="emergency_phone">
-            <el-input v-model="form.emergency_phone" placeholder="紧急联系人电话（可选）" maxlength="11" clearable />
-          </el-form-item>
+          <div class="form-grid">
+            <el-form-item label="联系人姓名" prop="emergency_contact" class="form-item">
+              <el-input
+                v-model="form.emergency_contact"
+                placeholder="紧急联系人姓名（可选）"
+                maxlength="50"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><User /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="联系人电话" prop="emergency_phone" class="form-item">
+              <el-input
+                v-model="form.emergency_phone"
+                placeholder="紧急联系人电话（可选）"
+                maxlength="11"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Phone /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+          </div>
         </div>
 
         <!-- 提交按钮 -->
-        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px">
+        <div class="form-actions">
+          <el-button size="large" class="cancel-btn" @click="$router.back()">
+            取消
+          </el-button>
           <el-button
             type="primary"
+            size="large"
             class="submit-btn"
-            @click="handleSubmit"
             :loading="saving"
+            @click="handleSubmit"
           >
+            <el-icon v-if="!saving"><Check /></el-icon>
             {{ isEdit ? '保存修改' : '创建员工' }}
           </el-button>
-          <el-button class="cancel-btn" @click="$router.back()">取消</el-button>
         </div>
       </el-form>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -96,14 +221,17 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
-import type { Employee } from '@/api/employee'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
   ArrowLeft,
   UserFilled,
+  User,
   Coin,
   InfoFilled,
   Phone,
+  Postcard,
+  Briefcase,
+  Check,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -192,152 +320,329 @@ onMounted(() => loadEmployee())
 </script>
 
 <style scoped lang="scss">
-.employee-create {
+// ============================================================
+// 变量定义
+// ============================================================
+$success: #10B981;
+$warning: #F59E0B;
+$error: #EF4444;
+$bg-page: #FAFBFC;
+$bg-surface: #FFFFFF;
+$text-primary: #1F2937;
+$text-secondary: #6B7280;
+$text-muted: #9CA3AF;
+$border-color: #E5E7EB;
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-xl: 24px;
+
+// ============================================================
+// 页面布局
+// ============================================================
 .employee-create {
   padding-bottom: 80px;
-  background: #F8FAFC;
-  min-height: 100%;
-}
+  background: $bg-page;
+  min-height: 100vh;
 }
 
-.header {
+// ============================================================
+// 页面头部
+// ============================================================
+.page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  padding: 16px;
-  border-bottom: 1px solid #F1F5F9;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   position: sticky;
   top: 0;
   z-index: 10;
 }
 
-.header-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #0F172A;
-}
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-md;
+  background: $bg-page;
+  border: 1px solid $border-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: $text-secondary;
 
-.form-card {
-  margin: 12px;
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
-
-.form-section {
-  margin-bottom: 8px;
-
-  & + & {
-    padding-top: 16px;
-    border-top: 1px solid #F1F5F9;
+  &:hover {
+    background: rgba(var(--primary), 0.08);
+    border-color: var(--primary-light);
+    color: var(--primary);
   }
 }
 
-.section-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0F172A;
-  margin-bottom: 12px;
+.header-title-group {
+  text-align: center;
+
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  .header-subtitle {
+    font-size: 13px;
+    color: $text-muted;
+    margin: 4px 0 0;
+  }
+}
+
+// ============================================================
+// 表单容器
+// ============================================================
+.form-container {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+// ============================================================
+// 玻璃态卡片
+// ============================================================
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-md;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+// ============================================================
+// 表单区块
+// ============================================================
+.form-section {
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid $border-color;
+  }
+}
+
+.section-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-md;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  font-size: 20px;
+
+  &--user {
+    background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+    color: var(--primary);
+  }
+
+  &--salary {
+    background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+    color: $success;
+  }
+
+  &--emergency {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: $error;
+  }
+}
+
+.section-title-group {
+  flex: 1;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 2px 0 0;
+}
+
+// ============================================================
+// 表单网格
+// ============================================================
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-item {
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.currency-prefix {
+  font-weight: 600;
+  color: $text-secondary;
 }
 
 .form-tip {
   font-size: 12px;
-  color: #94A3B8;
+  color: $text-muted;
   margin-top: 6px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 4px;
+
+  .el-icon {
+    font-size: 12px;
+  }
 }
 
-.submit-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  background: #0F766E;
-  border-color: #0F766E;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-
-  &:hover { background: #0D6B62; }
-  &:active { transform: scale(0.99); }
-  &:disabled { background: #CBD5E1; border-color: #CBD5E1; cursor: not-allowed; }
-}
-
-.cancel-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #E2E8F0;
-  color: #64748B;
-  transition: all 0.15s;
-
-  &:hover { border-color: #0F766E; color: #0F766E; }
-  &:active { background: #F1F5F9; }
-}
-
-// Element Plus overrides
+// ============================================================
+// Element Plus 覆盖
+// ============================================================
 :deep(.el-form-item) {
-  margin-bottom: 14px;
+  margin-bottom: 0;
 }
 
 :deep(.el-form-item__label) {
-  font-size: 14px;
-  color: #0F172A;
+  font-size: 13px;
   font-weight: 500;
-  padding-bottom: 6px !important;
-  line-height: 1.4;
+  color: $text-secondary;
+  padding-bottom: 8px !important;
 }
 
 :deep(.el-input__wrapper),
 :deep(.el-textarea__inner) {
-  border-radius: 10px;
-  border-color: #E2E8F0;
+  border-radius: $radius-md !important;
+  border-color: $border-color;
   box-shadow: none !important;
-  padding: 10px 12px;
-  font-size: 15px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-light);
+  }
 
   &:focus-within {
-    border-color: #0F766E;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary), 0.1) !important;
   }
 }
 
-:deep(.el-input-number .el-input__wrapper) {
-  padding-left: 12px;
-  padding-right: 12px;
-}
+:deep(.el-input-number) {
+  width: 100%;
 
-:deep(.el-input-number__decrease),
-:deep(.el-input-number__increase) {
-  background: #F8FAFC;
-  border-color: #E2E8F0;
-  color: #64748B;
+  .el-input__wrapper {
+    padding-left: 40px;
+  }
 
-  &:hover { color: #0F766E; }
+  .el-input__inner {
+    text-align: left;
+  }
 }
 
 :deep(.el-date-editor) {
   width: 100% !important;
+
+  .el-input__wrapper {
+    padding-left: 14px;
+  }
 }
 
-:deep(.el-form-item__error) {
-  font-size: 12px;
-  padding-top: 4px;
+// ============================================================
+// 提交按钮
+// ============================================================
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
 }
 
-:deep(.el-button--primary) {
-  background: #0F766E;
-  border-color: #0F766E;
+.submit-btn {
+  flex: 1;
+  height: 52px;
+  border-radius: $radius-lg;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border: none;
+  box-shadow: 0 4px 14px rgba(var(--primary), 0.4);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 
-  &:hover { background: #0D6B62; border-color: #0D6B62; }
-  &:active { background: #115E59; }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--primary), 0.5);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .el-icon {
+    font-size: 18px;
+  }
+}
+
+.cancel-btn {
+  flex: 1;
+  height: 52px;
+  border-radius: $radius-lg;
+  font-size: 16px;
+  background: $bg-surface;
+  border: 1px solid $border-color;
+  color: $text-secondary;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--primary-light);
+    color: var(--primary);
+    background: rgba(var(--primary), 0.04);
+  }
+}
+
+// ============================================================
+// 响应式
+// ============================================================
+@media (max-width: 768px) {
+  .form-container {
+    padding: 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-item--full {
+    grid-column: 1;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
 }
 </style>

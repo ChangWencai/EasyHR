@@ -1,32 +1,139 @@
 <template>
-  <div class="si-dashboard">
-    <div class="page-header">
-      <h1 class="page-title">社保看板</h1>
+  <div class="page-view">
+    <!-- 页面标题 -->
+    <header class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">社保看板</h1>
+        <p class="page-subtitle">实时掌握社保缴纳情况</p>
+      </div>
+      <div class="header-actions">
+        <el-button @click="loadDashboard">
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
+      </div>
+    </header>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="skeleton-grid">
+        <div v-for="i in 4" :key="i" class="skeleton-card"></div>
+      </div>
     </div>
 
-    <div v-loading="loading" class="dashboard-content">
-      <div v-if="error" class="error-state">
-        <el-empty description="加载社保数据失败，请刷新页面重试">
-          <el-button type="primary" @click="loadDashboard">重新加载</el-button>
-        </el-empty>
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state glass-card">
+      <div class="error-icon">
+        <el-icon><WarningFilled /></el-icon>
+      </div>
+      <h3>加载社保数据失败</h3>
+      <p>请检查网络连接后重试</p>
+      <el-button type="primary" @click="loadDashboard">重新加载</el-button>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div v-else class="stats-grid">
+      <!-- 应缴总额 -->
+      <div class="stat-card glass-card stat-card--primary">
+        <div class="stat-card-bg"></div>
+        <div class="stat-card-content">
+          <div class="stat-header">
+            <div class="stat-icon stat-icon--primary">
+              <el-icon><Coin /></el-icon>
+            </div>
+            <div class="stat-trend" :class="getTrendClass(data?.total_trend_percent, 'revenue')">
+              <el-icon v-if="getTrendDirection(data?.total_trend_percent) === 'up'"><Top /></el-icon>
+              <el-icon v-else-if="getTrendDirection(data?.total_trend_percent) === 'down'"><Bottom /></el-icon>
+              <span v-if="data?.total_trend_percent">{{ Math.abs(Number(data.total_trend_percent)).toFixed(1) }}%</span>
+              <span v-else>--</span>
+            </div>
+          </div>
+          <div class="stat-value stat-value--primary">{{ data?.total || '0.00' }}</div>
+          <div class="stat-label">应缴总额（元）</div>
+        </div>
       </div>
 
-      <div v-else class="stats-grid">
-        <div
-          v-for="card in statCards"
-          :key="card.label"
-          class="stat-card"
-        >
-          <div class="stat-value" :style="{ color: card.accent }">
-            {{ card.value }}
+      <!-- 单位部分 -->
+      <div class="stat-card glass-card">
+        <div class="stat-card-content">
+          <div class="stat-header">
+            <div class="stat-icon stat-icon--company">
+              <el-icon><OfficeBuilding /></el-icon>
+            </div>
+            <div class="stat-trend" :class="getTrendClass(data?.company_trend_percent, 'revenue')">
+              <el-icon v-if="getTrendDirection(data?.company_trend_percent) === 'up'"><Top /></el-icon>
+              <el-icon v-else-if="getTrendDirection(data?.company_trend_percent) === 'down'"><Bottom /></el-icon>
+              <span v-if="data?.company_trend_percent">{{ Math.abs(Number(data.company_trend_percent)).toFixed(1) }}%</span>
+              <span v-else>--</span>
+            </div>
           </div>
-          <div class="stat-label">{{ card.label }}</div>
-          <div v-if="card.trendPercent !== null" class="stat-trend" :class="card.trendClass">
-            <span v-if="card.trendDirection === 'up'">&#8593;</span>
-            <span v-else-if="card.trendDirection === 'down'">&#8595;</span>
-            {{ card.trendDisplay }}%
+          <div class="stat-value">{{ data?.company || '0.00' }}</div>
+          <div class="stat-label">单位部分合计（元）</div>
+        </div>
+      </div>
+
+      <!-- 个人部分 -->
+      <div class="stat-card glass-card">
+        <div class="stat-card-content">
+          <div class="stat-header">
+            <div class="stat-icon stat-icon--personal">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-trend" :class="getTrendClass(data?.personal_trend_percent, 'revenue')">
+              <el-icon v-if="getTrendDirection(data?.personal_trend_percent) === 'up'"><Top /></el-icon>
+              <el-icon v-else-if="getTrendDirection(data?.personal_trend_percent) === 'down'"><Bottom /></el-icon>
+              <span v-if="data?.personal_trend_percent">{{ Math.abs(Number(data.personal_trend_percent)).toFixed(1) }}%</span>
+              <span v-else>--</span>
+            </div>
           </div>
-          <div v-else class="stat-trend neutral">--</div>
+          <div class="stat-value">{{ data?.personal || '0.00' }}</div>
+          <div class="stat-label">个人部分合计（元）</div>
+        </div>
+      </div>
+
+      <!-- 欠缴金额 -->
+      <div class="stat-card glass-card stat-card--danger">
+        <div class="stat-card-bg stat-card-bg--danger"></div>
+        <div class="stat-card-content">
+          <div class="stat-header">
+            <div class="stat-icon stat-icon--danger">
+              <el-icon><WarningFilled /></el-icon>
+            </div>
+            <div v-if="data?.overdue_trend_percent" class="stat-trend stat-trend--danger">
+              <el-icon><Bottom /></el-icon>
+              <span>{{ Math.abs(Number(data.overdue_trend_percent)).toFixed(1) }}%</span>
+            </div>
+          </div>
+          <div class="stat-value stat-value--danger">{{ data?.overdue || '0.00' }}</div>
+          <div class="stat-label">欠缴金额（元）</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部图表占位 -->
+    <div class="charts-row">
+      <div class="chart-card glass-card">
+        <div class="chart-header">
+          <h3 class="chart-title">社保构成</h3>
+          <span class="chart-subtitle">单位 vs 个人缴费比例</span>
+        </div>
+        <div class="chart-placeholder">
+          <div class="placeholder-content">
+            <el-icon class="placeholder-icon"><PieChart /></el-icon>
+            <span>图表加载中...</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card glass-card">
+        <div class="chart-header">
+          <h3 class="chart-title">月度趋势</h3>
+          <span class="chart-subtitle">近6个月社保缴纳趋势</span>
+        </div>
+        <div class="chart-placeholder">
+          <div class="placeholder-content">
+            <el-icon class="placeholder-icon"><TrendCharts /></el-icon>
+            <span>图表加载中...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -34,9 +141,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import axios from '@/api/request'
+import { Refresh, Coin, OfficeBuilding, User, WarningFilled, Top, Bottom, PieChart, TrendCharts } from '@element-plus/icons-vue'
 
 interface DashboardData {
   total: string
@@ -49,95 +157,24 @@ interface DashboardData {
   overdue_trend_percent: number | null
 }
 
-interface SIDashboardStat {
-  label: string
-  value: string
-  trend_percent: string | null
-  trend_direction: string
-}
-
-interface OverdueItem {
-  id: number
-  employee_id: number
-  employee_name: string
-  city: string
-  year_month: string
-  amount: string
-}
-
-interface StatCard {
-  label: string
-  value: string
-  accent: string
-  trendPercent: number | null
-  trendDirection: 'up' | 'down' | null
-  trendClass: string
-  trendDisplay: string
-}
-
 const loading = ref(false)
 const error = ref(false)
 const data = ref<DashboardData | null>(null)
-const overdueItems = ref<OverdueItem[]>([])
 
-function parseTrendPercent(val: string | null | undefined): number | null {
+function getTrendDirection(val: string | number | null | undefined): 'up' | 'down' | null {
   if (val === null || val === undefined) return null
-  const n = parseFloat(val)
-  return isNaN(n) ? null : n
+  const n = typeof val === 'string' ? parseFloat(val) : Number(val)
+  if (isNaN(n)) return null
+  return n > 0 ? 'up' : n < 0 ? 'down' : null
 }
 
-const statCards = computed<StatCard[]>(() => {
-  if (!data.value) {
-    return getEmptyCards()
-  }
-
-  return [
-    buildCard('应缴总额（元）', data.value.total, '#4F6EF7', data.value.total_trend_percent, 'revenue'),
-    buildCard('单位部分合计（元）', data.value.company, '#4F6EF7', data.value.company_trend_percent, 'revenue'),
-    buildCard('个人部分合计（元）', data.value.personal, '#4F6EF7', data.value.personal_trend_percent, 'revenue'),
-    buildCard('欠缴金额（元）', data.value.overdue, '#FF5630', data.value.overdue_trend_percent, 'overdue'),
-  ]
-})
-
-function getEmptyCards(): StatCard[] {
-  return [
-    buildCard('应缴总额（元）', '0.00', '#4F6EF7', null, 'revenue'),
-    buildCard('单位部分合计（元）', '0.00', '#4F6EF7', null, 'revenue'),
-    buildCard('个人部分合计（元）', '0.00', '#4F6EF7', null, 'revenue'),
-    buildCard('欠缴金额（元）', '0.00', '#FF5630', null, 'overdue'),
-  ]
-}
-
-function buildCard(
-  label: string,
-  value: string,
-  accent: string,
-  trendPercent: number | null,
-  metricType: 'revenue' | 'overdue'
-): StatCard {
-  if (trendPercent === null) {
-    return { label, value, accent, trendPercent: null, trendDirection: null, trendClass: 'neutral', trendDisplay: '--' }
-  }
-
-  const absPercent = Math.abs(trendPercent)
-  const isPositive = trendPercent > 0
-  const direction = isPositive ? 'up' : 'down'
-
-  let trendClass: string
-  if (metricType === 'revenue') {
-    trendClass = isPositive ? 'up' : 'down'
+function getTrendClass(val: string | number | null | undefined, type: 'revenue' | 'overdue'): string {
+  const direction = getTrendDirection(val)
+  if (!direction) return ''
+  if (type === 'revenue') {
+    return direction === 'up' ? 'stat-trend--up' : 'stat-trend--down'
   } else {
-    trendClass = isPositive ? 'down' : 'up'
-  }
-
-  return {
-    label,
-    value,
-    accent,
-    trendPercent,
-    trendDirection: direction,
-    trendClass,
-    trendDisplay: absPercent.toFixed(1),
+    return direction === 'down' ? 'stat-trend--up' : 'stat-trend--down'
   }
 }
 
@@ -146,22 +183,10 @@ async function loadDashboard() {
   error.value = false
   try {
     const res = await axios.get('/api/v1/social-insurance/dashboard')
-    const raw = (res as { data?: { stats?: SIDashboardStat[]; overdue_items?: OverdueItem[] } })?.data ?? res
-    const stats = (raw as { stats?: SIDashboardStat[] }).stats || []
-    data.value = {
-      total: stats[0]?.value ?? '0.00',
-      total_trend_percent: parseTrendPercent(stats[0]?.trend_percent),
-      company: stats[1]?.value ?? '0.00',
-      company_trend_percent: parseTrendPercent(stats[1]?.trend_percent),
-      personal: stats[2]?.value ?? '0.00',
-      personal_trend_percent: parseTrendPercent(stats[2]?.trend_percent),
-      overdue: stats[3]?.value ?? '0.00',
-      overdue_trend_percent: parseTrendPercent(stats[3]?.trend_percent),
-    }
-    overdueItems.value = (raw as { overdue_items?: OverdueItem[] }).overdue_items || []
+    data.value = res.data as DashboardData
   } catch {
     error.value = true
-    ElMessage.error('加载社保数据失败，请刷新页面重试')
+    ElMessage.error('加载社保数据失败')
   } finally {
     loading.value = false
   }
@@ -173,91 +198,233 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.si-dashboard {
-  padding: 20px 24px;
-  width: 100%;
-  box-sizing: border-box;
+.loading-state {
+  margin-bottom: 24px;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
-.page-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
-  line-height: 1.2;
+.skeleton-card {
+  height: 160px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-xl);
+  animation: skeleton-loading 1.5s infinite;
 }
 
-.dashboard-content {
-  min-height: 120px;
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .error-state {
-  padding: 8px 0;
+  text-align: center;
+  padding: 64px 32px;
+
+  .error-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: #FEE2E2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--danger);
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+  }
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
-  background: #fafbff;
-  padding: 16px;
-  border-radius: 12px;
-  text-align: center;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  &--primary {
+    .stat-card-bg {
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, rgba(var(--primary-light), 0.3) 0%, rgba(var(--primary), 0.1) 100%);
+      border-radius: 50%;
+    }
+  }
+
+  &--danger {
+    .stat-card-bg--danger {
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, rgba(var(--danger), 0.3) 0%, rgba(var(--danger), 0.1) 100%);
+      border-radius: 50%;
+    }
+  }
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1.2;
+.stat-card-content {
+  position: relative;
+  z-index: 1;
 }
 
-.stat-label {
-  font-size: 12px;
-  color: #8c8c8c;
-  margin-top: 4px;
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+
+  &--primary { background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%); color: var(--primary); }
+  &--company { background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%); color: #3B82F6; }
+  &--personal { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); color: var(--warning); }
+  &--danger { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); color: var(--danger); }
 }
 
 .stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   font-size: 12px;
-  margin-top: 4px;
-  font-weight: 500;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 20px;
 
-  &.up {
-    color: #52c41a;
+  .el-icon { font-size: 12px; }
+
+  &--up {
+    background: #D1FAE5;
+    color: var(--success);
   }
 
-  &.down {
-    color: #ff4d4f;
+  &--down {
+    background: #FEE2E2;
+    color: var(--danger);
   }
 
-  &.neutral {
-    color: #8c8c8c;
+  &--danger {
+    background: #FEE2E2;
+    color: var(--danger);
   }
 }
 
-@media (max-width: 900px) {
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 4px;
+  font-family: 'SF Mono', Monaco, monospace;
+
+  &--primary { color: var(--primary); }
+  &--danger { color: var(--danger); }
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.chart-card {
+  padding: 24px;
+}
+
+.chart-header {
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.chart-subtitle {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.chart-placeholder {
+  height: 200px;
+  background: var(--bg-page);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.placeholder-icon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+@media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .si-dashboard {
-    padding: 12px;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .si-dashboard { padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .charts-row { grid-template-columns: 1fr; }
+  .skeleton-grid { grid-template-columns: 1fr; }
 }
 </style>

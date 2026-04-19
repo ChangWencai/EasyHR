@@ -24,19 +24,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { HomeFilled, UserFilled, Tools, Money, Avatar } from '@element-plus/icons-vue'
-import { useDashboardStore } from '@/stores/dashboard'
 
 const route = useRoute()
-const dashboard = useDashboardStore()
-
-// 合并所有待办数量
-const totalBadge = computed(() => {
-  const total = dashboard.todos.reduce((sum, t) => sum + t.count, 0)
-  return total > 0 ? (total > 99 ? '99+' : String(total)) : null
-})
 
 const tabs = [
   { path: '/home', label: '首页', icon: HomeFilled, badge: null },

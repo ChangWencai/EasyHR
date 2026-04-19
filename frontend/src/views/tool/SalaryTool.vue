@@ -162,7 +162,6 @@ import { salaryApi } from '@/api/salary'
 import { ElMessage } from 'element-plus'
 import SalaryDashboard from './SalaryDashboard.vue'
 import SalaryAdjustment from './SalaryAdjustment.vue'
-import SalaryList from './SalaryList.vue'
 import TaxUpload from './TaxUpload.vue'
 import SalarySlipSend from './SalarySlipSend.vue'
 
@@ -216,7 +215,7 @@ const payrollStatusMap: Record<string, string> = {
   confirmed: '已确认',
   paid: '已发放',
 }
-const payrollStatusTagType: Record<string, string> = {
+const payrollStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   draft: 'info',
   calculated: 'warning',
   confirmed: 'primary',
@@ -324,7 +323,7 @@ async function handleExport() {
   const [year, month] = exportYM.value.split('-').map(Number)
   exporting.value = true
   try {
-    const blob = await salaryApi.export(year, month)
+    const blob = await salaryApi.export(year, month) as unknown as Blob
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

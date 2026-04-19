@@ -130,27 +130,27 @@ async function loadDetail() {
   if (!props.employeeId) return
   loading.value = true
   try {
-    const res = await employeeApi.get(props.employeeId)
+    const res = await employeeApi.get(props.employeeId) as unknown as Record<string, unknown>
     detail.value = {
-      name: res.name || '',
-      gender: (res as Record<string, unknown>).gender as string || '',
-      phone: res.phone || '',
-      email: (res as Record<string, unknown>).email as string || '',
-      department_name: (res as Record<string, unknown>).department_name as string || '',
-      position: res.position || '',
-      hire_date: res.entry_date || '',
-      status: res.status || '',
-      id_card: res.id_number || '',
-      contract_type: (res as Record<string, unknown>).contract_type as string || '',
-      contract_start_date: (res as Record<string, unknown>).contract_start_date as string || '',
-      contract_end_date: (res as Record<string, unknown>).contract_end_date as string || '',
-      contract_expiry_days: (res as Record<string, unknown>).contract_expiry_days as number | null ?? null,
-      bank_account: res.bank_card || '',
-      bank_name: (res as Record<string, unknown>).bank_name as string || '',
-      address: (res as Record<string, unknown>).address as string || '',
-      emergency_contact: res.emergency_contact || '',
-      emergency_phone: res.emergency_phone || '',
-      remark: (res as Record<string, unknown>).remark as string || '',
+      name: (res.name as string) || '',
+      gender: (res.gender as string) || '',
+      phone: (res.phone as string) || '',
+      email: (res.email as string) || '',
+      department_name: (res.department_name as string) || '',
+      position: (res.position as string) || '',
+      hire_date: (res.entry_date as string) || '',
+      status: (res.status as string) || '',
+      id_card: (res.id_number as string) || '',
+      contract_type: (res.contract_type as string) || '',
+      contract_start_date: (res.contract_start_date as string) || '',
+      contract_end_date: (res.contract_end_date as string) || '',
+      contract_expiry_days: (res.contract_expiry_days as number) ?? null,
+      bank_account: (res.bank_card as string) || '',
+      bank_name: (res.bank_name as string) || '',
+      address: (res.address as string) || '',
+      emergency_contact: (res.emergency_contact as string) || '',
+      emergency_phone: (res.emergency_phone as string) || '',
+      remark: (res.remark as string) || '',
     }
   } catch {
     detail.value = null

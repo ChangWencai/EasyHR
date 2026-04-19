@@ -154,15 +154,15 @@ export interface SlipSendLog {
 }
 
 export const salaryApi = {
-  template: () => request.get<SalaryTemplate>('/salary/template'),
+  template: () => request.get<SalaryTemplate>('/salary/template').then(r => r.data),
 
   updateTemplate: (data: { items: { id: number; is_enabled: boolean }[] }) =>
     request.put<SalaryTemplate>('/salary/template', data),
 
   employeeItems: (employeeId: number, month: string) =>
-    request.get<EmployeeSalaryItem[]>(`/salary/items/${employeeId}`, {
-      params: { month },
-    }),
+    request.get<EmployeeSalaryItem[]>('/salary/items', {
+      params: { employee_id: employeeId, month },
+    }).then(r => r.data),
 
   setEmployeeItems: (
     employeeId: number,
@@ -184,7 +184,7 @@ export const salaryApi = {
     request.put<Payroll>('/salary/payroll/confirm', data),
 
   list: (params: { year: number; month: number; page?: number; page_size?: number }) =>
-    request.get<PayrollListResponse>('/salary/payroll', { params }),
+    request.get<PayrollListResponse>('/salary/payroll', { params }).then(r => r.data),
 
   detail: (id: number) => request.get<Payroll>(`/salary/payroll/${id}`),
 
@@ -201,7 +201,7 @@ export const salaryApi = {
 
   // 薪资看板
   getSalaryDashboard: (year: number, month: number) =>
-    request.get<SalaryDashboardResponse>('/salary/dashboard', { params: { year, month } }),
+    request.get<SalaryDashboardResponse>('/salary/dashboard', { params: { year, month } }).then(r => r.data),
 
   // 调薪
   createAdjustment: (data: AdjustmentRequest) =>
@@ -218,7 +218,7 @@ export const salaryApi = {
 
   // 绩效系数
   getPerformance: (year: number, month: number) =>
-    request.get<PerformanceCoefficient[]>('/salary/performance', { params: { year, month } }),
+    request.get<PerformanceCoefficient[]>('/salary/performance', { params: { year, month } }).then(r => r.data),
 
   setPerformance: (data: { coefficients: { employee_id: number; coefficient: number }[]; year: number; month: number }) =>
     request.put('/salary/performance', data),
@@ -227,7 +227,7 @@ export const salaryApi = {
   uploadTax: (year: number, month: number, file: File) => {
     const form = new FormData()
     form.append('file', file)
-    return request.post<TaxUploadResult>('/salary/tax-upload', form, { params: { year, month } })
+    return request.post<TaxUploadResult>('/salary/tax-upload', form, { params: { year, month } }).then(r => r.data)
   },
 
   confirmTaxUpload: (data: { year: number; month: number; matched_rows: TaxUploadRow[] }) =>
@@ -238,11 +238,11 @@ export const salaryApi = {
     request.post('/salary/slip/send-all', data),
 
   getSlipLogs: (params: { year?: number; month?: number; page?: number; page_size?: number }) =>
-    request.get<{ logs: SlipSendLog[]; total: number }>('/salary/slip/logs', { params }),
+    request.get<{ logs: SlipSendLog[]; total: number }>('/salary/slip/logs', { params }).then(r => r.data),
 
   // 薪资列表
   getSalaryList: (params: { year: number; month: number; department_id?: number; keyword?: string; page?: number; page_size?: number }) =>
-    request.get<{ list: SalaryRecord[]; total: number }>('/salary/list', { params }),
+    request.get<PayrollListResponse>('/salary/payroll', { params }).then(r => r.data),
 
   // 解锁
   sendUnlockCode: (data: { phone: string }) =>
@@ -251,12 +251,12 @@ export const salaryApi = {
   unlockRecord: (data: { record_id: number; sms_code: string }) =>
     request.post('/salary/unlock', data),
 
-  // 导出（含税前明细）
-  exportWithDetails: (year: number, month: number, includeDetails: boolean) =>
-    request.get('/salary/export', {
-      params: { year, month, include_details: includeDetails },
+  // 导出
+  exportWithDetails: (year: number, month: number): Promise<Blob> =>
+    request.get('/salary/payroll/export', {
+      params: { year, month },
       responseType: 'blob',
-    }),
+    }).then(r => r.data as Blob),
 }
 
 export interface SalaryRecord {
