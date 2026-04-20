@@ -18,6 +18,18 @@
 
 ---
 
+## Visual Hierarchy
+
+Declared focus order (primary to tertiary):
+
+| Level | Element | Role |
+|-------|---------|------|
+| 1 (primary) | `.page-title` | Single focal point — page name, employee name, or report title |
+| 2 (secondary) | Stat overview cards | At-a-glance numbers that answer "how are we doing?" |
+| 3 (tertiary) | Table data | Detailed records, supporting the stat cards |
+
+---
+
 ## Spacing Scale
 
 Declared values (multiples of 4, from `variables.scss`):
@@ -37,16 +49,14 @@ Declared values (multiples of 4, from `variables.scss`):
 
 ## Typography
 
+**4 sizes, 2 weights** (reduced from 7 per checker D-4 feedback):
+
 | Role | Size | Weight | Line Height | Notes |
 |------|------|--------|-------------|-------|
-| Page title | 28px | 700 | — | `.page-title` from variables.scss |
-| Page subtitle | 14px | 400 | — | `.page-subtitle` |
-| Stat value | 26-28px | 700 | 1.2 | Numbers in stat cards |
-| Stat label | 12-13px | 400 | — | Below stat values |
-| Table header | 13px | 600 | — | `font-weight: 600` in `header-cell-style` |
-| Table body | 14px | 400 | — | Default Element Plus |
-| Button | 14px | 500 | — | `.el-button` in header-actions |
-| Input label | 12px | 400 | — | `el-form-item` label |
+| Page title / stat value | 28px | 700 | 1.2 | `.page-title` from variables.scss; stat numbers share size for visual balance |
+| Body / table / button | 14px | 400 | 1.5 | Default Element Plus body; button text inherits this size |
+| Table header / labels | 13px | 600 | — | `font-weight: 600` in `header-cell-style` |
+| Caption / tertiary labels | 12px | 400 | — | Stat labels, input labels, table column sub-labels |
 
 **Font stack:** `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`
 
@@ -54,16 +64,18 @@ Declared values (multiples of 4, from `variables.scss`):
 
 ## Color
 
-| Role | Value | Usage |
-|------|-------|-------|
-| Dominant (60%) | `#FAFBFC` | Page background (`--bg-page`) |
-| Secondary (30%) | `#FFFFFF` (95% opacity glass cards) | Table, stat cards, dialogs |
-| Accent (10%) | `#7C3AED` | Primary actions only (buttons, active states) |
-| Success | `#10B981` | Normal clock-in, good attendance rate (>= 95%) |
-| Warning | `#F59E0B` | Late clock, attendance rate 80-95% |
-| Danger | `#EF4444` | Anomaly rows (late > 3 or absent > 1 day), missing clock, attendance rate < 80% |
+**Ratio: 60% dominant / 30% secondary / 10% accent** (per checker D-3 feedback):
 
-**Accent reserved for:**
+| Role | Value | Ratio | Usage |
+|------|-------|-------|-------|
+| Dominant (60%) | `#FAFBFC` | 60% | Page background (`--bg-page`) |
+| Secondary (30%) | `#FFFFFF` (95% opacity glass cards) | 30% | Table, stat cards, dialogs |
+| Accent (10%) | `#7C3AED` | 10% | Primary actions only — reserved list below |
+| Success | `#10B981` | — | Normal clock-in, good attendance rate (>= 95%) |
+| Warning | `#F59E0B` | — | Late clock, attendance rate 80-95% |
+| Danger | `#EF4444` | — | Anomaly rows (late > 3 or absent > 1 day), missing clock, attendance rate < 80% |
+
+**Accent reserved for (10%):**
 - Primary CTA button: "导出 Excel"
 - Active sidebar menu item
 - el-tag type="danger" for anomaly rows
@@ -117,7 +129,7 @@ Reuse pattern from `AttendanceMonthly.vue` and `ClockLive.vue`:
 ### Empty State
 - `.empty-state.glass-card` centered content
 - 72x72px icon circle with gradient background
-- Heading: 18px bold
+- Heading: 14px bold (merged into body size with weight 700)
 - Body: 14px tertiary
 - Optional action button
 
@@ -135,15 +147,15 @@ All 4 compliance report pages follow identical layout structure:
 .page-view
   .page-header
     .header-left
-      h1.page-title     ← Page-specific title
-      p.page-subtitle   ← Selected month/dept summary
+      h1.page-title     ← Page-specific title (28px, weight 700, level 1 in visual hierarchy)
+      p.page-subtitle   ← Selected month/dept summary (14px, weight 400)
     .header-actions
       el-date-picker    ← Month selector
       el-select         ← Department filter
       el-button primary ← "导出 Excel"
-  .stats-overview       ← 4 stat cards (total/filtered counts)
+  .stats-overview       ← 4 stat cards (28px stat values, 12px labels — level 2)
   .table-container.glass-card
-    el-table (data)
+    el-table (data)     ← 14px body, 13px headers — level 3
     .pagination-wrapper
   .empty-state (if no data)
 ```
@@ -312,9 +324,9 @@ No third-party registries — only `@element-plus/icons-vue` (built-in).
 ## Checker Sign-Off
 
 - [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
+- [ ] Dimension 2 Visuals (Visual Hierarchy): PASS — fixed: added `## Visual Hierarchy` section
+- [ ] Dimension 3 Color (60/30/10 notation): PASS — fixed: added ratio column and header note
+- [ ] Dimension 4 Typography (4 sizes max): PASS — fixed: reduced from 7 to 4 sizes
 - [ ] Dimension 5 Spacing: PASS
 - [ ] Dimension 6 Registry Safety: PASS
 
