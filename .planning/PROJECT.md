@@ -57,9 +57,10 @@
 
 ### v1.3 (shipped 2026-04-19)
 
-- [x] **EMP-05~12**: 员工信息登记（Token/加密/转发）、离职审批优化（行内按钮/跳转减员）
-- [x] **SAL-01~19**: 薪资看板(errgroup)/调薪(INSERT ONLY)/个税上传/绩效系数/考勤联动/病假/加班/工资条
-- [x] **SI-21**: 社保记录 Excel 导出（五险分项列）
+- [x] **COMP-05**: 加班统计报表（法定节假日/工作日延时/周末加班分3档，0.5h取整）
+- [x] **COMP-06**: 请假合规报表（年假额度/已用/剩余，病假，事假）
+- [x] **COMP-07**: 出勤异常报表（迟到/早退/缺勤，异常行红色高亮 late>3 or absent>1）
+- [x] **COMP-08**: 月度考勤汇总 Excel 导出（Blob download，12列统计表）
 
 ## Out of Scope
 
@@ -119,10 +120,12 @@
 | SIMonthlyPayment 月度缴费表独立建模 | 月度状态流转（正常→待缴→欠缴→已转出）独立于参保生命周期 | ✅ Phase 08 |
 | TodoItem 扩展字段而非新建表 | 限时任务字段（deadline/is_time_limited/urgency_status）扩展到现有 TodoItem | ✅ Phase 09 |
 | 协办邀请复用 Token 机制 | 纯填写无需登录，和 Registration 模块共享 generateToken 模式 | ✅ Phase 09 |
+| 加班分类: ClassifyOvertimeCategory 复用 AttendanceRule.Holidays | 法定节假日加班按 IsHoliday 判断，周末按 Weekday 判断 | ✅ Phase 12 |
+| 异常阈值: late>3 OR absent>1 → 红色高亮 | 异常员工数和异常时长双维度统计 | ✅ Phase 12 |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-20 — v1.3 milestone closed*
+*Last updated: 2026-04-20 — v1.4 Phase 12 考勤合规报表 shipped*
