@@ -190,7 +190,7 @@ All copy MUST be in Simplified Chinese. No English labels except for technical e
 | `ContractPeriodPicker.vue` | `frontend/src/components/contract/ContractPeriodPicker.vue` | Start date + end date pickers. Props: `modelValue` ({start, end}). Emits: `update:modelValue`. |
 | `PdfPreview.vue` | `frontend/src/components/contract/PdfPreview.vue` | PDF preview panel using `<iframe>`. Props: `url`, `loading`. Shows loading skeleton while PDF generates. |
 | `SmsVerifyInput.vue` | `frontend/src/components/contract/SmsVerifyInput.vue` | 6-digit SMS code input (6 individual `el-input` boxes). Props: `value`, `countdown`. Emits: `update:value`, `send-code`. |
-| `SignSuccessCard.vue` | `frontend/src/components/contract/SignSuccessCard.vue` | Success state after signing. Shows contract PDF link, download button. Props: `pdfUrl`, `contractId`. |
+| `SignSuccessCard.vue` | `frontend/src/components/contract/SignSuccessCard.vue` | **WARNING-3 fix: 内容已内联在 SignPage.vue 的 `flow === 'success'` 分支中，此文件为占位文件。** Props: `pdfUrl`, `contractId`. | WARNING-3 fix |
 | `ContractStatusBadge.vue` | `frontend/src/components/contract/ContractStatusBadge.vue` | Unified status badge. Props: `status`. Maps backend status to el-tag type + label. |
 | `ExpiryCountdown.vue` | `frontend/src/components/contract/ExpiryCountdown.vue` | Countdown display with color coding. Props: `days`. Auto-applies success/warning/danger color. |
 | `contractApi.ts` | `frontend/src/api/contract.ts` | API module for contract CRUD + signing. Endpoints: list, create, generate-pdf, upload-signed, verify-sign, terminate. |

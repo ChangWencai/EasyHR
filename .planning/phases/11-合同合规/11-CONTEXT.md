@@ -89,6 +89,14 @@
 - Phase 10 useMessage — 错误处理复用统一模式
 - `backend/internal/employee/` 目录结构 — 新合同签署相关代码放此处
 
+### Integration Points
+- `EmployeeDrawer.vue` → 新增「合同」Tab，含合同列表+新建合同入口
+- `contract_service.go` → OSS（上传签署后 PDF）
+- `contract_service.go` → SMS（发送签署链接）
+- `contract_service.go` → Todo（未签提醒触发待办）
+- `contract_handler.go` → 新签署验证 endpoint（校验验证码，更新合同状态）
+- 员工 H5 签署页（新建）→ 员工无需登录，输入手机号+验证码即完成签署
+
 </canonical_refs>
 
 <codebase_context>
@@ -105,14 +113,6 @@
 - EmployeeDrawer Tab 扩展: 现有抽屉可扩展 Tab 切换（参考员工信息各字段Tab布局）
 - asynq/gocron 定时任务: CheckContractRenewalReminders（到期提醒）已存在；新增"3天未签提醒"可复用同一模式
 - StepWizard 向导（Phase 10）: 员工入职向导组件可参考用于合同签署流程
-
-### Integration Points
-- `EmployeeDrawer.vue` → 新增「合同」Tab，含合同列表+新建合同入口
-- `contract_service.go` → OSS（上传签署后 PDF）
-- `contract_service.go` → SMS（发送签署链接）
-- `contract_service.go` → Todo（未签提醒触发待办）
-- `contract_handler.go` → 新签署验证 endpoint（校验验证码，更新合同状态）
-- 员工 H5 签署页（新建）→ 员工无需登录，输入手机号+验证码即完成签署
 
 </codebase_context>
 
