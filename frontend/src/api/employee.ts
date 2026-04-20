@@ -183,4 +183,7 @@ export const employeeApi = {
 
   getSensitiveInfo: (id: number) =>
     request.post<Employee>(`/employees/${id}/sensitive`).then(r => r.data),
+
+  batchImportEmployees: (rows: Record<string, unknown>[]): Promise<{ success: number; failed: number }> =>
+    request.post('/employees/batch-import', { employees: rows }).then(r => r.data as Promise<{ success: number; failed: number }>),
 }

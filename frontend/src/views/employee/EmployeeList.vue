@@ -7,6 +7,10 @@
         <p class="page-subtitle">共 {{ total }} 名员工</p>
       </div>
       <div class="header-actions">
+        <el-button @click="showBatchImport = true">
+          <el-icon><Upload /></el-icon>
+          批量入职
+        </el-button>
         <el-button @click="$router.push('/employee/invitations')">
           <el-icon><Plus /></el-icon>
           入职邀请
@@ -171,14 +175,31 @@
       v-model="drawerVisible"
       :employee-id="selectedEmployeeId"
     />
+
+    <!-- 批量入职弹窗 -->
+    <el-dialog
+      v-model="showBatchImport"
+      title="批量入职"
+      width="680px"
+      :close-on-click-modal="false"
+    >
+      <ExcelImportWizard
+        template-label="员工"
+        :template-fields="['姓名', '手机号', '身份证号', '入职日期', '岗位', '薪资']"
+        :import-api="batchImportEmployees"
+        @complete="handleBatchComplete"
+        @update:dialog-visible="showBatchImport = $event"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { employeeApi, type EmployeeRosterItem } from '@/api/employee'
+import { employeeApi, type EmployeeRosterItem, batchImportEmployees } from '@/api/employee'
 import { departmentApi, type Department } from '@/api/department'
 import { ElMessage } from 'element-plus'
+import ExcelImportWizard from '@/components/common/ExcelImportWizard.vue'
 import {
   Search,
   Close,
@@ -188,6 +209,7 @@ import {
   OfficeBuilding,
   View,
   Edit,
+  Upload,
   WarningFilled,
   CircleCheckFilled,
 } from '@element-plus/icons-vue'
@@ -207,9 +229,17 @@ const loading = ref(false)
 const drawerVisible = ref(false)
 const selectedEmployeeId = ref<number>(0)
 
+// 批量入职弹窗状态
+const showBatchImport = ref(false)
+
 function openDrawer(id: number) {
   selectedEmployeeId.value = id
   drawerVisible.value = true
+}
+
+async function handleBatchComplete(result: { success: number; failed: number }) {
+  showBatchImport.value = false
+  await load()
 }
 
 function formatPhone(phone: string): string {
