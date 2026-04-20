@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/xuri/excelize/v2"
@@ -635,4 +636,484 @@ func (s *AttendanceService) ExportMonthlyExcel(ctx context.Context, orgID int64,
 		return nil, "", fmt.Errorf("生成 Excel 失败: %w", err)
 	}
 	return buf.Bytes(), fmt.Sprintf("出勤月报_%s.xlsx", yearMonth), nil
+}
+
+// === Compliance Reports (COMP-05~COMP-08) ===
+
+// GetComplianceOvertime returns overtime statistics by category per employee
+// Overtime types: holiday加班(法定节假日), weekday加班(工作日延时), weekend加班
+// OvertimeHours from approved overtime-type Approvals + clock records after work_end on weekdays
+func (s *AttendanceService) GetComplianceOvertime(ctx context.Context, orgID int64, req *ComplianceReportRequest, page, pageSize int) (*ComplianceOvertimeResponse, error) {
+	deptIDs := req.ParseDeptIDs()
+	employees, err := s.repo.ListEmployeesByOrgWithDept(orgID, deptIDs)
+	if err != nil {
+		return nil, fmt.Errorf("获取员工列表失败: %w", err)
+	}
+	if len(employees) == 0 {
+		return &ComplianceOvertimeResponse{YearMonth: req.YearMonth, List: []OvertimeItem{}, Total: 0}, nil
+	}
+
+	empIDs := make([]int64, len(employees))
+	for i, e := range employees {
+		empIDs[i] = e.EmployeeID
+	}
+
+	approvals, err := s.repo.ListApprovalsByMonth(orgID, empIDs, req.YearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取加班审批失败: %w", err)
+	}
+
+	rule, _ := s.repo.GetRule(orgID)
+	ruleEngine := NewRuleEngine(rule)
+
+	// Compute holiday vs weekday vs weekend hours per employee from approved overtime approvals
+	type overtimeBreakdown struct {
+		Holiday, Weekday, Weekend float64
+	}
+	breakdown := make(map[int64]*overtimeBreakdown)
+	for _, empID := range empIDs {
+		breakdown[empID] = &overtimeBreakdown{}
+	}
+	for _, a := range approvals {
+		if a.ApprovalType == ApprovalTypeOvertime && a.Status == ApprovalStatusApproved {
+			if breakdown[a.EmployeeID] == nil {
+				breakdown[a.EmployeeID] = &overtimeBreakdown{}
+			}
+			hours := roundHalf(a.Duration) // D-12-04: 0.5h rounding
+			category := ruleEngine.ClassifyOvertimeCategory(a.StartTime, a.EndTime) // D-12-03
+			switch category {
+			case "holiday":
+				breakdown[a.EmployeeID].Holiday += hours
+			case "weekday":
+				breakdown[a.EmployeeID].Weekday += hours
+			case "weekend":
+				breakdown[a.EmployeeID].Weekend += hours
+			}
+		}
+	}
+
+	// Build item list
+	list := make([]OvertimeItem, 0, len(employees))
+	var totalHoliday, totalWeekday, totalWeekend float64
+	for _, emp := range employees {
+		bd := breakdown[emp.EmployeeID]
+		holidayH, weekdayH, weekendH := 0.0, 0.0, 0.0
+		if bd != nil {
+			holidayH = bd.Holiday
+			weekdayH = bd.Weekday
+			weekendH = bd.Weekend
+		}
+		totalHours := roundHalf(holidayH + weekdayH + weekendH)
+		list = append(list, OvertimeItem{
+			EmployeeID:     emp.EmployeeID,
+			EmployeeName:   emp.EmployeeName,
+			DepartmentName: emp.DepartmentName,
+			HolidayHours:   roundHalf(holidayH),
+			WeekdayHours:   roundHalf(weekdayH),
+			WeekendHours:   roundHalf(weekendH),
+			TotalHours:     totalHours,
+		})
+		totalHoliday += holidayH
+		totalWeekday += weekdayH
+		totalWeekend += weekendH
+	}
+
+	// Paginate
+	total := int64(len(list))
+	start := (page - 1) * pageSize
+	if start > int(total) {
+		start = int(total)
+	}
+	end := start + pageSize
+	if end > int(total) {
+		end = int(total)
+	}
+	paged := list[start:end]
+
+	return &ComplianceOvertimeResponse{
+		YearMonth: req.YearMonth,
+		Stats: ComplianceOvertimeStats{
+			TotalHolidayHours: roundHalf(totalHoliday),
+			TotalWeekdayHours: roundHalf(totalWeekday),
+			TotalWeekendHours: roundHalf(totalWeekend),
+		},
+		List:     paged,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// GetComplianceLeave returns leave compliance statistics per employee
+// Annual leave quota from AnnualLeaveQuota table (admin configured per D-12-08)
+// Sick/personal leave from approved leave-type approvals
+func (s *AttendanceService) GetComplianceLeave(ctx context.Context, orgID int64, req *ComplianceReportRequest, page, pageSize int) (*ComplianceLeaveResponse, error) {
+	deptIDs := req.ParseDeptIDs()
+	employees, err := s.repo.ListEmployeesByOrgWithDept(orgID, deptIDs)
+	if err != nil {
+		return nil, fmt.Errorf("获取员工列表失败: %w", err)
+	}
+	if len(employees) == 0 {
+		return &ComplianceLeaveResponse{YearMonth: req.YearMonth, List: []LeaveItem{}, Total: 0}, nil
+	}
+
+	empIDs := make([]int64, len(employees))
+	for i, e := range employees {
+		empIDs[i] = e.EmployeeID
+	}
+
+	approvals, err := s.repo.ListApprovalsByMonth(orgID, empIDs, req.YearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取请假审批失败: %w", err)
+	}
+
+	// Get year from year_month for annual leave quota lookup
+	parsed, _ := time.Parse("2006-01", req.YearMonth)
+	year := parsed.Year()
+	quotas, _ := s.repo.GetAnnualLeaveQuotas(orgID, empIDs, year)
+
+	// Aggregate leave per employee
+	type leaveAgg struct {
+		annualUsed, sickDays, personalDays float64
+	}
+	agg := make(map[int64]*leaveAgg)
+	for _, empID := range empIDs {
+		agg[empID] = &leaveAgg{}
+	}
+	for _, a := range approvals {
+		if a.Status != ApprovalStatusApproved {
+			continue
+		}
+		days := roundHalf(a.Duration / 8.0)
+		switch a.LeaveType {
+		case "annual_leave", "PTO":
+			agg[a.EmployeeID].annualUsed += days
+		case "sick_leave":
+			agg[a.EmployeeID].sickDays += days
+		case "personal_leave":
+			agg[a.EmployeeID].personalDays += days
+		}
+	}
+
+	list := make([]LeaveItem, 0, len(employees))
+	var totalAnnualUsed, totalSick, totalPersonal float64
+	var quotaCount int
+	for _, emp := range employees {
+		a := agg[emp.EmployeeID]
+		if a == nil {
+			a = &leaveAgg{}
+		}
+		quota := quotas[emp.EmployeeID]
+		if quota > 0 {
+			quotaCount++
+		}
+		list = append(list, LeaveItem{
+			EmployeeID:     emp.EmployeeID,
+			EmployeeName:   emp.EmployeeName,
+			DepartmentName: emp.DepartmentName,
+			AnnualQuota:    quota,
+			AnnualUsed:     roundHalf(a.annualUsed),
+			AnnualLeft:     roundHalf(quota - a.annualUsed),
+			SickDays:       roundHalf(a.sickDays),
+			PersonalDays:   roundHalf(a.personalDays),
+		})
+		totalAnnualUsed += a.annualUsed
+		totalSick += a.sickDays
+		totalPersonal += a.personalDays
+	}
+
+	total := int64(len(list))
+	start := (page - 1) * pageSize
+	if start > int(total) {
+		start = int(total)
+	}
+	end := start + pageSize
+	if end > int(total) {
+		end = int(total)
+	}
+	paged := list[start:end]
+
+	return &ComplianceLeaveResponse{
+		YearMonth: req.YearMonth,
+		Stats: ComplianceLeaveStats{
+			AnnualQuotaEmployeeCount: quotaCount,
+			TotalAnnualUsed:          roundHalf(totalAnnualUsed),
+			TotalSickDays:             roundHalf(totalSick),
+			TotalPersonalDays:        roundHalf(totalPersonal),
+		},
+		List:     paged,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// GetComplianceAnomaly returns attendance anomaly statistics per employee
+// Anomaly highlight: late_count > 3 OR absent_days > 1 (D-12-10)
+// Data from AttendanceMonthly table (late_count, early_leave_count, absent_days per employee)
+func (s *AttendanceService) GetComplianceAnomaly(ctx context.Context, orgID int64, req *ComplianceReportRequest, page, pageSize int) (*ComplianceAnomalyResponse, error) {
+	deptIDs := req.ParseDeptIDs()
+	employees, err := s.repo.ListEmployeesByOrgWithDept(orgID, deptIDs)
+	if err != nil {
+		return nil, fmt.Errorf("获取员工列表失败: %w", err)
+	}
+	if len(employees) == 0 {
+		return &ComplianceAnomalyResponse{YearMonth: req.YearMonth, List: []AnomalyItem{}, Total: 0}, nil
+	}
+
+	empIDs := make([]int64, len(employees))
+	for i, e := range employees {
+		empIDs[i] = e.EmployeeID
+	}
+
+	monthlyRecords, err := s.repo.ListMonthlyAttendanceForCompliance(orgID, empIDs, req.YearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取月度考勤数据失败: %w", err)
+	}
+
+	monthlyMap := make(map[int64]AttendanceMonthly)
+	for _, m := range monthlyRecords {
+		monthlyMap[m.EmployeeID] = m
+	}
+
+	list := make([]AnomalyItem, 0, len(employees))
+	var totalLate int
+	var totalAbsent float64
+	var anomalyCount int
+	for _, emp := range employees {
+		m := monthlyMap[emp.EmployeeID]
+		lateCount := int(m.LateCount)
+		earlyCount := int(m.EarlyLeaveCount)
+		absentDays := m.AbsentDays
+		anomalyTotal := lateCount + earlyCount
+		isAnomaly := lateCount > 3 || absentDays > 1
+		if isAnomaly {
+			anomalyCount++
+		}
+		totalLate += lateCount
+		totalAbsent += absentDays
+		list = append(list, AnomalyItem{
+			EmployeeID:      emp.EmployeeID,
+			EmployeeName:    emp.EmployeeName,
+			DepartmentName:  emp.DepartmentName,
+			LateCount:       lateCount,
+			EarlyLeaveCount: earlyCount,
+			AbsentDays:      absentDays,
+			AnomalyCount:    anomalyTotal,
+			IsAnomaly:       isAnomaly,
+		})
+	}
+
+	total := int64(len(list))
+	start := (page - 1) * pageSize
+	if start > int(total) {
+		start = int(total)
+	}
+	end := start + pageSize
+	if end > int(total) {
+		end = int(total)
+	}
+	paged := list[start:end]
+
+	return &ComplianceAnomalyResponse{
+		YearMonth: req.YearMonth,
+		Stats: ComplianceAnomalyStats{
+			AnomalyEmployeeCount: anomalyCount,
+			TotalLateCount:       totalLate,
+			TotalAbsentDays:      totalAbsent,
+		},
+		List:     paged,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// GetComplianceMonthly returns monthly compliance summary per employee
+// Combines: required/actual/leave/overtime from AttendanceMonthly + leave from approvals
+func (s *AttendanceService) GetComplianceMonthly(ctx context.Context, orgID int64, req *ComplianceReportRequest, page, pageSize int) (*ComplianceMonthlyResponse, error) {
+	deptIDs := req.ParseDeptIDs()
+	employees, err := s.repo.ListEmployeesByOrgWithDept(orgID, deptIDs)
+	if err != nil {
+		return nil, fmt.Errorf("获取员工列表失败: %w", err)
+	}
+	if len(employees) == 0 {
+		return &ComplianceMonthlyResponse{YearMonth: req.YearMonth, List: []MonthlyComplianceItem{}, Total: 0}, nil
+	}
+
+	empIDs := make([]int64, len(employees))
+	for i, e := range employees {
+		empIDs[i] = e.EmployeeID
+	}
+
+	// Get monthly attendance data
+	monthlyRecords, err := s.repo.ListMonthlyAttendanceForCompliance(orgID, empIDs, req.YearMonth)
+	if err != nil {
+		return nil, fmt.Errorf("获取月度考勤数据失败: %w", err)
+	}
+	monthlyMap := make(map[int64]AttendanceMonthly)
+	for _, m := range monthlyRecords {
+		monthlyMap[m.EmployeeID] = m
+	}
+
+	// Get leave data from approvals for annual/sick/personal leave breakdown
+	approvals, _ := s.repo.ListApprovalsByMonth(orgID, empIDs, req.YearMonth)
+	type leaveBreakdown struct {
+		annual, sick, personal float64
+	}
+	leaveMap := make(map[int64]*leaveBreakdown)
+	for _, empID := range empIDs {
+		leaveMap[empID] = &leaveBreakdown{}
+	}
+	for _, a := range approvals {
+		if a.Status != ApprovalStatusApproved {
+			continue
+		}
+		days := roundHalf(a.Duration / 8.0)
+		switch a.LeaveType {
+		case "annual_leave", "PTO":
+			leaveMap[a.EmployeeID].annual += days
+		case "sick_leave":
+			leaveMap[a.EmployeeID].sick += days
+		case "personal_leave":
+			leaveMap[a.EmployeeID].personal += days
+		}
+	}
+
+	list := make([]MonthlyComplianceItem, 0, len(employees))
+	var totalReq, totalAct, totalOT float64
+	var totalAbsent float64
+	var totalAnomaly int
+	for _, emp := range employees {
+		m := monthlyMap[emp.EmployeeID]
+		lb := leaveMap[emp.EmployeeID]
+		if lb == nil {
+			lb = &leaveBreakdown{}
+		}
+		lateCount := int(m.LateCount)
+		absentDays := m.AbsentDays
+		isAnomaly := lateCount > 3 || absentDays > 1
+		if isAnomaly {
+			totalAnomaly++
+		}
+		list = append(list, MonthlyComplianceItem{
+			EmployeeID:        emp.EmployeeID,
+			EmployeeName:      emp.EmployeeName,
+			DepartmentName:    emp.DepartmentName,
+			RequiredDays:      m.RequiredDays,
+			ActualDays:        m.ActualDays,
+			LateCount:         lateCount,
+			EarlyLeaveCount:   int(m.EarlyLeaveCount),
+			AbsentDays:        absentDays,
+			OvertimeHours:     roundHalf(m.OvertimeHours),
+			AnnualLeaveDays:   roundHalf(lb.annual),
+			SickLeaveDays:     roundHalf(lb.sick),
+			PersonalLeaveDays: roundHalf(lb.personal),
+			IsAnomaly:         isAnomaly,
+		})
+		totalReq += m.RequiredDays
+		totalAct += m.ActualDays
+		totalOT += m.OvertimeHours
+		totalAbsent += absentDays
+	}
+
+	total := int64(len(list))
+	start := (page - 1) * pageSize
+	if start > int(total) {
+		start = int(total)
+	}
+	end := start + pageSize
+	if end > int(total) {
+		end = int(total)
+	}
+	paged := list[start:end]
+
+	return &ComplianceMonthlyResponse{
+		YearMonth: req.YearMonth,
+		Stats: ComplianceMonthlyStats{
+			TotalRequiredDays:  roundHalf(totalReq),
+			TotalActualDays:    roundHalf(totalAct),
+			TotalOvertimeHours: roundHalf(totalOT),
+			TotalAbsentDays:    roundHalf(totalAbsent),
+			TotalAnomalyCount:  totalAnomaly,
+		},
+		List:     paged,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// ExportComplianceMonthlyExcel generates a monthly compliance Excel export
+// Headers: 姓名/部门/应出勤/实际出勤/迟到/早退/缺勤/加班/年假/病假/事假/异常标记
+func (s *AttendanceService) ExportComplianceMonthlyExcel(ctx context.Context, orgID int64, req *ComplianceReportRequest) ([]byte, string, error) {
+	report, err := s.GetComplianceMonthly(ctx, orgID, req, 1, 5000)
+	if err != nil {
+		return nil, "", fmt.Errorf("获取月度汇总数据失败: %w", err)
+	}
+
+	f := excelize.NewFile()
+	sheet := "月度考勤汇总"
+	index, _ := f.NewSheet(sheet)
+	f.SetActiveSheet(index)
+	f.DeleteSheet("Sheet1")
+
+	// Headers
+	headers := []string{"姓名", "部门", "应出勤(天)", "实际出勤(天)", "迟到(次)", "早退(次)", "缺勤(天)", "加班(小时)", "年假(天)", "病假(天)", "事假(天)", "异常"}
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"#EDE9FE"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, headerStyle)
+	}
+
+	anomalyStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "#EF4444"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#FEE2E2"}, Pattern: 1},
+	})
+	normalStyle, _ := f.NewStyle(&excelize.Alignment{Horizontal: "center"})
+
+	for rowIdx, item := range report.List {
+		row := rowIdx + 2
+		vals := []interface{}{
+			item.EmployeeName, item.DepartmentName,
+			item.RequiredDays, item.ActualDays,
+			item.LateCount, item.EarlyLeaveCount, item.AbsentDays,
+			item.OvertimeHours,
+			item.AnnualLeaveDays, item.SickLeaveDays, item.PersonalLeaveDays,
+			"是", // anomaly flag
+		}
+		if !item.IsAnomaly {
+			vals[11] = "否"
+		}
+		for colIdx, val := range vals {
+			cell, _ := excelize.CoordinatesToCellName(colIdx+1, row)
+			f.SetCellValue(sheet, cell, val)
+			if item.IsAnomaly {
+				f.SetCellStyle(sheet, cell, cell, anomalyStyle)
+			} else if colIdx >= 4 { // center numeric columns
+				f.SetCellStyle(sheet, cell, cell, normalStyle)
+			}
+		}
+	}
+
+	// Summary row
+	summaryRow := len(report.List) + 2
+	f.SetCellValue(sheet, "A"+strconv.Itoa(summaryRow), "合计")
+	f.SetCellValue(sheet, "C"+strconv.Itoa(summaryRow), report.Stats.TotalRequiredDays)
+	f.SetCellValue(sheet, "D"+strconv.Itoa(summaryRow), report.Stats.TotalActualDays)
+	f.SetCellValue(sheet, "H"+strconv.Itoa(summaryRow), roundHalf(report.Stats.TotalOvertimeHours))
+	f.SetCellValue(sheet, "G"+strconv.Itoa(summaryRow), report.Stats.TotalAbsentDays)
+	f.SetCellValue(sheet, "L"+strconv.Itoa(summaryRow), report.Stats.TotalAnomalyCount)
+
+	buf, err := f.WriteToBuffer()
+	if err != nil {
+		return nil, "", fmt.Errorf("生成 Excel 失败: %w", err)
+	}
+	filename := fmt.Sprintf("月度考勤汇总_%s.xlsx", req.YearMonth)
+	return buf.Bytes(), filename, nil
 }
