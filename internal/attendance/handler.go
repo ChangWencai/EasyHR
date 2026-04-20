@@ -63,6 +63,13 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	g.GET("/monthly", h.GetMonthlyReport)
 	g.GET("/monthly/export", h.ExportMonthlyExcel)
 	g.GET("/daily-records", h.GetDailyRecords)
+
+	// 合规报表
+	g.GET("/compliance/overtime", h.GetComplianceOvertime)
+	g.GET("/compliance/leave", h.GetComplianceLeave)
+	g.GET("/compliance/anomaly", h.GetComplianceAnomaly)
+	g.GET("/compliance/monthly", h.GetComplianceMonthly)
+	g.GET("/compliance/monthly/export", h.ExportComplianceMonthly)
 }
 
 func getOrgID(c *gin.Context) int64  { return c.GetInt64("org_id") }
@@ -423,4 +430,86 @@ func (h *Handler) GetDailyRecords(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+// === Compliance Report Handlers ===
+
+func (h *Handler) GetComplianceOvertime(c *gin.Context) {
+	var req ComplianceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 400, "year_month 参数必填，格式: YYYY-MM")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	resp, err := h.svc.GetComplianceOvertime(c.Request.Context(), getOrgID(c), &req, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func (h *Handler) GetComplianceLeave(c *gin.Context) {
+	var req ComplianceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 400, "year_month 参数必填，格式: YYYY-MM")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	resp, err := h.svc.GetComplianceLeave(c.Request.Context(), getOrgID(c), &req, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func (h *Handler) GetComplianceAnomaly(c *gin.Context) {
+	var req ComplianceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 400, "year_month 参数必填，格式: YYYY-MM")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	resp, err := h.svc.GetComplianceAnomaly(c.Request.Context(), getOrgID(c), &req, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func (h *Handler) GetComplianceMonthly(c *gin.Context) {
+	var req ComplianceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 400, "year_month 参数必填，格式: YYYY-MM")
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	resp, err := h.svc.GetComplianceMonthly(c.Request.Context(), getOrgID(c), &req, page, pageSize)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func (h *Handler) ExportComplianceMonthly(c *gin.Context) {
+	var req ComplianceReportRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, 400, "year_month 参数必填，格式: YYYY-MM")
+		return
+	}
+	data, filename, err := h.svc.ExportComplianceMonthlyExcel(c.Request.Context(), getOrgID(c), &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, 500, err.Error())
+		return
+	}
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename*=UTF-8''%s`, filename))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
 }
