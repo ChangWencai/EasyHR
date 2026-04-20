@@ -80,6 +80,17 @@ request.interceptors.response.use(
   async (error: AxiosError) => {
     const err = error as unknown as ApiError
     const status = err.response?.status
+    const bizCode = err.response?.data?.code
+
+    // 40301: org not set up — dedupe concurrent requests, show toast once
+    if (bizCode === 40301) {
+      if (!orgSetupRedirecting) {
+        orgSetupRedirecting = true
+        $msg.error('请先完善企业信息')
+        setTimeout(() => { $msg.close(); router.push('/onboarding/org-setup') }, 1500)
+      }
+      return Promise.reject(error)
+    }
 
     // 401: redirect to login (per existing pattern)
     if (status === 401) {
