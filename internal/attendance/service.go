@@ -1075,7 +1075,9 @@ func (s *AttendanceService) ExportComplianceMonthlyExcel(ctx context.Context, or
 		Font: &excelize.Font{Bold: true, Color: "#EF4444"},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"#FEE2E2"}, Pattern: 1},
 	})
-	normalStyle, _ := f.NewStyle(&excelize.Alignment{Horizontal: "center"})
+	normalStyle, _ := f.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
 
 	for rowIdx, item := range report.List {
 		row := rowIdx + 2
