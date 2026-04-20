@@ -133,9 +133,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-04-20T00:00:00.000Z
-Stopped at: v1.4 roadmap created
-Resume file: None
+Last session: 2026-04-20
+Stopped at: Phase 10 context gathered (discuss-phase complete)
+Resume file: .planning/phases/10-UX基础-流程简化与引导体系/10-CONTEXT.md
 
 ## Deferred Items
 
