@@ -1,5 +1,12 @@
 <template>
   <div class="home-view">
+    <!-- Tour Overlay -->
+    <TourOverlay
+      v-model:visible="showTour"
+      :steps="tourSteps"
+      @complete="completeTour"
+    />
+
     <!-- 页面标题区 - 现代化头部 -->
     <header class="page-header">
       <div class="header-content">
@@ -37,7 +44,7 @@
     <HomeCarousel />
 
     <!-- 待办事项 - 现代化卡片网格 -->
-    <section class="todo-section">
+    <section class="todo-section" data-tour="todo-section">
       <div class="section-header">
         <div class="section-title-group">
           <h2 class="section-title">待办事项</h2>
@@ -98,6 +105,7 @@
             :key="item.path + item.label"
             :to="item.path"
             class="shortcut-item"
+            :data-tour="item.dataTour"
             :style="{ animationDelay: `${index * 30}ms` }"
           >
             <div class="shortcut-icon" :style="{ background: item.bg }">
@@ -149,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   User,
@@ -174,9 +182,36 @@ import { useDashboardStore } from '@/stores/dashboard'
 import type { TodoItem } from '@/api/dashboard'
 import TodoRingChart from './components/TodoRingChart.vue'
 import HomeCarousel from './components/HomeCarousel.vue'
+import TourOverlay, { type TourStep } from '@/components/common/TourOverlay.vue'
 
 const store = useDashboardStore()
 const router = useRouter()
+const TOUR_DONE_KEY = 'hasSeenTour'
+const showTour = ref(!localStorage.getItem(TOUR_DONE_KEY))
+
+const todoCount = computed(() => store.todos?.length ?? 0)
+
+const tourSteps = computed<TourStep[]>(() => [
+  {
+    title: '新增员工',
+    body: '点击这里快速添加新员工，3步完成入职',
+    target: '[data-tour="new-employee"]',
+  },
+  {
+    title: '待办事项',
+    body: `您有 ${todoCount.value} 项待处理事项，记得及时处理`,
+    target: '[data-tour="todo-section"]',
+  },
+  {
+    title: '快速上手',
+    body: '60秒内完成您的第一个人事任务，开始使用吧',
+    target: undefined,
+  },
+])
+
+function completeTour() {
+  showTour.value = false
+}
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -220,7 +255,7 @@ const gridItems = [
   { path: '/tool/tax', label: '个税申报', icon: Document, color: '#3B82F6', bg: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)' },
   { path: '/finance/vouchers', label: '凭证管理', icon: Wallet, color: '#06B6D4', bg: 'linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 100%)' },
   { path: '/finance/invoices', label: '发票管理', icon: Tickets, color: '#EC4899', bg: 'linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)' },
-  { path: '/employee/create', label: '新入职', icon: Plus, color: '#8B5CF6', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)' },
+  { path: '/employee/create', label: '新入职', icon: Plus, color: '#8B5CF6', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)', dataTour: 'new-employee' },
   { path: '/tool/salary', label: '调薪', icon: TrendCharts, color: '#059669', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
   { path: '/attendance/clock-live', label: '考勤打卡', icon: Calendar, color: '#6366F1', bg: 'linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)' },
 ]
