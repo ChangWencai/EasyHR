@@ -156,7 +156,24 @@ func (s *Service) Login(ctx context.Context, phone, code string) (*LoginResponse
 	phoneHash := crypto.HashSHA256(phone)
 	user, err := s.repo.FindByPhoneHash(phoneHash)
 	if err == redis.Nil || errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("该手机号未注册，请先注册")
+		// 未注册用户 → 自动创建账户（org_id=0，后续由 onboarding 完善企业信息）
+		encryptedPhone, _ := crypto.Encrypt(phone, []byte(s.crypto.AESKey))
+		newUser := &model.User{
+			Phone:     encryptedPhone,
+			PhoneHash: phoneHash,
+			Role:      "owner",
+			Status:    "active",
+		}
+		if createErr := s.repo.CreateUser(newUser); createErr != nil {
+			return nil, fmt.Errorf("自动注册失败: %w", createErr)
+		}
+		accessToken, _ := jwt.GenerateAccessToken(newUser.ID, newUser.OrgID, newUser.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+		refreshToken, _ := jwt.GenerateRefreshToken(newUser.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+		return &LoginResponse{
+			AccessToken:        accessToken,
+			RefreshToken:       refreshToken,
+			OnboardingRequired: true, // 需完善企业信息
+		}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find user: %w", err)
