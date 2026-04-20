@@ -94,7 +94,13 @@
 5. 操作失败：网络错误/系统异常等场景，提供一键重试或切换解决方案的操作引导
 6. 空状态：每个模块（员工/考勤/薪资/社保）在无数据时，显示引导性空状态插画 + 下一步行动按钮
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Plan list**:
+- [ ] 10-01-PLAN.md — 员工向导3步改造 + 核心组件（StepWizard/EmptyState/useMessage/ErrorActions）
+- [ ] 10-02-PLAN.md — Excel批量导入向导（3步：模板→预览→确认）
+- [ ] 10-03-PLAN.md — Tour首次引导 + API错误映射 + 工具提示
+
 **UI hint**: yes
 
 ### Phase 11: 合同合规
@@ -176,7 +182,7 @@
 | 7. 薪资管理增强 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 8. 社保公积金增强 | v1.3 | 4/4 | Complete | 2026-04-19 |
 | 9. 待办中心 | v1.3 | 3/3 | Complete | 2026-04-19 |
-| 10. UX 基础 - 流程简化与引导体系 | v1.4 | 0/TBD | Not started | - |
+| 10. UX 基础 - 流程简化与引导体系 | v1.4 | 0/3 | Not started | - |
 | 11. 合同合规 | v1.4 | 0/TBD | Not started | - |
 | 12. 考勤合规报表 | v1.4 | 0/TBD | Not started | - |
 | 13. 工资合规 | v1.4 | 0/TBD | Not started | - |
