@@ -7,10 +7,10 @@ last_updated: "2026-04-20"
 last_activity: 2026-04-20
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 38
   completed_plans: 38
-  percent: 52
+  percent: 100
 ---
 
 # Project State
@@ -19,25 +19,33 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-04-17)
 
-**Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 12 — 考勤合规报表（执行完成，验证通过）
+**Core value:** 简单，好用，省时间 -- 老板3步完成核心人事操作，无需专业知识
+**Current focus:** Phase 13 — 工资合规（已完成）
 
 ## Current Position
 
-Phase: 12 (考勤合规报表) — **Complete (3/3 plans, 8/8 must-haves verified)**
-Status: Phase 11 complete | Phase 12 complete | Phase 13 pending
+Phase: 13 (工资合规) — **Complete (2/2 plans)**
+
+Status: Phase 11 complete | Phase 12 complete | Phase 13 complete
 Last activity: 2026-04-20
 
 Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 
 ## v1.4 Phase Overview
 
-| Phase | Goal | Requirements |
-|-------|------|--------------|
+| Phase | Goal | Requirements | Status |
+|-------|------|--------------|--------|
 | 10 | UX 基础 - 流程简化与引导体系 | UX-01~09 (9个) | **COMPLETE** |
 | 11 | 合同合规 | COMP-01~04 (4个) | **COMPLETE** |
 | 12 | 考勤合规报表 | COMP-05~08 (4个) | **COMPLETE** |
-| 13 | 工资合规 | COMP-09~11 (3个) | Pending |
+| 13 | 工资合规 | COMP-09~11 (3个) | **COMPLETE** |
+
+## v1.4 Phase 13 Summary
+
+| Plan | Type | Key Features |
+|------|------|-------------|
+| 13-01 | Backend | confirm API, confirmed_at, LEFT JOIN logs, asynq reminder worker, gocron scheduler |
+| 13-02 | Frontend | H5 confirm button, send log confirmation column, salary.ts types |
 
 ## Performance Metrics
 
@@ -59,24 +67,6 @@ Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 
 - Last 5 plans: all PASS
 - Trend: Stable
-
-| Phase 07 P01 | 13 | 5 tasks | 19 files |
-| Phase 07 P02 | 5 | 2 tasks | 4 files |
-| Phase 07 P03 | 22 | 4 tasks | 15 files |
-| Phase 07 P04 | 18 | 4 tasks | 12 files |
-| Phase 05 P04 | 8 | 2 tasks | 8 files |
-| Phase 08 P01 | 10 | 3 tasks | 9 files |
-| Phase 08 P02 | 3 | 3 tasks | 3 files |
-| Phase 08 P03 | 3 | 3 tasks | 3 files |
-| Phase 08 P04 | 3 | 2 tasks | 2 files |
-| Phase 09 P01 | 8 | 3 tasks | 10 files |
-| Phase 09 P02 | 5 | 2 tasks | 9 files |
-| Phase 09 P03 | 16 | 2 tasks | 16 files |
-| Phase 10 P01 | 237s | 4 tasks | 7 files |
-| Phase 10 P02 | 8 | 2 tasks | 8 files |
-| Phase 10 P03 | 60s | 4 tasks | 5 files |
-| Phase 11 P01 | 857s | 6 tasks | 11 files |
-| Phase 11 P02 | 480s | 9 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -123,6 +113,7 @@ Recent decisions affecting current work:
 - [Phase 10 P01]: 确认发送采用手动触发：Step2完成创建，员工手动点击发送短信
 - [Phase 10 P03]: Tour高亮使用非scoped全局CSS `.tour-highlight` + `!important`，gridItems通过dataTour属性而非DOM操作
 - [Phase 10 P03]: request.ts用ERROR_MESSAGES映射表+useMessage，可重试错误(500/502/503/timeout/network)传showActions:true
+- [Phase 13]: 工资条确认使用 `confirmed` 状态替代 `signed`；gocron每日9:00 CST入队asynq任务；TodoCenter幂等通过 SourceType+SourceID 实现
 
 ### Roadmap Evolution
 
@@ -143,7 +134,7 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-04-20
-Stopped at: Phase 11 Plan 01 complete (6 tasks, all PASS)
+Stopped at: Phase 13 complete (2/2 plans, all PASS)
 
 ## Deferred Items
 
@@ -161,4 +152,3 @@ Items acknowledged and deferred at milestone close on milestone completion:
 | debug | orgs-current-404 | fixed |
 | debug | register-calls-login-api | fixed |
 | debug | register-error-message-concat | fixed |
-

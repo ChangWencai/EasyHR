@@ -1,4 +1,4 @@
-2026-04-18T16:35:56.629+0800	[34mINFO[0m	server/main.go:110	logger initialized	{"level": "debug", "path": "./logs", "filename": "server.log"}
+2026-04-20T15:08:38.455+0800	[34mINFO[0m	server/main.go:127	logger initialized	{"level": "debug", "path": "./logs", "filename": "server.log"}
 [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
  - using env:	export GIN_MODE=release
  - using code:	gin.SetMode(gin.ReleaseMode)
@@ -42,6 +42,7 @@
 [GIN-debug] POST   /api/v1/employees/:id/confirm --> github.com/wencai/easyhr/internal/employee.(*InvitationHandler).ConfirmOnboarding-fm (6 handlers)
 [GIN-debug] GET    /api/v1/registrations/:token --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).GetRegistrationDetail-fm (4 handlers)
 [GIN-debug] POST   /api/v1/registrations/:token/submit --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).SubmitRegistration-fm (4 handlers)
+[GIN-debug] POST   /api/v1/registrations/send-sms --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).SendRegistrationSms-fm (4 handlers)
 [GIN-debug] POST   /api/v1/registrations     --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).CreateRegistration-fm (6 handlers)
 [GIN-debug] GET    /api/v1/registrations     --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).ListRegistrations-fm (5 handlers)
 [GIN-debug] DELETE /api/v1/registrations/:id --> github.com/wencai/easyhr/internal/employee.(*RegistrationHandler).DeleteRegistration-fm (6 handlers)
@@ -62,6 +63,10 @@
 [GIN-debug] GET    /api/v1/contracts/:id/upload-url --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).GenerateUploadURL-fm (6 handlers)
 [GIN-debug] PUT    /api/v1/contracts/:id/terminate --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).TerminateContract-fm (6 handlers)
 [GIN-debug] GET    /api/v1/contracts         --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).ListContracts-fm (5 handlers)
+[GIN-debug] POST   /api/v1/contracts/:id/send-sign-link --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).SendSignLink-fm (6 handlers)
+[GIN-debug] POST   /api/v1/contracts/sign/send-code --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).SendSignCode-fm (4 handlers)
+[GIN-debug] POST   /api/v1/contracts/sign/verify-code --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).VerifySignCode-fm (4 handlers)
+[GIN-debug] POST   /api/v1/contracts/sign/confirm --> github.com/wencai/easyhr/internal/employee.(*ContractHandler).ConfirmSign-fm (4 handlers)
 [GIN-debug] POST   /api/v1/social-insurance/policies --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).CreatePolicy-fm (6 handlers)
 [GIN-debug] GET    /api/v1/social-insurance/policies --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).ListPolicies-fm (5 handlers)
 [GIN-debug] GET    /api/v1/social-insurance/policies/:id --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetPolicy-fm (5 handlers)
@@ -75,6 +80,14 @@
 [GIN-debug] GET    /api/v1/social-insurance/my-records --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetMyRecords-fm (5 handlers)
 [GIN-debug] GET    /api/v1/social-insurance/records/:id/history --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetChangeHistory-fm (5 handlers)
 [GIN-debug] GET    /api/v1/social-insurance/deduction --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetDeduction-fm (5 handlers)
+[GIN-debug] GET    /api/v1/social-insurance/dashboard --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).SIDashboard-fm (5 handlers)
+[GIN-debug] POST   /api/v1/social-insurance/enroll/single --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).Enroll-fm (6 handlers)
+[GIN-debug] POST   /api/v1/social-insurance/stop/single --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).Stop-fm (6 handlers)
+[GIN-debug] POST   /api/v1/social-insurance/payment-callback --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).PaymentCallback-fm (6 handlers)
+[GIN-debug] GET    /api/v1/social-insurance/monthly-records --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetMonthlyRecords-fm (5 handlers)
+[GIN-debug] GET    /api/v1/social-insurance/monthly-records/:id --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).GetMonthlyRecordDetail-fm (5 handlers)
+[GIN-debug] POST   /api/v1/social-insurance/confirm-payment --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).ConfirmPayment-fm (6 handlers)
+[GIN-debug] GET    /api/v1/social-insurance/records/export --> github.com/wencai/easyhr/internal/socialinsurance.(*Handler).ExportSIRecords-fm (6 handlers)
 [GIN-debug] GET    /api/v1/tax/brackets      --> github.com/wencai/easyhr/internal/tax.(*Handler).ListTaxBrackets-fm (5 handlers)
 [GIN-debug] POST   /api/v1/tax/brackets/seed --> github.com/wencai/easyhr/internal/tax.(*Handler).SeedBrackets-fm (6 handlers)
 [GIN-debug] POST   /api/v1/tax/deductions    --> github.com/wencai/easyhr/internal/tax.(*Handler).CreateDeduction-fm (6 handlers)
@@ -102,6 +115,7 @@
 [GIN-debug] POST   /api/v1/salary/payroll/calculate --> github.com/wencai/easyhr/internal/salary.(*Handler).CalculatePayroll-fm (6 handlers)
 [GIN-debug] PUT    /api/v1/salary/payroll/confirm --> github.com/wencai/easyhr/internal/salary.(*Handler).ConfirmPayroll-fm (6 handlers)
 [GIN-debug] PUT    /api/v1/salary/payroll/:id/pay --> github.com/wencai/easyhr/internal/salary.(*Handler).RecordPayment-fm (6 handlers)
+[GIN-debug] GET    /api/v1/salary/dashboard  --> github.com/wencai/easyhr/internal/salary.(*Handler).GetDashboard-fm (5 handlers)
 [GIN-debug] POST   /api/v1/salary/attendance/import --> github.com/wencai/easyhr/internal/salary.(*Handler).ImportAttendance-fm (6 handlers)
 [GIN-debug] POST   /api/v1/salary/slip/send  --> github.com/wencai/easyhr/internal/salary.(*Handler).SendSlip-fm (6 handlers)
 [GIN-debug] GET    /api/v1/salary/payroll/export --> github.com/wencai/easyhr/internal/salary.(*Handler).ExportPayroll-fm (5 handlers)
@@ -109,6 +123,21 @@
 [GIN-debug] POST   /api/v1/salary/slip/:token/verify --> github.com/wencai/easyhr/internal/salary.(*Handler).VerifySlipPhone-fm (4 handlers)
 [GIN-debug] POST   /api/v1/salary/slip/:token/code --> github.com/wencai/easyhr/internal/salary.(*Handler).VerifySlipCode-fm (4 handlers)
 [GIN-debug] POST   /api/v1/salary/slip/:token/sign --> github.com/wencai/easyhr/internal/salary.(*Handler).SignSlip-fm (4 handlers)
+[GIN-debug] POST   /api/v1/salary/slip/:token/confirm --> github.com/wencai/easyhr/internal/salary.(*Handler).ConfirmSlip-fm (4 handlers)
+[GIN-debug] POST   /api/v1/salary/slip/send-all --> github.com/wencai/easyhr/internal/salary.(*SlipSendHandler).SendAllSlips-fm (5 handlers)
+[GIN-debug] GET    /api/v1/salary/slip/logs  --> github.com/wencai/easyhr/internal/salary.(*SlipSendHandler).GetSlipLogs-fm (5 handlers)
+[GIN-debug] POST   /api/v1/salary/adjustment --> github.com/wencai/easyhr/internal/salary.(*AdjustmentHandler).CreateAdjustment-fm (6 handlers)
+[GIN-debug] POST   /api/v1/salary/mass-adjustment --> github.com/wencai/easyhr/internal/salary.(*AdjustmentHandler).CreateMassAdjustment-fm (6 handlers)
+[GIN-debug] POST   /api/v1/salary/adjustment/preview --> github.com/wencai/easyhr/internal/salary.(*AdjustmentHandler).Preview-fm (6 handlers)
+[GIN-debug] GET    /api/v1/salary/adjustments --> github.com/wencai/easyhr/internal/salary.(*AdjustmentHandler).GetAdjustmentList-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/salary/performance --> github.com/wencai/easyhr/internal/salary.(*PerformanceHandler).SetPerformance-fm (6 handlers)
+[GIN-debug] GET    /api/v1/salary/performance --> github.com/wencai/easyhr/internal/salary.(*PerformanceHandler).GetPerformance-fm (5 handlers)
+[GIN-debug] GET    /api/v1/salary/list       --> github.com/wencai/easyhr/internal/salary.(*SalaryListHandler).ListSalary-fm (5 handlers)
+[GIN-debug] GET    /api/v1/salary/export     --> github.com/wencai/easyhr/internal/salary.(*SalaryListHandler).ExportSalaryList-fm (5 handlers)
+[GIN-debug] POST   /api/v1/salary/unlock     --> github.com/wencai/easyhr/internal/salary.(*UnlockHandler).Unlock-fm (6 handlers)
+[GIN-debug] POST   /api/v1/salary/unlock/send-code --> github.com/wencai/easyhr/internal/salary.(*UnlockHandler).SendCode-fm (6 handlers)
+[GIN-debug] POST   /api/v1/salary/tax-upload --> github.com/wencai/easyhr/internal/salary.(*TaxUploadHandler).UploadTax-fm (5 handlers)
+[GIN-debug] POST   /api/v1/salary/tax-upload/confirm --> github.com/wencai/easyhr/internal/salary.(*TaxUploadHandler).ConfirmTax-fm (5 handlers)
 [GIN-debug] GET    /api/v1/attendance/rule   --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetRule-fm (5 handlers)
 [GIN-debug] PUT    /api/v1/attendance/rule   --> github.com/wencai/easyhr/internal/attendance.(*Handler).SaveRule-fm (5 handlers)
 [GIN-debug] GET    /api/v1/attendance/shifts --> github.com/wencai/easyhr/internal/attendance.(*Handler).ListShifts-fm (5 handlers)
@@ -130,6 +159,11 @@
 [GIN-debug] GET    /api/v1/attendance/monthly --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetMonthlyReport-fm (5 handlers)
 [GIN-debug] GET    /api/v1/attendance/monthly/export --> github.com/wencai/easyhr/internal/attendance.(*Handler).ExportMonthlyExcel-fm (5 handlers)
 [GIN-debug] GET    /api/v1/attendance/daily-records --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetDailyRecords-fm (5 handlers)
+[GIN-debug] GET    /api/v1/attendance/compliance/overtime --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetComplianceOvertime-fm (5 handlers)
+[GIN-debug] GET    /api/v1/attendance/compliance/leave --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetComplianceLeave-fm (5 handlers)
+[GIN-debug] GET    /api/v1/attendance/compliance/anomaly --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetComplianceAnomaly-fm (5 handlers)
+[GIN-debug] GET    /api/v1/attendance/compliance/monthly --> github.com/wencai/easyhr/internal/attendance.(*Handler).GetComplianceMonthly-fm (5 handlers)
+[GIN-debug] GET    /api/v1/attendance/compliance/monthly/export --> github.com/wencai/easyhr/internal/attendance.(*Handler).ExportComplianceMonthly-fm (5 handlers)
 [GIN-debug] GET    /api/v1/accounts          --> github.com/wencai/easyhr/internal/finance.(*AccountHandler).GetTree-fm (6 handlers)
 [GIN-debug] POST   /api/v1/accounts          --> github.com/wencai/easyhr/internal/finance.(*AccountHandler).CreateAccount-fm (6 handlers)
 [GIN-debug] PUT    /api/v1/accounts/:id      --> github.com/wencai/easyhr/internal/finance.(*AccountHandler).UpdateAccount-fm (6 handlers)
@@ -168,7 +202,22 @@
 [GIN-debug] GET    /api/v1/cities            --> github.com/wencai/easyhr/internal/city.(*Handler).List-fm (4 handlers)
 [GIN-debug] GET    /api/v1/audit-logs        --> github.com/wencai/easyhr/internal/audit.(*Handler).List-fm (5 handlers)
 [GIN-debug] GET    /api/v1/dashboard         --> github.com/wencai/easyhr/internal/dashboard.(*Handler).GetDashboard-fm (5 handlers)
-[GIN-debug] GET    /api/v1/dashboard/employee-dashboard --> github.com/wencai/easyhr/internal/dashboard.(*Handler).GetEmployeeDashboard-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/todo-stats --> github.com/wencai/easyhr/internal/dashboard.(*Handler).GetTodoStats-fm (5 handlers)
+[GIN-debug] GET    /api/v1/dashboard/time-limited-stats --> github.com/wencai/easyhr/internal/dashboard.(*Handler).GetTimeLimitedStats-fm (5 handlers)
+[GIN-debug] GET    /api/v1/todos/invite/:token --> github.com/wencai/easyhr/internal/todo.(*Handler).VerifyInviteToken-fm (4 handlers)
+[GIN-debug] GET    /api/v1/todos/invite/:token/detail --> github.com/wencai/easyhr/internal/todo.(*Handler).GetInviteTodo-fm (4 handlers)
+[GIN-debug] POST   /api/v1/todos/invite/:token/submit --> github.com/wencai/easyhr/internal/todo.(*Handler).SubmitInvite-fm (4 handlers)
+[GIN-debug] GET    /api/v1/todos             --> github.com/wencai/easyhr/internal/todo.(*Handler).ListTodos-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/todos/:id/pin     --> github.com/wencai/easyhr/internal/todo.(*Handler).PinTodo-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/todos/:id/terminate --> github.com/wencai/easyhr/internal/todo.(*Handler).TerminateTodo-fm (5 handlers)
+[GIN-debug] POST   /api/v1/todos/:id/invite  --> github.com/wencai/easyhr/internal/todo.(*Handler).InviteTodo-fm (5 handlers)
+[GIN-debug] GET    /api/v1/todos/export      --> github.com/wencai/easyhr/internal/todo.(*Handler).ExportTodos-fm (5 handlers)
+[GIN-debug] GET    /api/v1/carousels         --> github.com/wencai/easyhr/internal/todo.(*Handler).ListCarousels-fm (5 handlers)
+[GIN-debug] GET    /api/v1/carousels/admin   --> github.com/wencai/easyhr/internal/todo.(*Handler).ListAllCarousels-fm (5 handlers)
+[GIN-debug] POST   /api/v1/carousels         --> github.com/wencai/easyhr/internal/todo.(*Handler).CreateCarousel-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/carousels/:id     --> github.com/wencai/easyhr/internal/todo.(*Handler).UpdateCarousel-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/carousels/:id     --> github.com/wencai/easyhr/internal/todo.(*Handler).DeleteCarousel-fm (5 handlers)
+[GIN-debug] POST   /api/v1/upload/image      --> github.com/wencai/easyhr/internal/upload.(*Handler).UploadImage-fm (5 handlers)
 [GIN-debug] POST   /api/v1/wxmp/auth/send-code --> github.com/wencai/easyhr/internal/wxmp.(*Handler).SendCode-fm (4 handlers)
 [GIN-debug] POST   /api/v1/wxmp/auth/login   --> github.com/wencai/easyhr/internal/wxmp.(*Handler).Login-fm (4 handlers)
 [GIN-debug] POST   /api/v1/wxmp/auth/wechat/bind --> github.com/wencai/easyhr/internal/wxmp.(*Handler).BindWechat-fm (4 handlers)
@@ -184,7 +233,34 @@
 [GIN-debug] GET    /api/v1/wxmp/expenses/:id --> github.com/wencai/easyhr/internal/wxmp.(*Handler).GetExpenseDetail-fm (5 handlers)
 [GIN-debug] POST   /api/v1/wxmp/oss/upload-url --> github.com/wencai/easyhr/internal/wxmp.(*Handler).GetOssUploadURL-fm (5 handlers)
 [GIN-debug] GET    /api/v1/health            --> main.main.func1 (4 handlers)
-2026-04-18T16:35:58.473+0800	[34mINFO[0m	runtime/proc.go:285	server starting	{"addr": ":8089"}
+2026-04-20T15:08:39.469+0800	[34mINFO[0m	runtime/proc.go:285	server starting	{"addr": ":8089"}
+2026-04-20T15:08:39.469+0800	[33mWARN[0m	runtime/proc.go:285	todo scheduler start failed	{"error": "create monthly generate job: gocron: CronJob: crontab parse failure\nprovided bad location CST: unknown time zone CST"}
+2026-04-20T15:08:39.485+0800	[34mINFO[0m	runtime/proc.go:285	asynq worker started
+asynq: pid=26210 2026/04/20 07:08:39.485451 INFO: Starting processing
+asynq: pid=26210 2026/04/20 07:08:39.485520 INFO: Send signal TSTP to stop processing new tasks
+asynq: pid=26210 2026/04/20 07:08:39.485540 INFO: Send signal TERM or INT to terminate the process
+2026/04/20 15:08:39 [SalaryScheduler] started: salary-remind-unconfirmed at 09:00 CST
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8089
+2026-04-20T15:08:46.907+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	request received	{"method": "POST", "path": "/api/v1/auth/login/password", "query": "", "client_ip": "::1", "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "user_id": 0, "org_id": 0}
+2026-04-20T15:08:46.908+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	request body	{"path": "/api/v1/auth/login/password", "body": "{\"phone\":\"15026664329\",\"password\":\"123456\"}"}
+2026-04-20T15:08:46.908+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	LoginPassword: 请求	{"phone": "15026664329"}
+2026-04-20T15:08:46.924+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	LoginPassword: 登录失败	{"error": "该账号未设置密码，请使用手机验证码登录", "phone": "15026664329"}
+2026-04-20T15:08:46.924+0800	[35mDEBUG[0m	user/handler.go:241	api error	{"method": "POST", "path": "/api/v1/auth/login/password", "http_status": 401, "error_code": 10011, "error_message": "该账号未设置密码，请使用手机验证码登录", "client_ip": "::1", "user_id": 0, "org_id": 0}
+2026-04-20T15:08:46.924+0800	[33mWARN[0m	gin@v1.12.0/context.go:192	request error	{"method": "POST", "path": "/api/v1/auth/login/password", "status": 401, "latency": 0.016866375, "client_ip": "::1"}
+2026-04-20T15:08:49.737+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	request received	{"method": "POST", "path": "/api/v1/auth/login/password", "query": "", "client_ip": "::1", "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "user_id": 0, "org_id": 0}
+2026-04-20T15:08:49.737+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	request body	{"path": "/api/v1/auth/login/password", "body": "{\"phone\":\"15026664329\",\"password\":\"123456\"}"}
+2026-04-20T15:08:49.738+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	LoginPassword: 请求	{"phone": "15026664329"}
+2026-04-20T15:08:49.739+0800	[35mDEBUG[0m	gin@v1.12.0/context.go:192	LoginPassword: 登录失败	{"error": "该账号未设置密码，请使用手机验证码登录", "phone": "15026664329"}
+2026-04-20T15:08:49.739+0800	[35mDEBUG[0m	user/handler.go:241	api error	{"method": "POST", "path": "/api/v1/auth/login/password", "http_status": 401, "error_code": 10011, "error_message": "该账号未设置密码，请使用手机验证码登录", "client_ip": "::1", "user_id": 0, "org_id": 0}
+2026-04-20T15:08:49.739+0800	[33mWARN[0m	gin@v1.12.0/context.go:192	request error	{"method": "POST", "path": "/api/v1/auth/login/password", "status": 401, "latency": 0.00222875, "client_ip": "::1"}
+asynq: pid=26210 2026/04/20 07:10:16.720295 INFO: Stopping processor
+2026-04-20T15:10:16.720+0800	[34mINFO[0m	runtime/asm_arm64.s:1268	shutting down server...
+asynq: pid=26210 2026/04/20 07:10:16.720883 INFO: Starting graceful shutdown
+asynq: pid=26210 2026/04/20 07:10:17.181608 INFO: Processor stopped
+asynq: pid=26210 2026/04/20 07:10:17.181631 INFO: Waiting for all workers to finish...
+asynq: pid=26210 2026/04/20 07:10:17.181705 INFO: All workers have finished
+asynq: pid=26210 2026/04/20 07:10:20.324542 ERROR: Failed to clear server state: INTERNAL_ERROR: redis command error: ZREM failed: i/o timeout
+asynq: pid=26210 2026/04/20 07:10:20.324800 INFO: Exiting
+2026-04-20T15:10:20.324+0800	[34mINFO[0m	runtime/asm_arm64.s:1268	server exited
