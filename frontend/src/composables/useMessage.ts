@@ -1,5 +1,5 @@
 // frontend/src/composables/useMessage.ts
-import { ElMessage, type MessageOptions as ElMessageOptions } from 'element-plus'
+import { ElMessage } from 'element-plus'
 
 export interface MessageOptions {
   showActions?: boolean   // show retry/contact-admin buttons (error only)
@@ -20,6 +20,11 @@ export function useMessage() {
     })
   }
 
+  // Close the currently visible message immediately (used before page navigation)
+  function close(): void {
+    ElMessage.closeAll()
+  }
+
   function warning(msg: string, opts?: MessageOptions): void {
     ElMessage.warning({ message: msg, duration: opts?.duration ?? 3000, showClose: true })
   }
@@ -28,5 +33,5 @@ export function useMessage() {
     ElMessage.info({ message: msg, duration: opts?.duration ?? 2000, showClose: true })
   }
 
-  return { success, error, warning, info }
+  return { success, error, warning, info, close }
 }

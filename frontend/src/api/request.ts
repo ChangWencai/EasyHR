@@ -11,6 +11,9 @@ const $msg = useMessage()
 
 const PUBLIC_AUTH_PATHS = ['/auth/send-code', '/auth/login', '/auth/register', '/auth/login/password', '/auth/refresh']
 
+// Business error codes that should switch to SMS login tab
+const ERR_NEED_SMS_LOGIN = 10011
+
 interface ApiError {
   response?: {
     status?: number
@@ -24,7 +27,7 @@ interface ApiError {
 // Error code → user-friendly message mapping (D-10-12)
 const ERROR_MESSAGES: Record<number, string> = {
   400: '请求参数错误，请检查输入',
-  401: '登录已过期，请重新登录',  // handled separately with redirect
+  401: '登录已过期，请重新登录',
   403: '您没有权限进行此操作',
   404: '请求的数据不存在',
   409: '数据冲突，请刷新后重试',
@@ -46,7 +49,28 @@ request.interceptors.request.use((config) => {
 })
 
 request.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // Business-level error: backend returns { code: X, message: "..." } with HTTP 200
+    const data = response.data as any
+    if (data && typeof data.code === 'number' && data.code !== 0) {
+      // 40301: org not set up yet — close any toast and redirect to org-setup
+      if (data.code === 40301) {
+        $msg.close()
+        router.push('/onboarding/org-setup')
+        return Promise.reject(new Error('ignore'))
+      }
+      const bizError = new Error(data.message || '操作失败') as any
+      bizError.response = {
+        status: 200,
+        data: {
+          code: data.code,
+          message: data.message,
+        },
+      }
+      return Promise.reject(bizError)
+    }
+    return response.data
+  },
   async (error: AxiosError) => {
     const err = error as unknown as ApiError
     const status = err.response?.status
@@ -55,12 +79,16 @@ request.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem('token')
       $msg.error('登录已过期，请重新登录')
-      router.push('/login')
+      // Close message then navigate so it doesn't linger on the login page
+      setTimeout(() => { $msg.close(); router.push('/login') }, 100)
       return Promise.reject(error)
     }
 
     // Determine user message
-    let userMessage = ERROR_MESSAGES[status ?? 0] ?? '操作失败，请稍后重试'
+    let userMessage = err.response?.data?.message
+    if (!userMessage) {
+      userMessage = ERROR_MESSAGES[status ?? 0] ?? '操作失败，请稍后重试'
+    }
 
     // Network errors (no response)
     if (!status) {
@@ -86,4 +114,5 @@ request.interceptors.response.use(
   },
 )
 
+export { ERR_NEED_SMS_LOGIN }
 export default request

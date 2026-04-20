@@ -256,6 +256,11 @@ router.beforeEach((to, _from) => {
   if (isProtectedRoute && !authStore.isLoggedIn) {
     return { path: '/login' }
   }
+
+  // 新用户（org_id === 0）访问业务页面 → 引导完善企业信息
+  if (isProtectedRoute && authStore.orgId === 0) {
+    return { path: '/onboarding/org-setup' }
+  }
 })
 
 export default router
