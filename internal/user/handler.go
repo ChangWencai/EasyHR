@@ -20,22 +20,23 @@ func NewHandler(svc *Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
+	// onboarding 需要在 RequireOrg 之前注册，允许 org_id=0 的用户访问
+	rg.PUT("/auth/org/onboarding", h.CompleteOnboarding)
+
 	authGroup := rg.Group("")
 	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	rg.POST("/auth/send-code", h.SendCode)
 	rg.POST("/auth/login", h.Login)
 	rg.POST("/auth/register", h.Register)
-	rg.POST("/auth/login/password", h.LoginPassword) // 新增：密码登录
+	rg.POST("/auth/login/password", h.LoginPassword)
 	rg.POST("/auth/refresh", h.Refresh)
 	authGroup.POST("/auth/logout", h.Logout)
-	authGroup.GET("/auth/me", h.GetMe)             // 新增：获取当前用户信息
-	authGroup.PUT("/auth/password", h.ChangePassword)  // 新增：修改密码
-	authGroup.PUT("/auth/avatar", h.UpdateAvatar)      // 新增：更新头像
-	authGroup.PUT("/auth/name", h.UpdateName)          // 新增：更新姓名
-	authGroup.PUT("/org", h.UpdateOrg)                // 新增：更新企业信息
-	authGroup.PUT("/org/onboarding", h.CompleteOnboarding)
-
+	authGroup.GET("/auth/me", h.GetMe)
+	authGroup.PUT("/auth/password", h.ChangePassword)
+	authGroup.PUT("/auth/avatar", h.UpdateAvatar)
+	authGroup.PUT("/auth/name", h.UpdateName)
+	authGroup.PUT("/org", h.UpdateOrg)
 	authGroup.GET("/users", middleware.RequireRole("owner", "admin"), h.ListSubAccounts)
 	authGroup.POST("/users", middleware.RequireRole("owner"), h.CreateSubAccount)
 	authGroup.PUT("/users/:id/role", middleware.RequireRole("owner"), h.UpdateSubAccountRole)
