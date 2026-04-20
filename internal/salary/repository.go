@@ -329,14 +329,17 @@ func (r *Repository) CreateSlipSendLog(log *SalarySlipSendLog) error {
 	return r.db.Create(log).Error
 }
 
-// FindSlipSendLogs 查询工资条发送日志列表
+// FindSlipSendLogs 查询工资条发送日志列表（含 payroll_slips 联查确认状态）
 func (r *Repository) FindSlipSendLogs(orgID int64, recordIDs []int64) ([]SalarySlipSendLog, error) {
 	var logs []SalarySlipSendLog
-	q := r.db.Scopes(middleware.TenantScope(orgID))
+	q := r.db.Scopes(middleware.TenantScope(orgID)).
+		Joins("LEFT JOIN payroll_slips ON payroll_slips.id = salary_slip_send_logs.payroll_record_id").
+		Select("salary_slip_send_logs.*, payroll_slips.confirmed_at AS confirmed_at").
+		Order("salary_slip_send_logs.created_at DESC")
 	if len(recordIDs) > 0 {
-		q = q.Where("payroll_record_id IN ?", recordIDs)
+		q = q.Where("salary_slip_send_logs.payroll_record_id IN ?", recordIDs)
 	}
-	err := q.Order("created_at DESC").Find(&logs).Error
+	err := q.Find(&logs).Error
 	return logs, err
 }
 
@@ -375,4 +378,27 @@ func (r *Repository) FindSlipSendLogByEmployeeMonth(orgID int64, employeeID int6
 		Order("salary_slip_send_logs.created_at DESC").
 		Find(&logs).Error
 	return logs, err
+}
+
+// ListUnconfirmedSlipsByMonth 查询指定月份未确认的工资条（D-13-08）
+func (r *Repository) ListUnconfirmedSlipsByMonth(orgID int64, year, month int) ([]PayrollSlip, error) {
+	var slips []PayrollSlip
+	err := r.db.Table("payroll_slips ps").
+		Joins("JOIN payroll_records pr ON pr.id = ps.payroll_record_id").
+		Where("ps.org_id = ? AND pr.year = ? AND pr.month = ? AND ps.confirmed_at IS NULL AND ps.deleted_at IS NULL", orgID, year, month).
+		Find(&slips).Error
+	return slips, err
+}
+
+// FindOwnerUserIDByOrg 查询企业的所有者用户ID
+func (r *Repository) FindOwnerUserIDByOrg(orgID int64) (int64, error) {
+	var userID int64
+	err := r.db.Table("users").
+		Select("id").
+		Where("org_id = ? AND role = 'owner' AND deleted_at IS NULL", orgID).
+		Scan(&userID).Error
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
 }

@@ -56,7 +56,7 @@ func (h *SlipSendHandler) SendAllSlips(c *gin.Context) {
 	})
 }
 
-// GetSlipLogs 查询工资条发送日志
+// GetSlipLogs 查询工资条发送日志（含员工确认状态 D-13-11）
 func (h *SlipSendHandler) GetSlipLogs(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 
@@ -93,23 +93,17 @@ func (h *SlipSendHandler) GetSlipLogs(c *gin.Context) {
 
 	logger.SugarLogger.Debugw("GetSlipLogs: 查询", "org_id", orgID, "year", year, "month", month)
 
-	// 复用 repository 查询
-	repo := NewRepository(nil) // NOTE: 这里用不上，具体实现在 svc 层
-	_ = repo // 实际通过 slipSendSvc.svc.repo 查询
+	// 查询工资条发送日志（含 confirmed_at 联查）
+	logs, err := h.slipSendSvc.GetSlipLogsWithConfirmation(orgID, year, month, page, pageSize)
+	if err != nil {
+		logger.SugarLogger.Debugw("GetSlipLogs: 失败", "error", err.Error())
+		response.Error(c, http.StatusInternalServerError, CodeTemplateConfig, "查询失败")
+		return
+	}
 
-	// 直接从 salarySvc 查询（通过 handler 的 service）
-	// GetSlipLogs 从 SalarySlipSendLogRepository 查询
-	// 为简化，直接在 SalarySlipSendLogHandler 中处理
-	_ = orgID
-	_ = year
-	_ = month
-
-	// 这里返回空，后续通过 svc.svc.repo 查询
-	// 实际通过 salaryHandler.svc.repo 查询
 	response.Success(c, gin.H{
-		"logs":  []interface{}{},
-		"total": 0,
-		"page":  page,
+		"logs":      logs,
+		"page":      page,
 		"page_size": pageSize,
 	})
 }
@@ -119,5 +113,5 @@ type SendAllSlipsRequest struct {
 	Year        int     `json:"year" binding:"required,min=2000,max=2100"`
 	Month       int     `json:"month" binding:"required,min=1,max=12"`
 	EmployeeIDs []int64 `json:"employee_ids"` // 空=全员
-	Channel     string  `json:"channel"`      // miniapp/sms/h5，默认 miniapp
+	Channel     string  `json:"channel"`       // miniapp/sms/h5，默认 miniapp
 }

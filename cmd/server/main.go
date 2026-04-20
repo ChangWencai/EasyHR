@@ -213,7 +213,7 @@ func main() {
 	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
 	salaryAttendanceProvider := attendance.NewAttendanceProvider(db)
 	salarySickLeavePolicySvc := salary.NewSickLeavePolicyService(db)
-	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto)
+	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto, todoSvcForDI)
 	salaryDashboardSvc := salary.NewDashboardService(db)
 	salaryHandler := salary.NewHandler(salarySvc, salaryDashboardSvc)
 	taxUploadHandler := salary.NewTaxUploadHandler(salarySvc)
@@ -362,12 +362,25 @@ func main() {
 	)
 	asynqMux := asynq.NewServeMux()
 	asynqMux.HandleFunc(salary.TypeSlipSend, salary.HandleSlipSendTask)
+	asynqMux.HandleFunc(salary.TypeRemindUnconfirmed, salary.HandleRemindUnconfirmedTask)
 	go func() {
 		if err := asynqServer.Run(asynqMux); err != nil {
 			logger.Logger.Error("asynq worker failed", zap.Error(err))
 		}
 	}()
 	logger.Logger.Info("asynq worker started")
+
+	// 工资条未确认提醒定时任务（D-13-08）
+	salaryScheduler := salary.NewSalaryScheduler(db, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+	salarySched, salarySchedErr := salaryScheduler.Start()
+	if salarySchedErr != nil {
+		logger.Logger.Warn("salary scheduler start failed", zap.Error(salarySchedErr))
+	}
+	defer func() {
+		if salarySched != nil {
+			salarySched.Shutdown()
+		}
+	}()
 
 	// 等待中断信号优雅关闭（与 r.Run 并行运行）
 	quit := make(chan os.Signal, 1)

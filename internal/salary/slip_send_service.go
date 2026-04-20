@@ -267,3 +267,122 @@ func GetGlobalSlipSendService() (*SlipSendService, error) {
 	return globalSlipSendService, nil
 }
 
+// GetSlipLogsWithConfirmation 查询工资条发送日志（含确认状态 D-13-11）
+func (s *SlipSendService) GetSlipLogsWithConfirmation(orgID int64, year, month, page, pageSize int) ([]SalarySlipSendLog, error) {
+	// 先按年月查询工资记录
+	var recordIDs []int64
+	if year > 0 && month > 0 {
+		records, err := s.svc.repo.FindPayrollRecordsByMonth(orgID, year, month)
+		if err != nil {
+			return nil, fmt.Errorf("查询工资记录失败: %w", err)
+		}
+		for _, r := range records {
+			recordIDs = append(recordIDs, r.ID)
+		}
+		if len(recordIDs) == 0 {
+			return []SalarySlipSendLog{}, nil
+		}
+	}
+
+	// 分页查询发送日志
+	offset := (page - 1) * pageSize
+	var logs []SalarySlipSendLog
+	var err error
+	if len(recordIDs) > 0 {
+		err = s.svc.repo.db.Scopes(middlewareTenantScopeLocal(orgID)).
+			Joins("LEFT JOIN payroll_slips ON payroll_slips.id = salary_slip_send_logs.payroll_record_id").
+			Select("salary_slip_send_logs.*, payroll_slips.confirmed_at AS confirmed_at").
+			Where("salary_slip_send_logs.payroll_record_id IN ?", recordIDs).
+			Order("salary_slip_send_logs.created_at DESC").
+			Offset(offset).Limit(pageSize).
+			Find(&logs).Error
+	} else {
+		err = s.svc.repo.db.Scopes(middlewareTenantScopeLocal(orgID)).
+			Joins("LEFT JOIN payroll_slips ON payroll_slips.id = salary_slip_send_logs.payroll_record_id").
+			Select("salary_slip_send_logs.*, payroll_slips.confirmed_at AS confirmed_at").
+			Order("salary_slip_send_logs.created_at DESC").
+			Offset(offset).Limit(pageSize).
+			Find(&logs).Error
+	}
+	if err != nil {
+		return nil, fmt.Errorf("查询发送日志失败: %w", err)
+	}
+	return logs, nil
+}
+
+// RemindUnconfirmedPayload asynq 提醒未确认工资单任务载荷
+type RemindUnconfirmedPayload struct {
+	OrgID int64 `json:"org_id"`
+	Year  int    `json:"year"`
+	Month int    `json:"month"`
+}
+
+// NewRemindUnconfirmedTask 创建未确认工资单提醒任务
+func NewRemindUnconfirmedTask(orgID int64, year, month int) (*asynq.Task, error) {
+	payload, err := json.Marshal(RemindUnconfirmedPayload{
+		OrgID: orgID,
+		Year:  year,
+		Month: month,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return asynq.NewTask("salary:remind-unconfirmed", payload), nil
+}
+
+// HandleRemindUnconfirmedTask asynq Worker Handler（D-13-08）
+func HandleRemindUnconfirmedTask(ctx context.Context, t *asynq.Task) error {
+	var payload RemindUnconfirmedPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("解析任务载荷失败: %w", err)
+	}
+
+	log.Printf("[RemindUnconfirmed] org=%d, year=%d, month=%d", payload.OrgID, payload.Year, payload.Month)
+
+	svc, err := GetGlobalSlipSendService()
+	if err != nil {
+		return fmt.Errorf("获取服务实例失败: %w", err)
+	}
+
+	return svc.processRemindUnconfirmed(ctx, &payload)
+}
+
+// processRemindUnconfirmed 处理未确认工资单提醒（D-13-08, D-13-09）
+func (s *SlipSendService) processRemindUnconfirmed(ctx context.Context, payload *RemindUnconfirmedPayload) error {
+	// 1. 查询上月未确认的工资条
+	unconfirmed, err := s.svc.repo.ListUnconfirmedSlipsByMonth(payload.OrgID, payload.Year, payload.Month)
+	if err != nil {
+		return fmt.Errorf("查询未确认工资单失败: %w", err)
+	}
+
+	if len(unconfirmed) == 0 {
+		log.Printf("[RemindUnconfirmed] org=%d, %d年%d月 无未确认工资条，跳过", payload.OrgID, payload.Year, payload.Month)
+		return nil
+	}
+
+	// 2. 获取企业所有者
+	ownerID, err := s.svc.repo.FindOwnerUserIDByOrg(payload.OrgID)
+	if err != nil {
+		return fmt.Errorf("获取企业所有者失败: %w", err)
+	}
+	if ownerID == 0 {
+		log.Printf("[RemindUnconfirmed] org=%d 无所有者，跳过", payload.OrgID)
+		return nil
+	}
+
+	// 3. 通过 TodoCenter 创建待办通知（D-13-09 幂等通过 SourceType+SourceID）
+	msg := fmt.Sprintf("您有 %d 名员工尚未确认 %d年%d月 工资条，请及时跟进。", len(unconfirmed), payload.Year, payload.Month)
+	sourceID := int64(payload.Year*100 + payload.Month)
+	err = s.svc.todoSvc.CreateTodoFromEmployee(
+		payload.OrgID, msg, "salary_unconfirmed", &ownerID, "", nil,
+		"salary_unconfirmed", &sourceID,
+	)
+	if err != nil {
+		log.Printf("[RemindUnconfirmed] 创建待办失败: %v", err)
+		return nil // 不重试，避免重复通知
+	}
+
+	log.Printf("[RemindUnconfirmed] 创建待办成功: org=%d, 未确认人数=%d", payload.OrgID, len(unconfirmed))
+	return nil
+}
+

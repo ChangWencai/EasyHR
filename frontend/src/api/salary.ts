@@ -150,6 +150,7 @@ export interface SlipSendLog {
   status: 'pending' | 'sending' | 'sent' | 'failed'
   error_message?: string
   sent_at?: string
+  confirmed_at?: string
   created_at: string
 }
 

@@ -24,6 +24,8 @@ type SalarySlipSendLog struct {
 	ErrorMessage    string     `gorm:"column:error_message;type:text;comment:错误信息" json:"error_message"`
 	SentAt          *time.Time `gorm:"column:sent_at;comment:发送时间" json:"sent_at"`
 	CreatedAt       time.Time  `gorm:"column:created_at;autoCreateTime" json:"created_at"`
+	// ConfirmedAt 员工确认时间（通过 JOIN payroll_slips 获取）
+	ConfirmedAt *time.Time `gorm:"-" json:"confirmed_at,omitempty"`
 }
 
 func (SalarySlipSendLog) TableName() string { return "salary_slip_send_logs" }

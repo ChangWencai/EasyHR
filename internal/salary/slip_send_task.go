@@ -9,6 +9,7 @@ import (
 
 // asynq task type
 const TypeSlipSend = "salary:slip:send"
+const TypeRemindUnconfirmed = "salary:remind-unconfirmed"
 
 // SlipSendPayload asynq 任务载荷
 type SlipSendPayload struct {

@@ -180,6 +180,12 @@ func (s *Service) GetSlipByToken(token string) (*SlipDetailResponse, error) {
 		resp.SignedAt = &signedAt
 	}
 
+	// 格式化确认时间（D-13-03）
+	if slip.ConfirmedAt != nil {
+		confirmedAt := slip.ConfirmedAt.Format("2006-01-02 15:04:05")
+		resp.ConfirmedAt = &confirmedAt
+	}
+
 	// 首次查看时更新状态
 	if slip.Status == SlipStatusSent {
 		now := time.Now()
@@ -309,6 +315,38 @@ func (s *Service) SignSlip(token string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("签收工资单失败: %w", err)
+	}
+
+	return nil
+}
+
+// ConfirmSlip 确认工资单已收到（员工主动确认，不可撤销）
+// D-13-01: 员工必须主动点击「确认已收到」按钮完成确认
+// D-13-03: 更新 confirmed_at + confirmed_ip
+// D-13-07: 幂等——多次确认只更新时间
+func (s *Service) ConfirmSlip(token string, clientIP string) error {
+	// 查询工资单
+	slip, err := s.repo.FindSlipByToken(token)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrSlipTokenInvalid
+		}
+		return fmt.Errorf("查询工资单失败: %w", err)
+	}
+
+	// 校验是否过期（D-13-03）
+	if time.Now().After(slip.ExpiresAt) {
+		return ErrSlipTokenExpired
+	}
+
+	// 更新确认时间戳和 IP（D-13-07: 幂等，多次确认只更新时间）
+	now := time.Now()
+	err = s.repo.UpdateSlip(slip.OrgID, slip.ID, map[string]interface{}{
+		"confirmed_at":  now,
+		"confirmed_ip":  clientIP,
+	})
+	if err != nil {
+		return fmt.Errorf("确认工资单失败: %w", err)
 	}
 
 	return nil

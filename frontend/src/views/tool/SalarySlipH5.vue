@@ -79,16 +79,16 @@
         <div class="net-income-value">¥{{ slip.net_income.toFixed(2) }}</div>
       </div>
 
-      <!-- 签收状态 -->
-      <div v-if="slip.signed_at" class="sign-status">
+      <!-- 确认状态（D-13-03） -->
+      <div v-if="slip.confirmed_at" class="confirm-status">
         <el-icon><CircleCheckFilled /></el-icon>
-        已于 {{ slip.signed_at }} 签收确认
+        已于 {{ slip.confirmed_at }} 确认签收
       </div>
 
-      <!-- 签收按钮 -->
-      <div v-else-if="slip.status === 'viewed'" class="sign-action">
-        <el-button type="primary" size="large" :loading="signing" @click="handleSign">
-          确认签收
+      <!-- 确认按钮（D-13-01） -->
+      <div v-else-if="slip.status === 'viewed'" class="confirm-action">
+        <el-button type="primary" size="large" :loading="confirming" @click="handleConfirm">
+          确认已收到
         </el-button>
       </div>
 
@@ -112,7 +112,7 @@ const token = route.params.token as string
 
 const loading = ref(true)
 const errorMsg = ref('')
-const signing = ref(false)
+const confirming = ref(false)
 
 interface SlipDetail {
   employee_name: string
@@ -125,7 +125,7 @@ interface SlipDetail {
   total_deductions: number
   net_income: number
   status: string
-  signed_at?: string
+  confirmed_at?: string
 }
 
 const slip = ref<SlipDetail | null>(null)
@@ -133,12 +133,12 @@ const slip = ref<SlipDetail | null>(null)
 const slipStatusMap: Record<string, string> = {
   sent: '待查看',
   viewed: '已查看',
-  signed: '已签收',
+  confirmed: '已确认',
 }
 const slipStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
   sent: 'info',
   viewed: 'warning',
-  signed: 'success',
+  confirmed: 'success',
 }
 
 const incomeItems = computed(() =>
@@ -169,20 +169,20 @@ async function loadSlip() {
   }
 }
 
-async function handleSign() {
-  signing.value = true
+async function handleConfirm() {
+  confirming.value = true
   try {
-    await request.post(`/salary/slip/${token}/sign`)
+    await request.post(`/salary/slip/${token}/confirm`)
     if (slip.value) {
-      slip.value.status = 'signed'
+      slip.value.status = 'confirmed'
       const now = new Date()
-      slip.value.signed_at = now.toLocaleString('zh-CN')
+      slip.value.confirmed_at = now.toLocaleString('zh-CN')
     }
-    ElMessage.success('签收成功')
+    ElMessage.success('确认成功')
   } catch {
-    ElMessage.error('签收失败')
+    ElMessage.error('确认失败')
   } finally {
-    signing.value = false
+    confirming.value = false
   }
 }
 
@@ -339,7 +339,7 @@ onMounted(() => {
   }
 }
 
-.sign-status {
+.confirm-status {
   margin: 0 16px 24px;
   text-align: center;
   color: #67c23a;
@@ -350,7 +350,7 @@ onMounted(() => {
   gap: 6px;
 }
 
-.sign-action {
+.confirm-action {
   margin: 0 16px 24px;
   .el-button {
     width: 100%;

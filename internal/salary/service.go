@@ -11,6 +11,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// TodoSvc todo服务接口（避免与todo包循环依赖）
+type TodoSvc interface {
+	CreateTodoFromEmployee(orgID int64, title string, todoType string, employeeID *int64, employeeName string, deadline *time.Time, sourceType string, sourceID *int64) error
+}
+
 // Service 工资核算业务逻辑层
 type Service struct {
 	repo               *Repository
@@ -23,6 +28,7 @@ type Service struct {
 	sickLeavePolicySvc *SickLeavePolicyService
 	smsClient          interface{}
 	cryptoCfg          config.CryptoConfig
+	todoSvc            TodoSvc
 }
 
 // NewService 创建工资核算 Service
@@ -37,6 +43,7 @@ func NewService(
 	sickLeavePolicySvc *SickLeavePolicyService,
 	smsClient interface{},
 	cryptoCfg config.CryptoConfig,
+	todoSvc TodoSvc,
 ) *Service {
 	return &Service{
 		repo:               repo,
@@ -49,6 +56,7 @@ func NewService(
 		sickLeavePolicySvc: sickLeavePolicySvc,
 		smsClient:          smsClient,
 		cryptoCfg:          cryptoCfg,
+		todoSvc:            todoSvc,
 	}
 }
 

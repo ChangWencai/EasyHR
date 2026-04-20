@@ -81,6 +81,8 @@ type PayrollSlip struct {
 	SentAt          *time.Time `gorm:"column:sent_at;comment:发送时间" json:"sent_at"`
 	ViewedAt        *time.Time `gorm:"column:viewed_at;comment:查看时间" json:"viewed_at"`
 	SignedAt        *time.Time `gorm:"column:signed_at;comment:签收时间" json:"signed_at"`
+	ConfirmedAt     *time.Time `gorm:"column:confirmed_at;comment:员工确认时间" json:"confirmed_at"`
+	ConfirmedIP     string     `gorm:"column:confirmed_ip;type:varchar(45);comment:确认IP地址" json:"confirmed_ip"`
 	ExpiresAt       time.Time  `gorm:"column:expires_at;not null;comment:过期时间" json:"expires_at"`
 }
 

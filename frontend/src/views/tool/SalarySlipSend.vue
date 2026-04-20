@@ -205,6 +205,12 @@
               <span class="time-text">{{ row.sent_at || '—' }}</span>
             </template>
           </el-table-column>
+          <el-table-column prop="confirmed_at" label="员工确认" width="120">
+            <template #default="{ row }">
+              <span v-if="row.confirmed_at" class="confirmed-tag">已确认</span>
+              <span v-else class="unconfirmed-tag">未确认</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="created_at" label="创建时间" width="170" />
         </el-table>
 
@@ -475,6 +481,16 @@ $radius-xl: 24px;
   &.status--failed { background: #FEE2E2; color: #DC2626; }
 }
 
+.confirmed-tag {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  background: #D1FAE5; color: #059669;
+  font-size: 12px; font-weight: 500; border-radius: 12px;
+}
+.unconfirmed-tag {
+  display: inline-flex; align-items: center; padding: 3px 10px;
+  background: #FEF3C7; color: #D97706;
+  font-size: 12px; font-weight: 500; border-radius: 12px;
+}
 .channel-tag {
   display: inline-flex; padding: 3px 10px;
   background: #EDE9FE; color: var(--primary);

@@ -62,6 +62,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 		public.POST("/:token/verify", h.VerifySlipPhone)
 		public.POST("/:token/code", h.VerifySlipCode)
 		public.POST("/:token/sign", h.SignSlip)
+		public.POST("/:token/confirm", h.ConfirmSlip) // D-13-01: 员工确认工资单
 	}
 }
 
@@ -553,6 +554,32 @@ func (h *Handler) SignSlip(c *gin.Context) {
 	}
 
 	response.Success(c, nil)
+}
+
+// ConfirmSlip 确认工资单已收到（D-13-01, D-13-03）
+func (h *Handler) ConfirmSlip(c *gin.Context) {
+	token := c.Param("token")
+	if token == "" {
+		response.BadRequest(c, "token 参数错误")
+		return
+	}
+
+	clientIP := c.ClientIP()
+
+	if err := h.svc.ConfirmSlip(token, clientIP); err != nil {
+		if err == ErrSlipTokenInvalid {
+			response.Error(c, http.StatusNotFound, CodePayrollNotFound, "工资单不存在")
+			return
+		}
+		if err == ErrSlipTokenExpired {
+			response.Error(c, http.StatusForbidden, CodePayrollNotFound, "工资单已过期")
+			return
+		}
+		response.Error(c, http.StatusBadRequest, CodeTemplateConfig, err.Error())
+		return
+	}
+
+	response.Success(c, ConfirmSlipResponse{})
 }
 
 // ExportPayroll 导出工资表 Excel

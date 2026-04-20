@@ -137,19 +137,23 @@ type SendSlipRequest struct {
 	RecordIDs []int64 `json:"record_ids" binding:"required,min=1"`
 }
 
+// ConfirmSlipResponse 确认工资单响应（空响应）
+type ConfirmSlipResponse struct{}
+
 // SlipDetailResponse 工资单详情响应
 type SlipDetailResponse struct {
-	EmployeeName    string             `json:"employee_name"`
-	Year            int                `json:"year"`
-	Month           int                `json:"month"`
-	Items           []SlipItemDetail   `json:"items"`
-	GrossIncome     float64            `json:"gross_income"`
-	SIDeduction     float64            `json:"si_deduction"`
-	Tax             float64            `json:"tax"`
-	TotalDeductions float64            `json:"total_deductions"`
-	NetIncome       float64            `json:"net_income"`
-	Status          string             `json:"status"`
-	SignedAt        *string            `json:"signed_at,omitempty"`
+	EmployeeName    string           `json:"employee_name"`
+	Year            int              `json:"year"`
+	Month           int              `json:"month"`
+	Items           []SlipItemDetail `json:"items"`
+	GrossIncome     float64          `json:"gross_income"`
+	SIDeduction     float64          `json:"si_deduction"`
+	Tax             float64          `json:"tax"`
+	TotalDeductions float64          `json:"total_deductions"`
+	NetIncome       float64          `json:"net_income"`
+	Status          string           `json:"status"`
+	SignedAt        *string         `json:"signed_at,omitempty"`
+	ConfirmedAt     *string         `json:"confirmed_at,omitempty"`
 }
 
 // SlipItemDetail 工资单明细项
