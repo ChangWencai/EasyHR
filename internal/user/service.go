@@ -246,7 +246,7 @@ func (s *Service) CompleteOnboarding(ctx context.Context, userID int64, req *Com
 		ContactName:  req.ContactName,
 		ContactPhone: encryptedPhone,
 		Status:       "active",
-		CreatedBy:   userID,
+		CreatedBy:    userID,
 	}
 	if err := s.repo.CreateOrg(org); err != nil {
 		return nil, fmt.Errorf("创建企业失败: %w", err)
