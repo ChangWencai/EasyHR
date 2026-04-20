@@ -69,3 +69,26 @@ func (e *RuleEngine) GetExpectedClockTimes(date time.Time) (workStart, workEnd s
 	isRestDay = !e.IsWorkDay(date)
 	return e.rule.WorkStart, e.rule.WorkEnd, isRestDay
 }
+
+// ClassifyOvertimeCategory classifies the overtime approval time window into one of three categories per D-12-03:
+// - "holiday": StartTime falls on a holiday (IsHoliday)
+// - "weekend": StartTime falls on Saturday/Sunday (Weekday == 6 or 0)
+// - "weekday": all other work days
+func (e *RuleEngine) ClassifyOvertimeCategory(start, end time.Time) string {
+	// Use the start date of the overtime window for classification
+	startDate := start
+	// For multi-day approvals, use the date of the first working day covered
+	if start.Hour() == 0 && start.Minute() == 0 {
+		// All-day approvals: classify by start date
+		startDate = start
+	}
+
+	if e.IsHoliday(startDate) {
+		return "holiday"
+	}
+	weekday := int(startDate.Weekday()) // 0=Sun, 1=Mon, ..., 6=Sat
+	if weekday == 0 || weekday == 6 {
+		return "weekend"
+	}
+	return "weekday"
+}

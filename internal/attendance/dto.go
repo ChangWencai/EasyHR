@@ -1,5 +1,12 @@
 package attendance
 
+import (
+	"strconv"
+	"strings"
+
+	"github.com/wencai/easyhr/internal/common/model"
+)
+
 // === AttendanceRule DTO ===
 
 type AttendanceRuleResponse struct {
@@ -168,3 +175,161 @@ type CreateApprovalRequest struct {
 type RejectApprovalRequest struct {
 	Note string `json:"note"`
 }
+
+// === Compliance Report DTO ===
+
+// ComplianceReportRequest 通用报表查询参数
+type ComplianceReportRequest struct {
+	YearMonth string `form:"year_month" binding:"required"` // YYYY-MM
+	DeptIDs   string `form:"dept_ids"`                      // comma-separated, empty=all
+}
+
+// parseDeptIDs parses comma-separated dept_ids, returns nil if empty
+func (r *ComplianceReportRequest) ParseDeptIDs() []int64 {
+	if r.DeptIDs == "" || r.DeptIDs == "__all__" {
+		return nil
+	}
+	ids := strings.Split(r.DeptIDs, ",")
+	result := make([]int64, 0, len(ids))
+	for _, s := range ids {
+		s = strings.TrimSpace(s)
+		if s == "" || s == "__all__" {
+			continue
+		}
+		if id, err := strconv.ParseInt(s, 10, 64); err == nil {
+			result = append(result, id)
+		}
+	}
+	return result
+}
+
+// --- Overtime Report (COMP-05) ---
+
+type OvertimeItem struct {
+	EmployeeID     int64   `json:"employee_id"`
+	EmployeeName   string  `json:"employee_name"`
+	DepartmentName string  `json:"department_name"`
+	HolidayHours   float64 `json:"holiday_hours"`     // 法定节假日加班 (0.5h rounding display)
+	WeekdayHours   float64 `json:"weekday_hours"`     // 工作日延时加班 (0.5h rounding display)
+	WeekendHours   float64 `json:"weekend_hours"`     // 周末加班 (0.5h rounding display)
+	TotalHours     float64 `json:"total_hours"`       // 合计
+}
+
+type ComplianceOvertimeStats struct {
+	TotalHolidayHours float64 `json:"total_holiday_hours"`
+	TotalWeekdayHours float64 `json:"total_weekday_hours"`
+	TotalWeekendHours float64 `json:"total_weekend_hours"`
+}
+
+type ComplianceOvertimeResponse struct {
+	YearMonth string                 `json:"year_month"`
+	Stats     ComplianceOvertimeStats `json:"stats"`
+	List      []OvertimeItem          `json:"list"`
+	Total     int64                   `json:"total"`
+	Page      int                     `json:"page"`
+	PageSize  int                     `json:"page_size"`
+}
+
+// --- Leave Compliance Report (COMP-06) ---
+
+type LeaveItem struct {
+	EmployeeID     int64   `json:"employee_id"`
+	EmployeeName   string  `json:"employee_name"`
+	DepartmentName string  `json:"department_name"`
+	AnnualQuota    float64 `json:"annual_quota"`   // 管理员配置的年假总额度
+	AnnualUsed     float64 `json:"annual_used"`    // 已用年假天数
+	AnnualLeft     float64 `json:"annual_left"`    // 剩余年假 (quota - used)
+	SickDays       float64 `json:"sick_days"`      // 病假天数
+	PersonalDays   float64 `json:"personal_days"`  // 事假天数
+}
+
+type ComplianceLeaveStats struct {
+	AnnualQuotaEmployeeCount int     `json:"annual_quota_employee_count"`
+	TotalAnnualUsed          float64 `json:"total_annual_used"`
+	TotalSickDays            float64 `json:"total_sick_days"`
+	TotalPersonalDays        float64 `json:"total_personal_days"`
+}
+
+type ComplianceLeaveResponse struct {
+	YearMonth string              `json:"year_month"`
+	Stats     ComplianceLeaveStats `json:"stats"`
+	List      []LeaveItem          `json:"list"`
+	Total     int64                `json:"total"`
+	Page      int                  `json:"page"`
+	PageSize  int                  `json:"page_size"`
+}
+
+// --- Anomaly Report (COMP-07) ---
+
+type AnomalyItem struct {
+	EmployeeID      int64   `json:"employee_id"`
+	EmployeeName    string  `json:"employee_name"`
+	DepartmentName  string  `json:"department_name"`
+	LateCount       int     `json:"late_count"`       // 迟到次数
+	EarlyLeaveCount int     `json:"early_leave_count"` // 早退次数
+	AbsentDays      float64 `json:"absent_days"`       // 缺勤天数
+	AnomalyCount    int     `json:"anomaly_count"`     // 累计异常次数 (late + early + absent)
+	IsAnomaly       bool    `json:"is_anomaly"`        // red-highlight: late>3 OR absent>1 per D-12-10
+}
+
+type ComplianceAnomalyStats struct {
+	AnomalyEmployeeCount int     `json:"anomaly_employee_count"` // 异常员工数
+	TotalLateCount      int     `json:"total_late_count"`
+	TotalAbsentDays     float64 `json:"total_absent_days"`
+}
+
+type ComplianceAnomalyResponse struct {
+	YearMonth string               `json:"year_month"`
+	Stats     ComplianceAnomalyStats `json:"stats"`
+	List      []AnomalyItem         `json:"list"`
+	Total     int64                 `json:"total"`
+	Page      int                   `json:"page"`
+	PageSize  int                   `json:"page_size"`
+}
+
+// --- Monthly Compliance Report (COMP-08) ---
+
+type MonthlyComplianceItem struct {
+	EmployeeID        int64   `json:"employee_id"`
+	EmployeeName      string  `json:"employee_name"`
+	DepartmentName    string  `json:"department_name"`
+	RequiredDays      float64 `json:"required_days"`      // 应出勤天数
+	ActualDays        float64 `json:"actual_days"`        // 实际出勤天数
+	LateCount         int     `json:"late_count"`
+	EarlyLeaveCount   int     `json:"early_leave_count"`
+	AbsentDays        float64 `json:"absent_days"`
+	OvertimeHours     float64 `json:"overtime_hours"`   // 合计加班小时数
+	AnnualLeaveDays   float64 `json:"annual_leave_days"` // 年假天数
+	SickLeaveDays     float64 `json:"sick_leave_days"`   // 病假天数
+	PersonalLeaveDays float64 `json:"personal_leave_days"` // 事假天数
+	IsAnomaly         bool    `json:"is_anomaly"`       // red-highlight: late>3 OR absent>1
+}
+
+type ComplianceMonthlyStats struct {
+	TotalRequiredDays   float64 `json:"total_required_days"`
+	TotalActualDays     float64 `json:"total_actual_days"`
+	TotalOvertimeHours  float64 `json:"total_overtime_hours"`
+	TotalAbsentDays     float64 `json:"total_absent_days"`
+	TotalAnomalyCount   int     `json:"total_anomaly_count"`
+}
+
+type ComplianceMonthlyResponse struct {
+	YearMonth string                 `json:"year_month"`
+	Stats     ComplianceMonthlyStats `json:"stats"`
+	List      []MonthlyComplianceItem `json:"list"`
+	Total     int64                  `json:"total"`
+	Page      int                    `json:"page"`
+	PageSize  int                    `json:"page_size"`
+}
+
+// --- Annual Leave Quota Config (COMP-06, D-12-08) ---
+
+// AnnualLeaveQuota 企业员工年假额度配置表
+type AnnualLeaveQuota struct {
+	model.BaseModel
+	EmployeeID int64   `gorm:"column:employee_id;not null;uniqueIndex:idx_annual_quota"`
+	Year       int     `gorm:"column:year;type:int;not null;uniqueIndex:idx_annual_quota"`
+	Quota      float64 `gorm:"column:quota;default:0;comment:年假总天数"`
+}
+
+func (AnnualLeaveQuota) TableName() string { return "attendance_annual_leave_quotas" }
