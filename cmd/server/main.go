@@ -284,6 +284,7 @@ func main() {
 		regHandler.RegisterRoutes(v1, authMiddleware)
 		obHandler.RegisterRoutes(v1, authMiddleware)
 		contractHandler.RegisterRoutes(v1, authMiddleware)
+		contractHandler.RegisterSignRoutes(v1)
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)

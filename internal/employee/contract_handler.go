@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,15 @@ func (h *ContractHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin
 	authGroup.GET("/contracts/:id/upload-url", middleware.RequireRole("owner", "admin"), h.GenerateUploadURL)
 	authGroup.PUT("/contracts/:id/terminate", middleware.RequireRole("owner", "admin"), h.TerminateContract)
 	authGroup.GET("/contracts", h.ListContracts) // 所有角色可查看企业合同列表
+	authGroup.POST("/contracts/:id/send-sign-link", middleware.RequireRole("owner", "admin"), h.SendSignLink) // 老板发起签署
+}
+
+// RegisterSignRoutes 注册签署相关端点（员工端，无需认证）
+func (h *ContractHandler) RegisterSignRoutes(rg *gin.RouterGroup) {
+	signGroup := rg.Group("/contracts/sign")
+	signGroup.POST("/send-code", h.SendSignCode)      // 发送验证码
+	signGroup.POST("/verify-code", h.VerifySignCode) // 校验验证码
+	signGroup.POST("/confirm", h.ConfirmSign)         // 确认签署
 }
 
 // CreateContract 创建合同
@@ -242,4 +252,95 @@ func (h *ContractHandler) ListContracts(c *gin.Context) {
 	}
 
 	response.PageSuccess(c, contracts, total, query.Page, query.PageSize)
+}
+
+// SendSignCode 发送签署验证码
+func (h *ContractHandler) SendSignCode(c *gin.Context) {
+	var req SendSignCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	if err := h.svc.SendSignCode(c.Request.Context(), req.ContractID, req.Phone); err != nil {
+		response.Error(c, http.StatusBadRequest, 20212, err.Error())
+		return
+	}
+
+	response.Success(c, &SendSignCodeResponse{
+		Message:   fmt.Sprintf("签署链接已发送至 %s，有效期7天", req.Phone),
+		ExpiresIn: int(SignLinkExpiry.Seconds()),
+	})
+}
+
+// VerifySignCode 校验签署验证码
+func (h *ContractHandler) VerifySignCode(c *gin.Context) {
+	var req VerifySignCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	result, err := h.svc.VerifySignCode(c.Request.Context(), req.ContractID, req.Phone, req.Code)
+	if err != nil {
+		if strings.Contains(err.Error(), "过期") {
+			response.Error(c, http.StatusBadRequest, 20213, "验证码已过期，请重新获取")
+		} else {
+			response.Error(c, http.StatusBadRequest, 20214, "验证码错误，请重新输入")
+		}
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// ConfirmSign 确认签署
+func (h *ContractHandler) ConfirmSign(c *gin.Context) {
+	var req ConfirmSignRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	result, err := h.svc.ConfirmSign(c.Request.Context(), req.ContractID, req.SignToken)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, 20215, err.Error())
+		return
+	}
+
+	response.Success(c, result)
+}
+
+// SendSignLink 老板发起签署（生成PDF + 上传OSS + 发送短信）
+func (h *ContractHandler) SendSignLink(c *gin.Context) {
+	contractID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的合同ID")
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	if err := h.svc.SendSignLink(c.Request.Context(), orgID, contractID); err != nil {
+		response.Error(c, http.StatusBadRequest, 20217, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "签署链接发送成功"})
+}
+
+// GetSignedPdf 获取已签PDF（员工端，通过 SignToken 访问）
+func (h *ContractHandler) GetSignedPdf(c *gin.Context) {
+	contractID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的合同ID")
+		return
+	}
+
+	url, err := h.svc.GetSignedPdfURL(c.Request.Context(), contractID)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, 20216, "合同不存在或尚未签署")
+		return
+	}
+
+	response.Success(c, &GetSignedPdfResponse{URL: url})
 }
