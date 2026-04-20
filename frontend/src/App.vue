@@ -1,5 +1,5 @@
 <template>
-  <router-view />
+  <router-view v-if="!showOnboarding" />
   <div v-if="showOnboarding" class="onboarding-overlay" @click.self="dismissOnboarding">
     <div class="onboarding-card">
       <h3>欢迎使用易人事！</h3>
@@ -25,15 +25,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
-const showOnboarding = ref(false)
-
-onMounted(() => {
-  if (!localStorage.getItem('onboarding_done')) {
-    showOnboarding.value = true
-  }
-})
+// Initialize synchronously from localStorage to avoid a two-render gap.
+// Previously showOnboarding was hard-coded to false, causing OrgSetup.vue
+// to render on the first pass before onMounted could check localStorage,
+// resulting in a visible flicker of the page before the overlay appeared.
+const showOnboarding = ref(!localStorage.getItem('onboarding_done'))
 
 function dismissOnboarding() {
   localStorage.setItem('onboarding_done', 'true')

@@ -119,8 +119,17 @@ func (s *Service) Register(ctx context.Context, phone, code string) (*LoginRespo
 	if err := s.repo.CreateUser(newUser); err != nil {
 		return nil, fmt.Errorf("创建账号失败: %w", err)
 	}
-	accessToken, _ := jwt.GenerateAccessToken(newUser.ID, newUser.OrgID, newUser.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
-	refreshToken, _ := jwt.GenerateRefreshToken(newUser.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	if newUser.ID <= 0 {
+		return nil, fmt.Errorf("创建账号失败: 用户ID无效")
+	}
+	accessToken, err := jwt.GenerateAccessToken(newUser.ID, newUser.OrgID, newUser.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成token失败: %w", err)
+	}
+	refreshToken, err := jwt.GenerateRefreshToken(newUser.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成refreshToken失败: %w", err)
+	}
 	return &LoginResponse{
 		AccessToken:        accessToken,
 		RefreshToken:       refreshToken,
@@ -171,8 +180,17 @@ func (s *Service) Login(ctx context.Context, phone, code string) (*LoginResponse
 		if createErr := s.repo.CreateUser(newUser); createErr != nil {
 			return nil, fmt.Errorf("自动注册失败: %w", createErr)
 		}
-		accessToken, _ := jwt.GenerateAccessToken(newUser.ID, newUser.OrgID, newUser.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
-		refreshToken, _ := jwt.GenerateRefreshToken(newUser.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+		if newUser.ID <= 0 {
+			return nil, fmt.Errorf("自动注册失败: 用户ID无效")
+		}
+		accessToken, err := jwt.GenerateAccessToken(newUser.ID, newUser.OrgID, newUser.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+		if err != nil {
+			return nil, fmt.Errorf("生成token失败: %w", err)
+		}
+		refreshToken, err := jwt.GenerateRefreshToken(newUser.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+		if err != nil {
+			return nil, fmt.Errorf("生成refreshToken失败: %w", err)
+		}
 		return &LoginResponse{
 			AccessToken:        accessToken,
 			RefreshToken:       refreshToken,
@@ -260,8 +278,17 @@ func (s *Service) CompleteOnboarding(ctx context.Context, userID int64, req *Com
 	}
 
 	// 生成含正确 org_id 的新 token（避免用户继续使用旧 token）
-	accessToken, _ := jwt.GenerateAccessToken(userID, org.ID, "owner", s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
-	refreshToken, _ := jwt.GenerateRefreshToken(userID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	if userID <= 0 {
+		return nil, fmt.Errorf("关联企业失败: userID无效")
+	}
+	accessToken, err := jwt.GenerateAccessToken(userID, org.ID, "owner", s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成token失败: %w", err)
+	}
+	refreshToken, err := jwt.GenerateRefreshToken(userID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成refreshToken失败: %w", err)
+	}
 
 	return &LoginResponse{
 		AccessToken:        accessToken,
@@ -364,8 +391,14 @@ func (s *Service) LoginPassword(ctx context.Context, phone, password string) (*L
 	}
 
 	// 生成 token
-	accessToken, _ := jwt.GenerateAccessToken(user.ID, user.OrgID, user.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
-	refreshToken, _ := jwt.GenerateRefreshToken(user.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	accessToken, err := jwt.GenerateAccessToken(user.ID, user.OrgID, user.Role, s.jwtCfg.Secret, s.jwtCfg.AccessTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成token失败: %w", err)
+	}
+	refreshToken, err := jwt.GenerateRefreshToken(user.ID, s.jwtCfg.Secret, s.jwtCfg.RefreshTTL)
+	if err != nil {
+		return nil, fmt.Errorf("生成refreshToken失败: %w", err)
+	}
 
 	// 判断 onboarding 状态
 	onboardingRequired := false

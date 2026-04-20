@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/wencai/easyhr/internal/common/crypto"
+	"github.com/wencai/easyhr/internal/common/logger"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
 	"gorm.io/gorm"
@@ -120,7 +121,16 @@ func (r *Repository) UpdateUserPassword(userID int64, passwordHash string) error
 }
 
 func (r *Repository) UpdateUserOrgID(userID, orgID int64) error {
-	return r.db.Model(&model.User{}).Where("id = ?", userID).Update("org_id", orgID).Error
+	result := r.db.Model(&model.User{}).Where("id = ?", userID).Update("org_id", orgID)
+	if result.Error != nil {
+		logger.SugarLogger.Errorw("UpdateUserOrgID: 更新失败", "userID", userID, "orgID", orgID, "error", result.Error.Error())
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		logger.SugarLogger.Warnw("UpdateUserOrgID: 未找到用户或org_id已相同", "userID", userID, "orgID", orgID, "rowsAffected", result.RowsAffected)
+	}
+	logger.SugarLogger.Infow("UpdateUserOrgID: 更新完成", "userID", userID, "orgID", orgID, "rowsAffected", result.RowsAffected)
+	return nil
 }
 
 func (r *Repository) UpdateUserAvatar(userID int64, avatar string) error {

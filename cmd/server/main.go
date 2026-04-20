@@ -133,6 +133,8 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS())
+
+	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 	r.Use(middleware.RequestLogger())
 
 	smsClient, _ := sms.NewClient(sms.Config{
@@ -272,8 +274,6 @@ func main() {
 	bookHandler := finance.NewBookHandler(bookSvc)
 	reportHandler := finance.NewReportHandler(reportSvc, periodSvc)
 	financeHandler := finance.NewFinanceHandler(accountHandler, voucherHandler, invoiceHandler, expenseHandler, bookHandler, reportHandler)
-
-	authMiddleware := middleware.Auth(cfg.JWT.Secret, rdb)
 
 	v1 := r.Group("/api/v1")
 	{
