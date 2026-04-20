@@ -12,8 +12,105 @@
       <div style="width: 36px" />
     </header>
 
-    <!-- 表单卡片 -->
-    <div class="form-container">
+    <!-- 创建模式：步骤向导 -->
+    <div v-if="!isEdit" class="form-container">
+      <StepWizard
+        :steps="steps"
+        v-model:current-step="currentStep"
+        @complete="handleCreate"
+      >
+        <template #default="{ step }">
+          <!-- Step 0: 基本信息 -->
+          <div v-show="step === 0">
+            <StepCard title="基本信息" description="填写员工基本资料">
+              <div class="form-grid">
+                <el-form-item label="姓名" prop="name" class="form-item">
+                  <el-input v-model="form.name" placeholder="请输入员工姓名" maxlength="50" size="large">
+                    <template #prefix><el-icon><User /></el-icon></template>
+                  </el-input>
+                </el-form-item>
+                <el-form-item label="手机号" prop="phone" class="form-item">
+                  <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="11" size="large">
+                    <template #prefix><el-icon><Phone /></el-icon></template>
+                  </el-input>
+                </el-form-item>
+                <el-form-item label="身份证号" prop="id_number" class="form-item form-item--full">
+                  <el-input v-model="form.id_number" placeholder="请输入18位身份证号" maxlength="18" size="large">
+                    <template #prefix><el-icon><Postcard /></el-icon></template>
+                  </el-input>
+                </el-form-item>
+              </div>
+            </StepCard>
+          </div>
+
+          <!-- Step 1: 入职信息 -->
+          <div v-show="step === 1">
+            <StepCard title="入职信息" description="填写入职相关信息">
+              <div class="form-grid">
+                <el-form-item label="入职日期" prop="entry_date" class="form-item">
+                  <el-date-picker
+                    v-model="form.entry_date"
+                    type="date"
+                    placeholder="选择入职日期"
+                    value-format="YYYY-MM-DD"
+                    size="large"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="岗位" prop="position" class="form-item">
+                  <el-input v-model="form.position" placeholder="请输入岗位名称" maxlength="100" size="large">
+                    <template #prefix><el-icon><Briefcase /></el-icon></template>
+                  </el-input>
+                </el-form-item>
+                <el-form-item label="正式薪资（元/月）" prop="salary" class="form-item">
+                  <el-input-number
+                    v-model="form.salary"
+                    :min="0"
+                    :precision="2"
+                    :controls="false"
+                    placeholder="税前薪资"
+                    size="large"
+                    style="width: 100%"
+                  >
+                    <template #prefix><span class="currency-prefix">¥</span></template>
+                  </el-input-number>
+                </el-form-item>
+              </div>
+            </StepCard>
+          </div>
+
+          <!-- Step 2: 确认发送 -->
+          <div v-show="step === 2">
+            <StepCard
+              :title="employeeCreated ? '发送邀请' : '确认发送'"
+              :description="employeeCreated ? undefined : '员工创建成功，请确认并发送入职邀请'"
+            >
+              <!-- 未创建时：显示摘要 + 确认按钮（由 StepWizard complete 事件触发 handleCreate） -->
+              <div v-if="!employeeCreated" class="confirm-summary">
+                <p>员工「{{ form.name }}」信息已填写，确认创建并发送入职邀请短信。</p>
+                <div class="confirm-details">
+                  <div class="detail-row"><span>手机号：</span>{{ form.phone }}</div>
+                  <div class="detail-row"><span>入职日期：</span>{{ form.entry_date }}</div>
+                  <div class="detail-row"><span>岗位：</span>{{ form.position }}</div>
+                </div>
+              </div>
+              <!-- 已创建后：显示发送按钮 -->
+              <div v-else class="post-create-actions">
+                <p>员工「{{ form.name }}」创建成功，请点击「发送邀请短信」发送入职邀请。</p>
+                <div class="action-btns">
+                  <el-button type="primary" size="large" :loading="saving" @click="sendInvitation">
+                    发送邀请短信
+                  </el-button>
+                </div>
+              </div>
+            </StepCard>
+          </div>
+        </template>
+      </StepWizard>
+    </div>
+
+    <!-- 编辑模式：原始表单 -->
+    <div v-else class="form-container">
       <el-form
         ref="formRef"
         :model="form"
@@ -221,7 +318,10 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import StepWizard from '@/components/common/StepWizard.vue'
+import StepCard from '@/components/common/StepCard.vue'
+import { useMessage } from '@/composables/useMessage'
+import { type FormInstance, type FormRules } from 'element-plus'
 import {
   ArrowLeft,
   UserFilled,
@@ -238,8 +338,18 @@ const route = useRoute()
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const saving = ref(false)
+const $msg = useMessage()
+const currentStep = ref(0)
+const createdEmployeeId = ref<number | null>(null)
+const employeeCreated = ref(false)
 
 const isEdit = computed(() => !!route.params.id)
+
+const steps = [
+  { title: '基本信息' },
+  { title: '入职信息' },
+  { title: '确认发送' },
+]
 
 const form = reactive({
   name: '',
@@ -268,6 +378,39 @@ const rules: FormRules = {
   entry_date: [{ required: true, message: '请选择入职日期', trigger: 'change' }],
 }
 
+async function handleCreate() {
+  if (saving.value) return
+  saving.value = true
+  try {
+    const data = { ...form }
+    const result = await employeeApi.create(data)
+    createdEmployeeId.value = result.id
+    employeeCreated.value = true
+    $msg.success('员工创建成功')
+  } catch {
+    $msg.error('创建失败，请稍后重试')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function sendInvitation() {
+  if (!createdEmployeeId.value) return
+  saving.value = true
+  try {
+    await employeeApi.createInvitation({
+      name: form.name,
+      phone: form.phone,
+    })
+    $msg.success('邀请短信已发送')
+    router.push('/employee')
+  } catch {
+    $msg.error('短信发送失败，请稍后重试')
+  } finally {
+    saving.value = false
+  }
+}
+
 async function handleSubmit() {
   if (saving.value) return
   if (!formRef.value) return
@@ -282,14 +425,14 @@ async function handleSubmit() {
     const data = { ...form }
     if (isEdit.value) {
       await employeeApi.update(Number(route.params.id), data)
-      ElMessage.success('保存成功')
+      $msg.success('保存成功')
     } else {
       await employeeApi.create(data)
-      ElMessage.success('创建成功')
+      $msg.success('创建成功')
     }
     router.push('/employee')
   } catch {
-    ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
+    $msg.error(isEdit.value ? '保存失败' : '创建失败')
   } finally {
     saving.value = false
   }
@@ -312,7 +455,7 @@ async function loadEmployee() {
       emergency_phone: emp.emergency_phone || '',
     })
   } catch {
-    ElMessage.error('加载失败')
+    $msg.error('加载失败')
   }
 }
 
@@ -622,6 +765,43 @@ $radius-xl: 24px;
     border-color: var(--primary-light);
     color: var(--primary);
     background: rgba(var(--primary), 0.04);
+  }
+}
+
+// ============================================================
+// 确认页样式
+// ============================================================
+.confirm-summary {
+  p {
+    font-size: 14px;
+    color: $text-secondary;
+    margin-bottom: 16px;
+  }
+}
+
+.confirm-details {
+  background: $bg-page;
+  border-radius: $radius-md;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-row {
+  font-size: 14px;
+  color: $text-primary;
+
+  span {
+    color: $text-secondary;
+  }
+}
+
+.post-create-actions {
+  p {
+    font-size: 14px;
+    color: $text-secondary;
+    margin-bottom: 16px;
   }
 }
 
