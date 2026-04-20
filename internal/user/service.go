@@ -157,7 +157,11 @@ func (s *Service) Login(ctx context.Context, phone, code string) (*LoginResponse
 	user, err := s.repo.FindByPhoneHash(phoneHash)
 	if err == redis.Nil || errors.Is(err, gorm.ErrRecordNotFound) {
 		// 未注册用户 → 自动创建账户（org_id=0，后续由 onboarding 完善企业信息）
-		encryptedPhone, _ := crypto.Encrypt(phone, []byte(s.crypto.AESKey))
+		encryptedPhone, err := crypto.Encrypt(phone, []byte(s.crypto.AESKey))
+		if err != nil {
+			return nil, fmt.Errorf("加密手机号失败: %w", err)
+		}
+		fmt.Println("encryptedPhone:", encryptedPhone)
 		newUser := &model.User{
 			Phone:     encryptedPhone,
 			PhoneHash: phoneHash,
