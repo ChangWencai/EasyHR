@@ -20,13 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** 简单、好用、省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 11 — 合同合规
+**Current focus:** Phase 12 — 考勤合规报表
 
 ## Current Position
 
-Phase: 11 (合同合规) — **Plan 02 COMPLETE, Phase 11 DONE**
-Plan: 01: 后端签署验证与中文PDF | 02: 前端合同管理UI
-Status: Phase 11 complete (2/2 plans done)
+Phase: 12 (考勤合规报表) — **Pending discuss**
+Status: Phase 11 complete (2/2 plans done, 2 HIGH security fixes committed)
 Last activity: 2026-04-20
 
 Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
@@ -36,7 +35,7 @@ Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 | Phase | Goal | Requirements |
 |-------|------|--------------|
 | 10 | UX 基础 - 流程简化与引导体系 | UX-01~09 (9个) | **COMPLETE** |
-| 11 | 合同合规 | COMP-01~04 (4个) | In progress (P01 done) |
+| 11 | 合同合规 | COMP-01~04 (4个) | **COMPLETE** |
 | 12 | 考勤合规报表 | COMP-05~08 (4个) | Pending |
 | 13 | 工资合规 | COMP-09~11 (3个) | Pending |
 
