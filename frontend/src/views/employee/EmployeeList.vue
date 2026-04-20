@@ -196,7 +196,7 @@
       <ExcelImportWizard
         template-label="员工"
         :template-fields="['姓名', '手机号', '身份证号', '入职日期', '岗位', '薪资']"
-        :import-api="batchImportEmployees"
+        :import-api="employeeApi.batchImportEmployees"
         @complete="handleBatchComplete"
         @update:dialog-visible="showBatchImport = $event"
       />
@@ -206,7 +206,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { employeeApi, type EmployeeRosterItem, batchImportEmployees } from '@/api/employee'
+import { employeeApi, type EmployeeRosterItem } from '@/api/employee'
 import { departmentApi, type Department } from '@/api/department'
 import { ElMessage } from 'element-plus'
 import ExcelImportWizard from '@/components/common/ExcelImportWizard.vue'
@@ -247,7 +247,7 @@ function openDrawer(id: number) {
   drawerVisible.value = true
 }
 
-async function handleBatchComplete(result: { success: number; failed: number }) {
+async function handleBatchComplete(_result: { success: number; failed: number }) {
   showBatchImport.value = false
   await load()
 }
