@@ -8,68 +8,67 @@
   >
     <div v-loading="loading" style="padding: 0 24px 24px">
       <template v-if="detail">
-        <!-- 基本信息 -->
-        <div class="section-title">基本信息</div>
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="姓名">{{ detail.name }}</el-descriptions-item>
-          <el-descriptions-item label="性别">{{ detail.gender }}</el-descriptions-item>
-          <el-descriptions-item label="手机号">{{ detail.phone }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ detail.email || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="部门">{{ detail.department_name || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="岗位">{{ detail.position }}</el-descriptions-item>
-          <el-descriptions-item label="入职日期">{{ formatDate(detail.hire_date) }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="statusTagType[detail.status]" size="small">{{ statusMap[detail.status] }}</el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
+        <el-tabs v-model="activeTab" class="employee-drawer-tabs">
+          <el-tab-pane label="基本信息" name="basic">
+            <!-- 基本信息 -->
+            <div class="section-title">基本信息</div>
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="姓名">{{ detail.name }}</el-descriptions-item>
+              <el-descriptions-item label="性别">{{ detail.gender }}</el-descriptions-item>
+              <el-descriptions-item label="手机号">{{ detail.phone }}</el-descriptions-item>
+              <el-descriptions-item label="邮箱">{{ detail.email || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="部门">{{ detail.department_name || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="岗位">{{ detail.position }}</el-descriptions-item>
+              <el-descriptions-item label="入职日期">{{ formatDate(detail.hire_date) }}</el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-tag :type="statusTagType[detail.status]" size="small">{{ statusMap[detail.status] }}</el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
 
-        <!-- 身份证 -->
-        <div class="section-title">身份证</div>
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="证件号">{{ detail.id_card }}</el-descriptions-item>
-        </el-descriptions>
+            <!-- 身份证 -->
+            <div class="section-title">身份证</div>
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="证件号">{{ detail.id_card }}</el-descriptions-item>
+            </el-descriptions>
 
-        <!-- 合同 -->
-        <div class="section-title">合同</div>
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="合同类型">{{ contractTypeLabel }}</el-descriptions-item>
-          <el-descriptions-item label="起止日期">{{ contractDateRange }}</el-descriptions-item>
-          <el-descriptions-item label="到期天数">
-            <template v-if="detail.contract_expiry_days !== null && detail.contract_expiry_days !== undefined">
-              <span v-if="detail.contract_expiry_days > 0">{{ detail.contract_expiry_days }}天</span>
-              <span v-else-if="detail.contract_expiry_days === 0" style="color: #E6A23C">今天到期</span>
-              <span v-else style="color: #F56C6C">已过期{{ Math.abs(detail.contract_expiry_days) }}天</span>
-            </template>
-            <span v-else style="color: #8C8C8C">无固定期限</span>
-          </el-descriptions-item>
-        </el-descriptions>
+            <!-- 银行卡 -->
+            <div class="section-title">银行卡</div>
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="卡号">{{ detail.bank_account || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="开户行">{{ detail.bank_name || '-' }}</el-descriptions-item>
+            </el-descriptions>
 
-        <!-- 银行卡 -->
-        <div class="section-title">银行卡</div>
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="卡号">{{ detail.bank_account || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="开户行">{{ detail.bank_name || '-' }}</el-descriptions-item>
-        </el-descriptions>
-
-        <!-- 其他信息 -->
-        <div class="section-title">其他信息</div>
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="地址">{{ detail.address || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="紧急联系人">{{ detail.emergency_contact || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="紧急联系电话">{{ detail.emergency_phone || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="备注">{{ detail.remark || '-' }}</el-descriptions-item>
-        </el-descriptions>
+            <!-- 其他信息 -->
+            <div class="section-title">其他信息</div>
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="地址">{{ detail.address || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="紧急联系人">{{ detail.emergency_contact || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="紧急联系电话">{{ detail.emergency_phone || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="备注">{{ detail.remark || '-' }}</el-descriptions-item>
+            </el-descriptions>
+          </el-tab-pane>
+          <el-tab-pane label="合同" name="contract">
+            <ContractList
+              :employee-id="detail.id"
+              :employee-name="detail.name"
+              :employee-salary="0"
+              @open-wizard="activeTab = 'basic'"
+            />
+          </el-tab-pane>
+        </el-tabs>
       </template>
     </div>
   </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { employeeApi } from '@/api/employee'
 import { statusMap, statusTagType } from '@/views/employee/statusMap'
+import ContractList from './components/ContractList.vue'
 
 interface EmployeeDetail {
+  id: number
   name: string
   gender: string
   phone: string
@@ -102,24 +101,7 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 const detail = ref<EmployeeDetail | null>(null)
-
-const contractTypeMap: Record<string, string> = {
-  fixed_term: '固定期限',
-  indefinite: '无固定期限',
-  intern: '实习',
-}
-
-const contractTypeLabel = computed(() => {
-  if (!detail.value?.contract_type) return '-'
-  return contractTypeMap[detail.value.contract_type] || detail.value.contract_type
-})
-
-const contractDateRange = computed(() => {
-  if (!detail.value?.contract_start_date) return '-'
-  const start = detail.value.contract_start_date
-  const end = detail.value.contract_end_date || '无固定期限'
-  return `${start} ~ ${end}`
-})
+const activeTab = ref('basic')
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
@@ -132,6 +114,7 @@ async function loadDetail() {
   try {
     const res = await employeeApi.get(props.employeeId) as unknown as Record<string, unknown>
     detail.value = {
+      id: (res.id as number) || 0,
       name: (res.name as string) || '',
       gender: (res.gender as string) || '',
       phone: (res.phone as string) || '',
@@ -176,5 +159,21 @@ watch(() => props.modelValue, (val) => {
 
 .section-title:first-child {
   margin-top: 0;
+}
+
+.employee-drawer-tabs {
+  :deep(.el-tabs__item) {
+    font-size: 14px;
+    font-weight: 500;
+    &.is-active {
+      color: var(--el-color-primary);
+    }
+  }
+  :deep(.el-tabs__nav-wrap::after) {
+    background-color: var(--el-border-color);
+  }
+  :deep(.el-tabs__item):not(.is-active) {
+    color: var(--el-text-color-secondary);
+  }
 }
 </style>
