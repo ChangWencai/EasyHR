@@ -197,6 +197,12 @@ const routes: RouteRecordRaw[] = [
     name: 'todo-invite',
     component: () => import('@/views/todo/InviteFillPage.vue'),
   },
+  // 合同签署页（员工端，无需登录）
+  {
+    path: '/sign/:contractId',
+    name: 'contract-sign',
+    component: () => import('@/views/sign/SignPage.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -208,8 +214,8 @@ const router = createRouter({
 router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
-  // /login, /onboarding/org-setup, /register, /salary/slip/ and /todo/*/invite 不做守卫检查
-  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/') || to.path.includes('/invite')) {
+  // /login, /onboarding/org-setup, /register, /salary/slip/, /todo/*/invite, /sign/ 不做守卫检查
+  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/') || to.path.includes('/invite') || to.path.startsWith('/sign/')) {
     return
   }
 
