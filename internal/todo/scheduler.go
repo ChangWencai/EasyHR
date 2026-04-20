@@ -29,7 +29,7 @@ func NewScheduler(repo *Repository, rdb *redis.Client, contractSvc ContractServi
 }
 
 // cstZone 定义中国时区（+08:00）
-var cstZone = time.FixedZone("CST", 8*3600)
+var cstZone, _ = time.LoadLocation("Asia/Shanghai")
 
 // Start 启动调度器
 func (s *Scheduler) Start() (gocron.Scheduler, error) {
@@ -106,9 +106,8 @@ func (s *Scheduler) Start() (gocron.Scheduler, error) {
 		gocron.CronJob("1 0 5 * *", true), // 每月5日00:01
 		gocron.NewTask(func() {
 			ctx := context.Background()
-			cst := time.FixedZone("CST", 8*3600)
-			today := time.Now().In(cst)
-			deadline := time.Date(today.Year(), today.Month(), 20, 23, 59, 59, 0, cst)
+			today := time.Now().In(cstZone)
+			deadline := time.Date(today.Year(), today.Month(), 20, 23, 59, 59, 0, cstZone)
 
 			var orgIDs []int64
 			s.repo.db.Model(&struct{ ID int64 }{}).Table("organizations").Pluck("id", &orgIDs)
