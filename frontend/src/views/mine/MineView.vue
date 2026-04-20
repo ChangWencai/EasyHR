@@ -430,18 +430,35 @@ async function handleEditOrg() {
   }
   editOrgSaving.value = true
   try {
-    await request.put('/org', {
-      name: editOrgForm.name,
-      credit_code: editOrgForm.credit_code,
-      city: editOrgForm.city,
-      contact_name: editOrgForm.contact_name,
-      contact_phone: editOrgForm.contact_phone,
-    })
-    ElMessage.success('企业信息更新成功')
+    if (org.value) {
+      // 已有企业 → 更新
+      await request.put('/org', {
+        name: editOrgForm.name,
+        credit_code: editOrgForm.credit_code,
+        city: editOrgForm.city,
+        contact_name: editOrgForm.contact_name,
+        contact_phone: editOrgForm.contact_phone,
+      })
+      ElMessage.success('企业信息更新成功')
+    } else {
+      // 无企业 → 创建并获取含正确 org_id 的新 token
+      const resp = await request.put('/auth/org/onboarding', {
+        name: editOrgForm.name,
+        credit_code: editOrgForm.credit_code,
+        city: editOrgForm.city,
+        contact_name: editOrgForm.contact_name,
+        contact_phone: editOrgForm.contact_phone,
+      })
+      // 更新本地 JWT token（使其含正确 org_id）
+      if (resp.data?.access_token) {
+        authStore.setToken(resp.data.access_token)
+      }
+      ElMessage.success('企业创建成功')
+    }
     editOrgDialogVisible.value = false
     await loadOrgInfo()
   } catch (err: any) {
-    ElMessage.error(err.response?.data?.message || '更新企业信息失败')
+    ElMessage.error(err.response?.data?.message || '操作失败')
   } finally {
     editOrgSaving.value = false
   }

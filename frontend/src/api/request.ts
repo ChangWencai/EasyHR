@@ -11,8 +11,8 @@ const $msg = useMessage()
 
 const PUBLIC_AUTH_PATHS = ['/auth/send-code', '/auth/login', '/auth/register', '/auth/login/password', '/auth/refresh']
 
-// Guard: prevent multiple 40301 redirects for concurrent requests (e.g. homepage loads multiple widgets simultaneously)
-let orgSetupRedirecting = false
+// Guard: prevent multiple 40301 toasts for concurrent requests
+let orgSetupToastShown = false
 
 // Business error codes that should switch to SMS login tab
 const ERR_NEED_SMS_LOGIN = 10011
@@ -56,12 +56,11 @@ request.interceptors.response.use(
     // Business-level error: backend returns { code: X, message: "..." } with HTTP 200
     const data = response.data as any
     if (data && typeof data.code === 'number' && data.code !== 0) {
-      // 40301: org not set up yet — dedupe concurrent requests, show toast once
+      // 40301: org not set up — dedupe toast, don't redirect (user can fill via /mine)
       if (data.code === 40301) {
-        if (!orgSetupRedirecting) {
-          orgSetupRedirecting = true
+        if (!orgSetupToastShown) {
+          orgSetupToastShown = true
           $msg.error('请先完善企业信息')
-          setTimeout(() => { $msg.close(); router.push('/onboarding/org-setup') }, 1500)
         }
         return Promise.reject(new Error('ignore'))
       }
@@ -82,12 +81,11 @@ request.interceptors.response.use(
     const status = err.response?.status
     const bizCode = err.response?.data?.code
 
-    // 40301: org not set up — dedupe concurrent requests, show toast once
+    // 40301: org not set up — dedupe toast, don't redirect (user can fill via /mine)
     if (bizCode === 40301) {
-      if (!orgSetupRedirecting) {
-        orgSetupRedirecting = true
+      if (!orgSetupToastShown) {
+        orgSetupToastShown = true
         $msg.error('请先完善企业信息')
-        setTimeout(() => { $msg.close(); router.push('/onboarding/org-setup') }, 1500)
       }
       return Promise.reject(error)
     }
