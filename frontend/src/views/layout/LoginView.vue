@@ -224,7 +224,7 @@ import {
   DataLine,
   CircleCheck,
 } from '@element-plus/icons-vue'
-import request from '@/api/request'
+import request, { ERR_NEED_SMS_LOGIN } from '@/api/request'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -342,6 +342,12 @@ async function handlePasswordLogin() {
     })
     handleLoginSuccess(resp.data)
   } catch (err: any) {
+    const bizCode = err.response?.data?.code
+    if (bizCode === ERR_NEED_SMS_LOGIN) {
+      activeTab.value = 'sms'
+      ElMessage.error(err.response?.data?.message || '该账号未设置密码，请使用手机验证码登录')
+      return
+    }
     if (err.response?.status === 403) {
       ElMessage.error('您的账号为员工账号，请使用员工端微信小程序登录')
       return
