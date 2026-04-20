@@ -54,3 +54,50 @@ type ContractListQueryParams struct {
 	Page     int    `form:"page,default=1"`
 	PageSize int    `form:"page_size,default=20"`
 }
+
+// SendSignCodeRequest 发送签署验证码请求
+type SendSignCodeRequest struct {
+	ContractID int64  `json:"contract_id" binding:"required"`
+	Phone     string `json:"phone" binding:"required,len=11"`
+}
+
+// SendSignCodeResponse 发送签署验证码响应
+type SendSignCodeResponse struct {
+	Message   string `json:"message"`
+	ExpiresIn int    `json:"expires_in"` // 秒
+}
+
+// VerifySignCodeRequest 校验签署验证码请求
+type VerifySignCodeRequest struct {
+	ContractID int64  `json:"contract_id" binding:"required"`
+	Phone     string `json:"phone" binding:"required,len=11"`
+	Code      string `json:"code" binding:"required,len=6"`
+}
+
+// VerifySignCodeResponse 校验成功响应（含 sign_token）
+type VerifySignCodeResponse struct {
+	SignToken    string `json:"sign_token"` // 用于 ConfirmSign
+	ExpiresIn   int    `json:"expires_in"` // 秒
+	EmployeeName string `json:"employee_name"`
+	ContractType string `json:"contract_type"`
+	StartDate   string `json:"start_date"`
+	EndDate     string `json:"end_date,omitempty"`
+	OrgName     string `json:"org_name"`
+}
+
+// ConfirmSignRequest 确认签署请求
+type ConfirmSignRequest struct {
+	ContractID int64  `json:"contract_id" binding:"required"`
+	SignToken string `json:"sign_token" binding:"required"`
+}
+
+// ConfirmSignResponse 确认签署响应
+type ConfirmSignResponse struct {
+	SignedPDFURL string `json:"signed_pdf_url"`
+	Message     string `json:"message"`
+}
+
+// GetSignedPdfResponse 获取已签PDF响应
+type GetSignedPdfResponse struct {
+	URL string `json:"url"`
+}

@@ -85,3 +85,46 @@ func (r *ContractRepository) List(orgID int64, status string, page, pageSize int
 
 	return contracts, total, nil
 }
+
+// UpsertSignCode 创建或更新签署验证码
+func (r *ContractRepository) UpsertSignCode(signCode *ContractSignCode) error {
+	return r.db.Where("contract_id = ? AND phone = ?", signCode.ContractID, signCode.Phone).
+		Assign(ContractSignCode{
+			Code:      signCode.Code,
+			ExpiresAt: signCode.ExpiresAt,
+			Verified:  false,
+			SignToken: "",
+		}).
+		FirstOrCreate(signCode).Error
+}
+
+// FindLatestSignCode 查询最新验证码记录
+func (r *ContractRepository) FindLatestSignCode(contractID int64, phone string) (*ContractSignCode, error) {
+	var signCode ContractSignCode
+	err := r.db.Where("contract_id = ? AND phone = ?", contractID, phone).
+		Order("created_at DESC").
+		First(&signCode).Error
+	if err != nil {
+		return nil, err
+	}
+	return &signCode, nil
+}
+
+// UpdateSignCode 更新签署验证码（设置 verified 和 sign_token）
+func (r *ContractRepository) UpdateSignCode(signCode *ContractSignCode) error {
+	return r.db.Model(&ContractSignCode{}).Where("id = ?", signCode.ID).Updates(map[string]interface{}{
+		"verified":   signCode.Verified,
+		"sign_token": signCode.SignToken,
+		"expires_at": signCode.ExpiresAt,
+	}).Error
+}
+
+// FindBySignToken 根据 SignToken 查找验证码记录
+func (r *ContractRepository) FindBySignToken(signToken string) (*ContractSignCode, error) {
+	var signCode ContractSignCode
+	err := r.db.Where("sign_token = ?", signToken).First(&signCode).Error
+	if err != nil {
+		return nil, err
+	}
+	return &signCode, nil
+}

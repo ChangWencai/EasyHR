@@ -45,3 +45,28 @@ const (
 	ContractTypeIndefinite = "indefinite"  // 无固定期限
 	ContractTypeIntern     = "intern"      // 实习
 )
+
+// SignCodeExpiry 验证码有效期：5分钟
+const SignCodeExpiry = 5 * time.Minute
+
+// SignLinkExpiry 签署链接有效期：7天
+const SignLinkExpiry = 7 * 24 * time.Hour
+
+// SignTokenExpiry 签署 Token 有效期：30分钟（验证码校验后，用于确认签署）
+const SignTokenExpiry = 30 * time.Minute
+
+// ContractSignCode 签署验证码记录
+type ContractSignCode struct {
+	model.BaseModel
+	ContractID int64     `gorm:"column:contract_id;index;not null" json:"contract_id"`
+	Phone     string    `gorm:"column:phone;type:varchar(20);not null;index" json:"phone"`
+	Code      string    `gorm:"column:code;type:varchar(6);not null" json:"code"` // 6位纯数字
+	ExpiresAt time.Time `gorm:"column:expires_at;not null;index" json:"expires_at"`
+	Verified  bool      `gorm:"column:verified;default:false" json:"verified"`
+	SignToken string    `gorm:"column:sign_token;type:varchar(64);index" json:"sign_token"` // 校验通过后生成的签署 token
+}
+
+// TableName 指定表名
+func (ContractSignCode) TableName() string {
+	return "contract_sign_codes"
+}
