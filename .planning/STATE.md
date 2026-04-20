@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 11 (合同合规) — **Context gathered**
+Phase: 11 (合同合规) — **UI-SPEC ready, planning**
 Status: Ready for planning
 Last activity: 2026-04-20
 
