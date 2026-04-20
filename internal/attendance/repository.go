@@ -1,6 +1,8 @@
 package attendance
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -303,4 +305,109 @@ func (r *AttendanceRepository) GetDailyClockRecords(orgID int64, employeeID int6
 		result[dateStr][r.ClockType] = r.ClockTime.Format("15:04")
 	}
 	return result, nil
+}
+
+// --- Compliance Report Queries ---
+
+// EmployeeWithDept helper struct for compliance queries
+type EmployeeWithDept struct {
+	EmployeeID     int64
+	EmployeeName   string
+	DepartmentName string
+}
+
+// ListEmployeesByOrgWithDept lists active employees with their department names, filtered by deptIDs
+// Used by: GetComplianceOvertime, GetComplianceLeave, GetComplianceAnomaly
+func (r *AttendanceRepository) ListEmployeesByOrgWithDept(orgID int64, deptIDs []int64) ([]EmployeeWithDept, error) {
+	type result struct {
+		EmployeeID     int64
+		EmployeeName   string
+		DepartmentName string
+	}
+	var rows []result
+	query := r.db.Table("employees").
+		Select("employees.id as employee_id, employees.name as employee_name, departments.name as department_name").
+		Joins("LEFT JOIN departments ON departments.id = employees.department_id").
+		Where("employees.org_id = ? AND employees.status = ? AND employees.deleted_at IS NULL", orgID, "active")
+	if len(deptIDs) > 0 {
+		query = query.Where("employees.department_id IN ?", deptIDs)
+	}
+	err := query.Order("employees.name ASC").Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	emps := make([]EmployeeWithDept, len(rows))
+	for i, row := range rows {
+		emps[i] = EmployeeWithDept{EmployeeID: row.EmployeeID, EmployeeName: row.EmployeeName, DepartmentName: row.DepartmentName}
+	}
+	return emps, nil
+}
+
+// ListClockRecordsByMonth returns all clock records for the given org+employees in a year-month
+// Used by: GetComplianceOvertime (for weekday/weekend classification), GetComplianceAnomaly
+func (r *AttendanceRepository) ListClockRecordsByMonth(orgID int64, employeeIDs []int64, yearMonth string) ([]ClockRecord, error) {
+	if len(employeeIDs) == 0 {
+		return nil, nil
+	}
+	var startTime, endTime time.Time
+	parsed, err := time.Parse("2006-01", yearMonth)
+	if err != nil {
+		return nil, err
+	}
+	startTime = time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC)
+	endTime = startTime.AddDate(0, 1, 0)
+	var records []ClockRecord
+	err = r.db.Where("org_id = ? AND employee_id IN ? AND clock_time >= ? AND clock_time < ?",
+		orgID, employeeIDs, startTime, endTime).Find(&records).Error
+	return records, err
+}
+
+// ListApprovalsByMonth returns approved approvals for given employees in a year-month
+// Used by: GetComplianceOvertime (overtime hours from overtime approvals),
+//           GetComplianceLeave (annual/sick/personal leave days from leave approvals)
+func (r *AttendanceRepository) ListApprovalsByMonth(orgID int64, employeeIDs []int64, yearMonth string) ([]Approval, error) {
+	if len(employeeIDs) == 0 {
+		return nil, nil
+	}
+	parsed, err := time.Parse("2006-01", yearMonth)
+	if err != nil {
+		return nil, err
+	}
+	startTime := time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC)
+	endTime := startTime.AddDate(0, 1, 0)
+	var approvals []Approval
+	err = r.db.Where("org_id = ? AND employee_id IN ? AND status = ? AND start_time >= ? AND start_time < ?",
+		orgID, employeeIDs, ApprovalStatusApproved, startTime, endTime).Find(&approvals).Error
+	return approvals, err
+}
+
+// GetAnnualLeaveQuotas returns annual leave quota records for given employees in a given year
+func (r *AttendanceRepository) GetAnnualLeaveQuotas(orgID int64, employeeIDs []int64, year int) (map[int64]float64, error) {
+	if len(employeeIDs) == 0 {
+		return nil, nil
+	}
+	var quotas []AnnualLeaveQuota
+	err := r.db.Scopes(r.orgScope(orgID)).
+		Where("employee_id IN ? AND year = ?", employeeIDs, year).
+		Find(&quotas).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[int64]float64, len(quotas))
+	for _, q := range quotas {
+		result[q.EmployeeID] = q.Quota
+	}
+	return result, nil
+}
+
+// ListMonthlyAttendanceForCompliance returns monthly attendance summaries for given employees + year_month
+// Used by: GetComplianceAnomaly (for late_count, early_leave_count, absent_days)
+//          GetComplianceMonthly (full compliance row)
+func (r *AttendanceRepository) ListMonthlyAttendanceForCompliance(orgID int64, employeeIDs []int64, yearMonth string) ([]AttendanceMonthly, error) {
+	if len(employeeIDs) == 0 {
+		return nil, nil
+	}
+	var records []AttendanceMonthly
+	err := r.db.Where("org_id = ? AND employee_id IN ? AND year_month = ?", orgID, employeeIDs, yearMonth).Find(&records).Error
+	return records, err
 }
