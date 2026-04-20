@@ -75,6 +75,11 @@
         :header-cell-style="{ background: '#F9FAFB', color: '#374151', fontWeight: 600 }"
       >
         <el-table-column prop="name" label="姓名" min-width="100" fixed="left">
+          <template #header>
+            <el-tooltip content="点击查看员工详情" placement="top" :show-after="500">
+              <span>姓名</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <div class="employee-cell">
               <el-avatar :size="36" class="employee-avatar">
@@ -141,6 +146,11 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
+          <template #header>
+            <el-tooltip content="编辑、查看员工信息" placement="top" :show-after="500">
+              <span>操作</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <div class="action-btns">
               <el-button size="small" text @click="openDrawer(row.id)">

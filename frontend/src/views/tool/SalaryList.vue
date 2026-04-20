@@ -107,6 +107,11 @@
         :header-cell-style="{ background: '#F9FAFB', color: '#374151', fontWeight: 600 }"
       >
         <el-table-column prop="employee_name" label="员工" min-width="120" fixed="left">
+          <template #header>
+            <el-tooltip content="点击查看员工详情" placement="top" :show-after="500">
+              <span>员工</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <div class="employee-cell">
               <el-avatar :size="36" class="employee-avatar">
@@ -148,6 +153,11 @@
           </template>
         </el-table-column>
         <el-table-column label="实发" min-width="130" fixed="right">
+          <template #header>
+            <el-tooltip content="点击查看月度工资详情" placement="top" :show-after="500">
+              <span>实发</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <span class="amount net">
               ¥{{ (row.net_income || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}
@@ -155,6 +165,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="120">
+          <template #header>
+            <el-tooltip content="草稿→已核算→已确认→已发放" placement="top" :show-after="500">
+              <span>状态</span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <div class="status-cell">
               <span class="status-badge" :class="`status--${row.status}`">
