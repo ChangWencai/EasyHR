@@ -8,6 +8,7 @@ interface Step {
 const props = defineProps<{
   steps: Step[]
   currentStep: number
+  finishText?: string
 }>()
 
 const emit = defineEmits<{
@@ -49,7 +50,7 @@ const next = () => {
         type="primary"
         @click="emit('complete')"
       >
-        确认
+        {{ finishText || '确认' }}
       </el-button>
     </div>
   </div>
