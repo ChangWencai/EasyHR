@@ -74,7 +74,7 @@ Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 | Phase 09 P03 | 16 | 2 tasks | 16 files |
 | Phase 10 P01 | 237s | 4 tasks | 7 files |
 | Phase 10 P02 | 8 | 2 tasks | 8 files |
-| Phase 10 P03 | 5 | 2 tasks | 5 files |
+| Phase 10 P03 | 60s | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -119,6 +119,8 @@ Recent decisions affecting current work:
 - [v1.4 Phase 10]: UX 增强统一前端基础设施，不涉及后端 API 变更（除必要的数据结构支持）
 - [Phase 10 P01]: 员工向导创建模式使用StepWizard，编辑模式保持原有表单
 - [Phase 10 P01]: 确认发送采用手动触发：Step2完成创建，员工手动点击发送短信
+- [Phase 10 P03]: Tour高亮使用非scoped全局CSS `.tour-highlight` + `!important`，gridItems通过dataTour属性而非DOM操作
+- [Phase 10 P03]: request.ts用ERROR_MESSAGES映射表+useMessage，可重试错误(500/502/503/timeout/network)传showActions:true
 
 ### Roadmap Evolution
 
