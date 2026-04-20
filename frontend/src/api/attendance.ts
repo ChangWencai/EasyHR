@@ -170,6 +170,119 @@ export interface DailyRecordsResponse {
   records: DailyRecord[]
 }
 
+// === Compliance Reports (COMP-05~COMP-08) ===
+
+export interface OvertimeItem {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  holiday_hours: number
+  weekday_hours: number
+  weekend_hours: number
+  total_hours: number
+}
+
+export interface ComplianceOvertimeStats {
+  total_holiday_hours: number
+  total_weekday_hours: number
+  total_weekend_hours: number
+}
+
+export interface ComplianceOvertimeResponse {
+  year_month: string
+  stats: ComplianceOvertimeStats
+  list: OvertimeItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface LeaveItem {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  annual_quota: number
+  annual_used: number
+  annual_left: number
+  sick_days: number
+  personal_days: number
+}
+
+export interface ComplianceLeaveStats {
+  annual_quota_employee_count: number
+  total_annual_used: number
+  total_sick_days: number
+  total_personal_days: number
+}
+
+export interface ComplianceLeaveResponse {
+  year_month: string
+  stats: ComplianceLeaveStats
+  list: LeaveItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface AnomalyItem {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  late_count: number
+  early_leave_count: number
+  absent_days: number
+  anomaly_count: number
+  is_anomaly: boolean
+}
+
+export interface ComplianceAnomalyStats {
+  anomaly_employee_count: number
+  total_late_count: number
+  total_absent_days: number
+}
+
+export interface ComplianceAnomalyResponse {
+  year_month: string
+  stats: ComplianceAnomalyStats
+  list: AnomalyItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface MonthlyComplianceItem {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  required_days: number
+  actual_days: number
+  late_count: number
+  early_leave_count: number
+  absent_days: number
+  overtime_hours: number
+  annual_leave_days: number
+  sick_leave_days: number
+  personal_leave_days: number
+  is_anomaly: boolean
+}
+
+export interface ComplianceMonthlyStats {
+  total_required_days: number
+  total_actual_days: number
+  total_overtime_hours: number
+  total_absent_days: number
+  total_anomaly_count: number
+}
+
+export interface ComplianceMonthlyResponse {
+  year_month: string
+  stats: ComplianceMonthlyStats
+  list: MonthlyComplianceItem[]
+  total: number
+  page: number
+  page_size: number
+}
+
 export const attendanceApi = {
   // 打卡规则
   getRule: () => request.get<AttendanceRule>('/attendance/rule'),
@@ -225,4 +338,24 @@ export const attendanceApi = {
 
   getDailyRecords: (params: { employee_id: number; year_month: string }) =>
     request.get<DailyRecordsResponse>('/attendance/daily-records', { params }),
+
+  // 合规报表 - 加班统计
+  getComplianceOvertime: (params: { year_month: string; dept_ids?: string; page?: number; page_size?: number }) =>
+    request.get<ComplianceOvertimeResponse>('/attendance/compliance/overtime', { params }),
+
+  // 合规报表 - 请假合规
+  getComplianceLeave: (params: { year_month: string; dept_ids?: string; page?: number; page_size?: number }) =>
+    request.get<ComplianceLeaveResponse>('/attendance/compliance/leave', { params }),
+
+  // 合规报表 - 出勤异常
+  getComplianceAnomaly: (params: { year_month: string; dept_ids?: string; page?: number; page_size?: number }) =>
+    request.get<ComplianceAnomalyResponse>('/attendance/compliance/anomaly', { params }),
+
+  // 合规报表 - 月度汇总
+  getComplianceMonthly: (params: { year_month: string; dept_ids?: string; page?: number; page_size?: number }) =>
+    request.get<ComplianceMonthlyResponse>('/attendance/compliance/monthly', { params }),
+
+  // 合规报表 - 月度汇总导出
+  exportComplianceMonthly: (params: { year_month: string; dept_ids?: string }) =>
+    request.get('/attendance/compliance/monthly/export', { params, responseType: 'blob' }),
 }
