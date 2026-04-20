@@ -64,9 +64,9 @@
 </details>
 
 <details>
-<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS</summary>
+<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS (1/4 phases)</summary>
 
-- [ ] **Phase 10: UX 基础 - 流程简化与引导体系** — 2026-04-20
+- [x] **Phase 10: UX 基础 - 流程简化与引导体系** — 2026-04-20
 - [ ] **Phase 11: 合同合规** — 待开始
 - [ ] **Phase 12: 考勤合规报表** — 待开始
 - [ ] **Phase 13: 工资合规** — 待开始
@@ -97,9 +97,9 @@
 **Plans**: 3 plans
 
 **Plan list**:
-- [ ] 10-01-PLAN.md — 员工向导3步改造 + 核心组件（StepWizard/EmptyState/useMessage/ErrorActions）
-- [ ] 10-02-PLAN.md — Excel批量导入向导（3步：模板→预览→确认）
-- [ ] 10-03-PLAN.md — Tour首次引导 + API错误映射 + 工具提示
+- [x] 10-01-PLAN.md — 员工向导3步改造 + 核心组件（StepWizard/EmptyState/useMessage/ErrorActions）— **SHIPPED**
+- [x] 10-02-PLAN.md — Excel批量导入向导（3步：模板→预览→确认）— **SHIPPED**
+- [x] 10-03-PLAN.md — Tour首次引导 + API错误映射 + 工具提示 — **SHIPPED**
 
 **UI hint**: yes
 
@@ -182,11 +182,11 @@
 | 7. 薪资管理增强 | v1.3 | 4/4 | Complete | 2026-04-18 |
 | 8. 社保公积金增强 | v1.3 | 4/4 | Complete | 2026-04-19 |
 | 9. 待办中心 | v1.3 | 3/3 | Complete | 2026-04-19 |
-| 10. UX 基础 - 流程简化与引导体系 | v1.4 | 0/3 | Not started | - |
+| 10. UX 基础 - 流程简化与引导体系 | v1.4 | 3/3 | Complete | 2026-04-20 |
 | 11. 合同合规 | v1.4 | 0/TBD | Not started | - |
 | 12. 考勤合规报表 | v1.4 | 0/TBD | Not started | - |
 | 13. 工资合规 | v1.4 | 0/TBD | Not started | - |
 
 ---
 
-_v1.0 + v1.1 + v1.2 + v1.3 全部交付。Roadmap created: 2026-04-06_
+_v1.0 + v1.1 + v1.2 + v1.3 + Phase 10 (v1.4) 全部交付。Roadmap created: 2026-04-06_
