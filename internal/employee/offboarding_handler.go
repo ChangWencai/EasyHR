@@ -23,7 +23,7 @@ func NewOffboardingHandler(svc *OffboardingService) *OffboardingHandler {
 // RegisterRoutes 注册离职管理路由
 func (h *OffboardingHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	// 老板办理离职 — OWNER/ADMIN
 	authGroup.POST("/employees/:id/resign", middleware.RequireRole("owner", "admin"), h.BossResign)

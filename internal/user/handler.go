@@ -21,7 +21,7 @@ func NewHandler(svc *Service) *Handler {
 
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	rg.POST("/auth/send-code", h.SendCode)
 	rg.POST("/auth/login", h.Login)

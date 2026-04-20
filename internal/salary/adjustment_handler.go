@@ -22,7 +22,7 @@ func NewAdjustmentHandler(adjustmentSvc *AdjustmentService) *AdjustmentHandler {
 
 // RegisterRoutes 注册调薪路由
 func (h *AdjustmentHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	adj := rg.Group("/salary", authMiddleware)
+	adj := rg.Group("/salary", authMiddleware, middleware.RequireOrg)
 	{
 		adj.POST("/adjustment", middleware.RequireRole("owner", "admin"), h.CreateAdjustment)
 		adj.POST("/mass-adjustment", middleware.RequireRole("owner", "admin"), h.CreateMassAdjustment)

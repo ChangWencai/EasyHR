@@ -55,6 +55,10 @@ func Forbidden(c *gin.Context, msg string) {
 	Error(c, http.StatusForbidden, 40300, msg)
 }
 
+func OrgNotSetup(c *gin.Context) {
+	Error(c, http.StatusForbidden, 40301, "请先完善企业信息")
+}
+
 func BadRequest(c *gin.Context, msg string) {
 	Error(c, http.StatusBadRequest, 40000, msg)
 }

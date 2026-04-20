@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
@@ -29,7 +30,7 @@ func (h *Handler) SetApprovalService(approvalSvc *ApprovalService) {
 // RegisterRoutes 注册路由
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	g := rg.Group("/attendance")
-	g.Use(authMiddleware)
+	g.Use(authMiddleware, middleware.RequireOrg)
 
 	// 打卡规则
 	g.GET("/rule", h.GetRule)

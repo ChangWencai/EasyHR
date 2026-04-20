@@ -25,7 +25,7 @@ func NewHandler(svc *Service) *Handler {
 // RegisterRoutes 注册路由
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg) // RequireOrg: org_id==0 时返回 40301
 
 	authGroup.POST("/employees", middleware.RequireRole("owner", "admin"), h.CreateEmployee)
 	authGroup.GET("/employees", h.ListEmployees)

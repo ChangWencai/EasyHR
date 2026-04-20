@@ -2,6 +2,7 @@ package todo
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"gorm.io/gorm"
 )
 
@@ -19,7 +20,7 @@ func RegisterRouter(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc, db *gor
 
 	// 受保护路由需要 auth
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 	authGroup.GET("/todos", handler.ListTodos)
 	authGroup.PUT("/todos/:id/pin", handler.PinTodo)
 	authGroup.PUT("/todos/:id/terminate", handler.TerminateTodo)

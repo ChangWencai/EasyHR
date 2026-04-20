@@ -24,7 +24,7 @@ func NewHandler(svc *Service) *Handler {
 // RegisterRoutes 注册路由
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	// 税率表 -- 所有角色可查询，OWNER 可初始化
 	authGroup.GET("/tax/brackets", h.ListTaxBrackets)

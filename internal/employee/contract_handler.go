@@ -25,7 +25,7 @@ func NewContractHandler(svc *ContractService) *ContractHandler {
 // RegisterRoutes 注册合同路由
 func (h *ContractHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	// 合同 CRUD -- OWNER/ADMIN 可创建/编辑/终止
 	authGroup.POST("/employees/:id/contracts", middleware.RequireRole("owner", "admin"), h.CreateContract)

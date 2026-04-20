@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/logger"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
@@ -22,7 +23,7 @@ func NewSalaryListHandler(svc *Service) *SalaryListHandler {
 
 // RegisterRoutes 注册薪资列表路由
 func (h *SalaryListHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	list := rg.Group("/salary", authMiddleware)
+	list := rg.Group("/salary", authMiddleware, middleware.RequireOrg)
 	{
 		list.GET("/list", h.ListSalary)
 		list.GET("/export", h.ExportSalaryList)

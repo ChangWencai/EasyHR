@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/logger"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
@@ -21,7 +22,7 @@ func NewTaxUploadHandler(svc *Service) *TaxUploadHandler {
 
 // RegisterRoutes 注册路由
 func (h *TaxUploadHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	taxUpload := rg.Group("/salary/tax-upload", authMiddleware)
+	taxUpload := rg.Group("/salary/tax-upload", authMiddleware, middleware.RequireOrg)
 	{
 		taxUpload.POST("", h.UploadTax)
 		taxUpload.POST("/confirm", h.ConfirmTax)

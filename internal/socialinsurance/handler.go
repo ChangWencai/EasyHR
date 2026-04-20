@@ -28,7 +28,7 @@ func NewHandler(svc *Service, dashboardSvc *SIDashboardService, paymentRepo *SIM
 // RegisterRoutes 注册路由
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	// 政策管理仅 OWNER 可操作（D-14），查询和计算所有角色可访问
 	authGroup.POST("/social-insurance/policies", middleware.RequireRole("owner"), h.CreatePolicy)

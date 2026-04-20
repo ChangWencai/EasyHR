@@ -22,7 +22,7 @@ func NewPerformanceHandler(performanceSvc *PerformanceService) *PerformanceHandl
 
 // RegisterRoutes 注册绩效系数路由
 func (h *PerformanceHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	perf := rg.Group("/salary", authMiddleware)
+	perf := rg.Group("/salary", authMiddleware, middleware.RequireOrg)
 	{
 		perf.PUT("/performance", middleware.RequireRole("owner", "admin"), h.SetPerformance)
 		perf.GET("/performance", h.GetPerformance)

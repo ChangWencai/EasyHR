@@ -2,6 +2,7 @@ package finance
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/wencai/easyhr/internal/common/middleware"
 )
 
 // FinanceHandler wraps all finance sub-handlers and provides route registration.
@@ -36,7 +37,7 @@ func NewFinanceHandler(
 // RegisterRoutes registers all finance routes within the given router group.
 // authMiddleware is applied as a middleware to all finance routes.
 func (h *FinanceHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	authGroup := rg.Group("", authMiddleware)
+	authGroup := rg.Group("", authMiddleware, middleware.RequireOrg)
 
 	if h.accountHandler != nil {
 		h.accountHandler.RegisterRoutes(authGroup)

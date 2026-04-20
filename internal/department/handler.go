@@ -23,7 +23,7 @@ func NewDepartmentHandler(svc *Service) *DepartmentHandler {
 // RegisterRoutes 注册路由
 func (h *DepartmentHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	authGroup.POST("/departments", middleware.RequireRole("owner", "admin"), h.CreateDepartment)
 	authGroup.GET("/departments", h.ListDepartments)

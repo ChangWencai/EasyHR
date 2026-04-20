@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"gorm.io/gorm"
 )
 
@@ -12,7 +13,7 @@ func RegisterRouter(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc, db *gor
 	svc := NewService(repo)
 	handler := NewHandler(svc)
 
-	rg.Use(authMiddleware)
+	rg.Use(authMiddleware, middleware.RequireOrg)
 	rg.GET("", handler.GetDashboard)
 	rg.GET("/todo-stats", handler.GetTodoStats)
 	rg.GET("/time-limited-stats", handler.GetTimeLimitedStats)

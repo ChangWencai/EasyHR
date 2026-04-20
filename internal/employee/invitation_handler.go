@@ -22,7 +22,7 @@ func NewInvitationHandler(svc *InvitationService) *InvitationHandler {
 // RegisterRoutes 注册路由（公开接口 + 认证接口混合）
 func (h *InvitationHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
 	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware)
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 
 	// 公开接口（无需认证）— 员工填写信息
 	rg.GET("/invitations/:token", h.GetInvitationDetail)

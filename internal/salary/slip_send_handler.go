@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/wencai/easyhr/internal/common/logger"
+	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/response"
 )
 
@@ -21,7 +22,7 @@ func NewSlipSendHandler(slipSendSvc *SlipSendService) *SlipSendHandler {
 
 // RegisterRoutes 注册路由
 func (h *SlipSendHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	slip := rg.Group("/salary/slip", authMiddleware)
+	slip := rg.Group("/salary/slip", authMiddleware, middleware.RequireOrg)
 	{
 		slip.POST("/send-all", h.SendAllSlips)
 		slip.GET("/logs", h.GetSlipLogs) // 查询发送日志

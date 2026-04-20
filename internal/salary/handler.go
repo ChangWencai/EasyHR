@@ -24,7 +24,7 @@ func NewHandler(svc *Service, dashboardSvc *SalaryDashboardService) *Handler {
 
 // RegisterRoutes 注册路由
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	salary := rg.Group("/salary", authMiddleware)
+	salary := rg.Group("/salary", authMiddleware, middleware.RequireOrg)
 	{
 		// 薪资模板管理
 		salary.GET("/template", h.GetTemplate)
