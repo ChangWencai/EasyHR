@@ -13,6 +13,7 @@ import (
 // ContractServiceWrapper wraps the contract renewal check to avoid circular imports.
 type ContractServiceWrapper interface {
 	CheckContractRenewalReminders(ctx context.Context) error
+	CheckPendingSignReminders(ctx context.Context) error
 }
 
 // Scheduler 定时任务调度器
@@ -168,6 +169,27 @@ func (s *Scheduler) Start() (gocron.Scheduler, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create contract renewal check job: %w", err)
+	}
+
+	// 每日 09:00 CST -- 检查合同3天未签提醒
+	_, err = sched.NewJob(
+		gocron.DailyJob(1, gocron.NewAtTimes(gocron.NewAtTime(9, 0, 0))),
+		gocron.NewTask(func() {
+			ctx := context.Background()
+			if s.contractService != nil {
+				if err := s.contractService.CheckPendingSignReminders(ctx); err != nil {
+					log.Printf("[todo-scheduler] CheckPendingSignReminders failed: %v", err)
+				} else {
+					log.Printf("[todo-scheduler] CheckPendingSignReminders completed")
+				}
+			} else {
+				log.Printf("[todo-scheduler] contractService not available, skipping pending sign check")
+			}
+		}),
+		gocron.WithName("contract-pending-sign-reminder"),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create pending sign reminder job: %w", err)
 	}
 
 	sched.Start()
