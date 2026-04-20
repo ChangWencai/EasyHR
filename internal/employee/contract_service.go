@@ -569,11 +569,13 @@ func (s *ContractService) ConfirmSign(ctx context.Context, contractID int64, sig
 		status = ContractStatusActive
 	}
 
-	s.contractRepo.Update(orgID, contractID, map[string]interface{}{
+	if err := s.contractRepo.Update(orgID, contractID, map[string]interface{}{
 		"status":         status,
 		"sign_date":      now,
 		"signed_pdf_url": signedPdfUrl,
-	})
+	}); err != nil {
+		return nil, fmt.Errorf("更新合同状态失败: %w", err)
+	}
 
 	return &ConfirmSignResponse{
 		SignedPDFURL: signedPdfUrl,
@@ -713,7 +715,7 @@ func (s *ContractService) uploadPdfToOss(ctx context.Context, orgID, contractID 
 		orgID, contractID, time.Now().Unix())
 	putURL, err := s.ossClient.GeneratePutURL(ctx, "contract", orgID, objectKey, int64(len(pdfBytes)), "application/pdf", 30*time.Minute)
 	if err != nil {
-		return objectKey, nil
+		return "", fmt.Errorf("生成签署链接失败: %w", err)
 	}
 	_ = putURL // 前端直传，或后端上传
 	return objectKey, nil
