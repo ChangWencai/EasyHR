@@ -64,11 +64,11 @@
 </details>
 
 <details>
-<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS (2/4 phases)</summary>
+<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS (3/4 phases)</summary>
 
 - [x] **Phase 10: UX 基础 - 流程简化与引导体系** — 2026-04-20
 - [x] **Phase 11: 合同合规** — 2026-04-20
-- [ ] **Phase 12: 考勤合规报表** — 待开始
+- [x] **Phase 12: 考勤合规报表** — 2026-04-20
 - [ ] **Phase 13: 工资合规** — 待开始
 
 </details>
