@@ -9,7 +9,13 @@ const request = axios.create({
 
 const $msg = useMessage()
 
-const PUBLIC_AUTH_PATHS = ['/auth/send-code', '/auth/login', '/auth/register', '/auth/login/password', '/auth/refresh']
+const PUBLIC_AUTH_PATHS = [
+  '/auth/send-code',
+  '/auth/login',
+  '/auth/register',
+  '/auth/login/password',
+  '/auth/refresh',
+]
 
 // Guard: prevent multiple 40301 toasts for concurrent requests
 let orgSetupToastShown = false
@@ -60,7 +66,7 @@ request.interceptors.response.use(
       if (data.code === 40301) {
         if (!orgSetupToastShown) {
           orgSetupToastShown = true
-          $msg.error('请先完善企业信息')
+          $msg.error('请先完善企业信息', { duration: 3000 })
         }
         return Promise.reject(new Error('ignore'))
       }
@@ -85,7 +91,7 @@ request.interceptors.response.use(
     if (bizCode === 40301) {
       if (!orgSetupToastShown) {
         orgSetupToastShown = true
-        $msg.error('请先完善企业信息')
+        $msg.error('请先完善企业信息', { duration: 3000 })
       }
       return Promise.reject(error)
     }
@@ -95,7 +101,10 @@ request.interceptors.response.use(
       localStorage.removeItem('token')
       $msg.error('登录已过期，请重新登录')
       // Close message then navigate so it doesn't linger on the login page
-      setTimeout(() => { $msg.close(); router.push('/login') }, 100)
+      setTimeout(() => {
+        $msg.close()
+        router.push('/login')
+      }, 100)
       return Promise.reject(error)
     }
 

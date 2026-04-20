@@ -20,17 +20,20 @@ func NewHandler(svc *Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.HandlerFunc) {
-	// onboarding 需要在 RequireOrg 之前注册，允许 org_id=0 的用户访问
-	rg.PUT("/auth/org/onboarding", h.CompleteOnboarding)
-
-	authGroup := rg.Group("")
-	authGroup.Use(authMiddleware, middleware.RequireOrg)
-
 	rg.POST("/auth/send-code", h.SendCode)
 	rg.POST("/auth/login", h.Login)
 	rg.POST("/auth/register", h.Register)
 	rg.POST("/auth/login/password", h.LoginPassword)
 	rg.POST("/auth/refresh", h.Refresh)
+
+	// 认证但不需要 org 的路由
+	authOnlyGroup := rg.Group("")
+	authOnlyGroup.Use(authMiddleware)
+	authOnlyGroup.PUT("/auth/org/onboarding", h.CompleteOnboarding)
+
+	// 认证 + 需要 org 的路由
+	authGroup := rg.Group("")
+	authGroup.Use(authMiddleware, middleware.RequireOrg)
 	authGroup.POST("/auth/logout", h.Logout)
 	authGroup.GET("/auth/me", h.GetMe)
 	authGroup.PUT("/auth/password", h.ChangePassword)
@@ -253,8 +256,18 @@ func (h *Handler) GetMe(c *gin.Context) {
 	orgID := c.GetInt64("org_id")
 
 	logger.SugarLogger.Debugw("GetMe: 请求", "user_id", userID, "org_id", orgID)
+	if userID == 0 && orgID == 0 {
+		logger.SugarLogger.Warnw("GetMe: user_id 为 0", "user_id", userID)
+		response.Error(c, http.StatusInternalServerError, 10013, "获取用户信息失败")
+		return
+	}
 	resp, err := h.svc.GetMe(c.Request.Context(), userID, orgID)
 	if err != nil {
+		if orgID == 0 {
+			logger.SugarLogger.Warnw("GetMe: org_id 为 0", "user_id", userID, "org_id", orgID)
+			response.Error(c, http.StatusInternalServerError, 10018, "请先完善企业信息")
+			return
+		}
 		logger.SugarLogger.Debugw("GetMe: 失败", "error", err.Error(), "user_id", userID)
 		response.Error(c, http.StatusInternalServerError, 10013, "获取用户信息失败")
 		return
