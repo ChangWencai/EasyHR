@@ -64,10 +64,10 @@
 </details>
 
 <details>
-<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS (1/4 phases)</summary>
+<summary>🔄 v1.4 用户体验 + 合规增强 — IN PROGRESS (2/4 phases)</summary>
 
 - [x] **Phase 10: UX 基础 - 流程简化与引导体系** — 2026-04-20
-- [ ] **Phase 11: 合同合规** — 待开始
+- [x] **Phase 11: 合同合规** — 2026-04-20
 - [ ] **Phase 12: 考勤合规报表** — 待开始
 - [ ] **Phase 13: 工资合规** — 待开始
 
@@ -183,7 +183,7 @@
 | 8. 社保公积金增强 | v1.3 | 4/4 | Complete | 2026-04-19 |
 | 9. 待办中心 | v1.3 | 3/3 | Complete | 2026-04-19 |
 | 10. UX 基础 - 流程简化与引导体系 | v1.4 | 3/3 | Complete | 2026-04-20 |
-| 11. 合同合规 | v1.4 | 0/TBD | Not started | - |
+| 11. 合同合规 | v1.4 | 2/2 | Complete | 2026-04-20 |
 | 12. 考勤合规报表 | v1.4 | 0/TBD | Not started | - |
 | 13. 工资合规 | v1.4 | 0/TBD | Not started | - |
 
