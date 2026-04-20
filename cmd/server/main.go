@@ -30,6 +30,7 @@ import (
 	"github.com/wencai/easyhr/internal/upload"
 	"github.com/wencai/easyhr/internal/user"
 	"github.com/wencai/easyhr/internal/wxmp"
+	"github.com/wencai/easyhr/pkg/oss"
 	"github.com/wencai/easyhr/pkg/sms"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -142,6 +143,14 @@ func main() {
 		TestMode:        cfg.SMS.TestMode,
 	})
 
+	// OSS 客户端（合同 PDF 等文件存储）
+	ossClient, _ := oss.NewClient(oss.Config{
+		Endpoint:        cfg.OSS.Endpoint,
+		AccessKeyID:     cfg.OSS.AccessKeyID,
+		AccessKeySecret: cfg.OSS.AccessKeySecret,
+		BucketName:      cfg.OSS.BucketName,
+	})
+
 	userRepo := user.NewRepository(db)
 	userSvc := user.NewService(userRepo, rdb, smsClient, cfg.JWT, cfg.Crypto)
 	userHandler := user.NewHandler(userSvc)
@@ -181,7 +190,7 @@ func main() {
 
 	// 合同管理模块依赖注入（前置，供个税模块使用）
 	contractRepo := employee.NewContractRepository(db)
-	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto, todoSvcForDI)
+	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto, todoSvcForDI, smsClient, ossClient)
 	contractHandler := employee.NewContractHandler(contractSvc)
 
 	// 个税模块依赖注入

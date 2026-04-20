@@ -167,6 +167,16 @@ func (r *Repository) FindByUserID(orgID int64, userID int64) (*Employee, error) 
 	return &emp, nil
 }
 
+// FindByPhoneHashGlobal 根据手机号哈希查找员工（跨租户，用于签署等无认证场景）
+func (r *Repository) FindByPhoneHashGlobal(phoneHash string) (*Employee, error) {
+	var emp Employee
+	err := r.db.Where("phone_hash = ?", phoneHash).First(&emp).Error
+	if err != nil {
+		return nil, err
+	}
+	return &emp, nil
+}
+
 // ListAllByOrg 获取指定企业全部在职/试用期员工（用于组织架构树构建）
 // 仅选择 ID/Name/Position/DepartmentID 字段，避免加载加密数据
 func (r *Repository) ListAllByOrg(orgID int64) ([]Employee, error) {
