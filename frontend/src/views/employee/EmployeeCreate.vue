@@ -431,7 +431,7 @@ async function handleCreate() {
   try {
     const data = { ...form }
     const result = await employeeApi.create(data)
-    createdEmployeeId.value = result.id
+    createdEmployeeId.value = result.data?.id ?? 0
     employeeCreated.value = true
     $msg.success('员工创建成功')
   } catch {
@@ -494,7 +494,7 @@ async function loadEmployee() {
       phone: emp.phone,
       id_number: emp.id_number,
       position: emp.position,
-      position_id: (emp as Record<string, unknown>).position_id as number | null ?? null,
+      position_id: (emp as unknown as Record<string, unknown>).position_id as number | null ?? null,
       entry_date: emp.entry_date,
       salary: emp.salary,
       probation_salary: emp.probation_salary,
