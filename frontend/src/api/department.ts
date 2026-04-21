@@ -42,4 +42,7 @@ export const departmentApi = {
     request.put<Department>(`/departments/${id}`, data),
 
   delete: (id: number) => request.delete(`/departments/${id}`),
+
+  transferDelete: (id: number, data: { target_department_id: number; employee_ids: number[] }) =>
+    request.delete<void>(`/departments/${id}/transfer`, { data }),
 }
