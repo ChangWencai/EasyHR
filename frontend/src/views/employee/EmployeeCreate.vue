@@ -61,10 +61,32 @@
                       style="width: 100%"
                     />
                   </el-form-item>
-                  <el-form-item label="岗位" prop="position" class="form-item">
-                    <el-input v-model="form.position" placeholder="请输入岗位名称" maxlength="100" size="large">
-                      <template #prefix><el-icon><Briefcase /></el-icon></template>
-                    </el-input>
+                  <el-form-item label="岗位" prop="position_id" class="form-item">
+                    <el-select
+                      v-model="form.position_id"
+                      placeholder="请选择岗位"
+                      clearable
+                      size="large"
+                      style="width: 100%"
+                    >
+                      <el-option value="" label="未分配岗位" />
+                      <el-optgroup v-if="deptPositions.length" label="部门专属岗位">
+                        <el-option
+                          v-for="p in deptPositions"
+                          :key="p.id"
+                          :value="p.id"
+                          :label="p.name"
+                        />
+                      </el-optgroup>
+                      <el-optgroup v-if="commonPositions.length" label="通用岗位">
+                        <el-option
+                          v-for="p in commonPositions"
+                          :key="p.id"
+                          :value="p.id"
+                          :label="p.name"
+                        />
+                      </el-optgroup>
+                    </el-select>
                   </el-form-item>
                   <el-form-item label="正式薪资" prop="salary" class="form-item form-item--full">
                     <el-input-number
@@ -95,7 +117,7 @@
                   <div class="confirm-details">
                     <div class="detail-row"><span>手机号：</span>{{ form.phone }}</div>
                     <div class="detail-row"><span>入职日期：</span>{{ form.entry_date }}</div>
-                    <div class="detail-row"><span>岗位：</span>{{ form.position }}</div>
+                    <div class="detail-row"><span>岗位：</span>{{ resolvePositionName() }}</div>
                   </div>
                 </div>
                 <!-- 已创建后：显示发送按钮 -->
@@ -173,17 +195,32 @@
                 </template>
               </el-input>
             </el-form-item>
-            <el-form-item label="岗位" prop="position" class="form-item">
-              <el-input
-                v-model="form.position"
-                placeholder="请输入岗位名称"
-                maxlength="100"
+            <el-form-item label="岗位" prop="position_id" class="form-item">
+              <el-select
+                v-model="form.position_id"
+                placeholder="请选择岗位"
+                clearable
                 size="large"
+                style="width: 100%"
               >
-                <template #prefix>
-                  <el-icon><Briefcase /></el-icon>
-                </template>
-              </el-input>
+                <el-option value="" label="未分配岗位" />
+                <el-optgroup v-if="deptPositions.length" label="部门专属岗位">
+                  <el-option
+                    v-for="p in deptPositions"
+                    :key="p.id"
+                    :value="p.id"
+                    :label="p.name"
+                  />
+                </el-optgroup>
+                <el-optgroup v-if="commonPositions.length" label="通用岗位">
+                  <el-option
+                    v-for="p in commonPositions"
+                    :key="p.id"
+                    :value="p.id"
+                    :label="p.name"
+                  />
+                </el-optgroup>
+              </el-select>
             </el-form-item>
             <el-form-item label="入职日期" prop="entry_date" class="form-item">
               <el-date-picker
@@ -323,6 +360,8 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
+import { positionApi } from '@/api/position'
+import type { PositionSelectOptions } from '@/api/position'
 import StepWizard from '@/components/common/StepWizard.vue'
 import StepCard from '@/components/common/StepCard.vue'
 import { useMessage } from '@/composables/useMessage'
@@ -335,7 +374,6 @@ import {
   InfoFilled,
   Phone,
   Postcard,
-  Briefcase,
   Check,
 } from '@element-plus/icons-vue'
 
@@ -356,11 +394,15 @@ const steps = [
   { title: '确认发送' },
 ]
 
+const deptPositions = ref<Array<{ id: number; name: string }>>([])
+const commonPositions = ref<Array<{ id: number; name: string }>>([])
+
 const form = reactive({
   name: '',
   phone: '',
   id_number: '',
   position: '',
+  position_id: null as number | null,
   entry_date: '',
   salary: undefined as number | undefined,
   probation_salary: undefined as number | undefined,
@@ -379,7 +421,7 @@ const rules: FormRules = {
     { required: true, message: '请输入身份证号', trigger: 'blur' },
     { pattern: /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/, message: '身份证号格式不正确', trigger: 'blur' },
   ],
-  position: [{ required: true, message: '请输入岗位', trigger: 'blur' }],
+  position_id: [{ required: false, message: '请选择岗位', trigger: 'change' }],
   entry_date: [{ required: true, message: '请选择入职日期', trigger: 'change' }],
 }
 
@@ -452,6 +494,7 @@ async function loadEmployee() {
       phone: emp.phone,
       id_number: emp.id_number,
       position: emp.position,
+      position_id: (emp as Record<string, unknown>).position_id as number | null ?? null,
       entry_date: emp.entry_date,
       salary: emp.salary,
       probation_salary: emp.probation_salary,
@@ -464,7 +507,32 @@ async function loadEmployee() {
   }
 }
 
-onMounted(() => loadEmployee())
+async function loadPositionOptions(deptId?: number | null) {
+  try {
+    const res = await positionApi.getSelectOptions(deptId ?? undefined)
+    const data = (res as { data?: PositionSelectOptions }).data
+      ?? (res as unknown as PositionSelectOptions)
+    deptPositions.value = data.dept_positions ?? []
+    commonPositions.value = data.common_positions ?? []
+  } catch {
+    deptPositions.value = []
+    commonPositions.value = []
+  }
+}
+
+function resolvePositionName(): string {
+  if (form.position_id) {
+    const allPositions = [...deptPositions.value, ...commonPositions.value]
+    const found = allPositions.find(p => p.id === form.position_id)
+    if (found) return found.name
+  }
+  return form.position || '未分配岗位'
+}
+
+onMounted(() => {
+  loadEmployee()
+  loadPositionOptions(undefined)
+})
 </script>
 
 <style scoped lang="scss">

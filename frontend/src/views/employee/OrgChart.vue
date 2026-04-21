@@ -176,8 +176,6 @@ import { TooltipComponent, TitleComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { departmentApi } from '@/api/department'
 import type { Department, TreeNode } from '@/api/department'
-import { positionApi } from '@/api/position'
-import type { Position } from '@/api/position'
 import request from '@/api/request'
 
 use([TreeChart, TooltipComponent, TitleComponent, CanvasRenderer])
