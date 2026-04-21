@@ -20,6 +20,7 @@ type Employee struct {
 	Gender                  string     `gorm:"column:gender;type:varchar(10);comment:性别" json:"gender"`
 	BirthDate               *time.Time `gorm:"column:birth_date;type:date;comment:出生日期" json:"birth_date"`
 	Position                string     `gorm:"column:position;type:varchar(100);not null;index;comment:岗位" json:"position"`
+	PositionID              *int64     `gorm:"column:position_id;index;comment:岗位ID（FK，NULL=未分配）" json:"position_id"`
 	DepartmentID            *int64     `gorm:"column:department_id;index;comment:所属部门ID" json:"department_id"`
 	HireDate                time.Time  `gorm:"column:hire_date;type:date;not null;comment:入职日期" json:"hire_date"`
 	Status                  string     `gorm:"column:status;type:varchar(20);not null;default:pending;index;comment:状态（pending/probation/active/resigned）" json:"status"`

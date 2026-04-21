@@ -32,6 +32,7 @@ func (h *DepartmentHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware g
 	authGroup.GET("/departments/:id", h.GetDepartment)
 	authGroup.PUT("/departments/:id", middleware.RequireRole("owner", "admin"), h.UpdateDepartment)
 	authGroup.DELETE("/departments/:id", middleware.RequireRole("owner", "admin"), h.DeleteDepartment)
+	authGroup.DELETE("/departments/:id/transfer", middleware.RequireRole("owner", "admin"), h.TransferDeleteDepartment)
 }
 
 // CreateDepartment 创建部门
@@ -172,4 +173,29 @@ func (h *DepartmentHandler) SearchTree(c *gin.Context) {
 	}
 
 	response.Success(c, tree)
+}
+
+// TransferDeleteDepartment 转移员工并删除部门
+func (h *DepartmentHandler) TransferDeleteDepartment(c *gin.Context) {
+	var req TransferDeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.SugarLogger.Debugw("TransferDeleteDepartment: 参数错误", "error", err.Error())
+		response.BadRequest(c, "参数错误: "+err.Error())
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	deptID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的部门ID")
+		return
+	}
+
+	if err := h.svc.TransferAndDeleteDepartment(orgID, deptID, req.TargetDepartmentID, req.EmployeeIDs); err != nil {
+		logger.SugarLogger.Debugw("TransferDeleteDepartment: 失败", "error", err.Error(), "department_id", deptID)
+		response.Error(c, http.StatusBadRequest, 20207, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "员工已转移，部门已删除"})
 }

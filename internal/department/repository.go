@@ -1,16 +1,8 @@
 package department
 
 import (
-	"errors"
-
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"gorm.io/gorm"
-)
-
-var (
-	ErrDepartmentNotFound = errors.New("部门不存在")
-	ErrHasChildren        = errors.New("该部门下存在子部门，无法删除")
-	ErrHasEmployees       = errors.New("该部门下存在员工，无法删除")
 )
 
 // Repository 部门数据访问层
@@ -97,4 +89,11 @@ func (r *Repository) List(orgID int64, page, pageSize int) ([]Department, int64,
 	}
 
 	return departments, total, nil
+}
+
+// FindAllByIDs 批量查询部门（用于目标部门下拉列表）
+func (r *Repository) FindAllByIDs(orgID int64, ids []int64) ([]Department, error) {
+	var departments []Department
+	err := r.db.Scopes(middleware.TenantScope(orgID)).Where("id IN ?", ids).Find(&departments).Error
+	return departments, err
 }

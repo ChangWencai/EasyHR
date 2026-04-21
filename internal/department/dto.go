@@ -43,3 +43,9 @@ type DepartmentListQueryParams struct {
 type SearchTreeRequest struct {
 	Keyword string `form:"keyword" binding:"required,min=1"`
 }
+
+// TransferDeleteRequest 转移员工并删除部门请求（D-14-09）
+type TransferDeleteRequest struct {
+	TargetDepartmentID int64   `json:"target_department_id" binding:"required"`
+	EmployeeIDs        []int64 `json:"employee_ids" binding:"required,min=1"`
+}

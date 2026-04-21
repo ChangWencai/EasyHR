@@ -183,7 +183,7 @@ func (r *Repository) ListAllByOrg(orgID int64) ([]Employee, error) {
 	var employees []Employee
 	err := r.db.Scopes(middleware.TenantScope(orgID)).
 		Where("status IN ?", []string{StatusActive, StatusProbation}).
-		Select("id", "name", "position", "department_id").
+		Select("id", "name", "position", "department_id", "position_id").
 		Find(&employees).Error
 	if err != nil {
 		return nil, fmt.Errorf("list all employees by org: %w", err)
@@ -198,6 +198,19 @@ func (r *Repository) CountByDepartment(orgID, departmentID int64) (int64, error)
 		Where("department_id = ?", departmentID).
 		Count(&count).Error
 	return count, err
+}
+
+// UpdateDepartmentID 更新员工所属部门（用于部门转移）
+func (r *Repository) UpdateDepartmentID(orgID, empID, deptID int64) error {
+	result := r.db.Model(&Employee{}).Scopes(middleware.TenantScope(orgID)).
+		Where("id = ?", empID).Updates(map[string]interface{}{"department_id": deptID})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }
 
 // ListRoster 花名册分页查询（支持部门筛选+综合搜索）
