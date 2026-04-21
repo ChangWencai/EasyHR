@@ -70,22 +70,22 @@
                       style="width: 100%"
                     >
                       <el-option value="" label="未分配岗位" />
-                      <el-optgroup v-if="deptPositions.length" label="部门专属岗位">
+                      <el-option-group v-if="deptPositions.length" label="部门专属岗位">
                         <el-option
                           v-for="p in deptPositions"
                           :key="p.id"
                           :value="p.id"
                           :label="p.name"
                         />
-                      </el-optgroup>
-                      <el-optgroup v-if="commonPositions.length" label="通用岗位">
+                      </el-option-group>
+                      <el-option-group v-if="commonPositions.length" label="通用岗位">
                         <el-option
                           v-for="p in commonPositions"
                           :key="p.id"
                           :value="p.id"
                           :label="p.name"
                         />
-                      </el-optgroup>
+                      </el-option-group>
                     </el-select>
                   </el-form-item>
                   <el-form-item label="正式薪资" prop="salary" class="form-item form-item--full">
@@ -204,22 +204,22 @@
                 style="width: 100%"
               >
                 <el-option value="" label="未分配岗位" />
-                <el-optgroup v-if="deptPositions.length" label="部门专属岗位">
+                <el-option-group v-if="deptPositions.length" label="部门专属岗位">
                   <el-option
                     v-for="p in deptPositions"
                     :key="p.id"
                     :value="p.id"
                     :label="p.name"
                   />
-                </el-optgroup>
-                <el-optgroup v-if="commonPositions.length" label="通用岗位">
+                </el-option-group>
+                <el-option-group v-if="commonPositions.length" label="通用岗位">
                   <el-option
                     v-for="p in commonPositions"
                     :key="p.id"
                     :value="p.id"
                     :label="p.name"
                   />
-                </el-optgroup>
+                </el-option-group>
               </el-select>
             </el-form-item>
             <el-form-item label="入职日期" prop="entry_date" class="form-item">
@@ -380,7 +380,6 @@ import {
 const route = useRoute()
 const router = useRouter()
 const formRef = ref<FormInstance>()
-const createFormRef = ref<FormInstance>()
 const saving = ref(false)
 const $msg = useMessage()
 const currentStep = ref(0)
