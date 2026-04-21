@@ -23,9 +23,9 @@
             >
               <el-option
                 v-for="city in cityList"
-                :key="city.id"
+                :key="city.code"
                 :label="city.name"
-                :value="city.id"
+                :value="city.code"
               />
             </el-select>
             <el-button size="small" @click="detectCity" :loading="detecting">
@@ -62,7 +62,7 @@ const saving = ref(false)
 const detecting = ref(false)
 const cityAutoDetected = ref(false)
 const detectedCityName = ref('')
-const cityList = ref<{ id: number; name: string }[]>([])
+const cityList = ref<{ code: number; name: string }[]>([])
 
 const form = reactive({
   name: '',
@@ -105,7 +105,7 @@ async function detectCity() {
         (c) => c.name.includes(data.city) || data.city.includes(c.name),
       )
       if (matched) {
-        form.city_id = matched.id
+        form.city_id = matched.code
         cityAutoDetected.value = true
         detectedCityName.value = matched.name
       } else {
@@ -139,7 +139,7 @@ async function handleSubmit() {
     const res = await request.put('/org/onboarding', {
       name: form.name,
       credit_code: form.credit_code,
-      city: cityList.value.find(c => c.id === form.city_id)?.name || '',
+      city: cityList.value.find(c => c.code === form.city_id)?.name || '',
       contact_name: form.contact_name,
       contact_phone: form.contact_phone,
     })

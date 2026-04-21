@@ -123,7 +123,7 @@
     <div class="version-info">
       <span>易人事 v1.3.0</span>
       <span class="version-divider">·</span>
-      <span>Made with ❤️ for SMB</span>
+      <span>Made with for SMB</span>
     </div>
 
     <!-- 修改密码弹窗 -->
@@ -225,7 +225,23 @@
           />
         </el-form-item>
         <el-form-item label="城市" prop="city">
-          <el-input v-model="editOrgForm.city" placeholder="请输入所在城市" size="large" />
+          <el-select
+            v-model="editOrgForm.city"
+            filterable
+            reserve-keyword
+            placeholder="点击选择或输入搜索城市"
+            :loading="cityLoading"
+            size="large"
+            style="width: 100%"
+            @focus="fetchCityOptions('')"
+          >
+            <el-option
+              v-for="city in cityOptions"
+              :key="city.code"
+              :label="city.name"
+              :value="city.name"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="联系人" prop="contact_name">
           <el-input v-model="editOrgForm.contact_name" placeholder="请输入联系人姓名" maxlength="50" size="large" />
@@ -268,6 +284,36 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/api/request'
 
+// ========== 城市下拉 ==========
+interface CityOption {
+  code: string
+  name: string
+}
+
+const cityOptions = ref<CityOption[]>([])
+const cityLoading = ref(false)
+let citySearchTimer: ReturnType<typeof setTimeout> | null = null
+
+async function fetchCityOptions(query: string) {
+  if (citySearchTimer) clearTimeout(citySearchTimer)
+  if (!query && cityOptions.value.length > 0) return
+  citySearchTimer = setTimeout(async () => {
+    cityLoading.value = true
+    try {
+      const res = await request.get('/cities', { params: query ? { search: query } : {} })
+      cityOptions.value = (res.data ?? []).map((item: any) => ({
+        code: item.code ?? item.city_code ?? '',
+        name: item.name ?? item.city_name ?? item,
+      }))
+    } catch {
+      cityOptions.value = []
+    } finally {
+      cityLoading.value = false
+    }
+  }, 200)
+}
+
+// ========== 修改姓名 ==========
 const router = useRouter()
 const userStore = useUserStore()
 const authStore = useAuthStore()
@@ -419,6 +465,7 @@ function openEditOrgDialog() {
     Object.assign(editOrgForm, { name: '', credit_code: '', city: '', contact_name: '', contact_phone: '' })
   }
   editOrgDialogVisible.value = true
+  fetchCityOptions('')
 }
 
 async function handleEditOrg() {

@@ -20,6 +20,7 @@ defineProps<{
 <style scoped lang="scss">
 .step-card {
   padding: 24px;
+  padding-top: 20px;
   margin-bottom: 20px;
 }
 
