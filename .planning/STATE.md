@@ -151,11 +151,12 @@ Stopped at: Phase 14 Plan 02 complete
 
 ## Deferred Items
 
-Items acknowledged and deferred at milestone close on milestone completion:
+Items acknowledged and deferred at v1.4 milestone close on 2026-04-21:
 
 | Category | Item | Status |
 |----------|------|--------|
 | debug | auth-me-org-id-mismatch | fixed |
+| debug | cities-api-frontend-adaptation | verifying |
 | debug | dashboard-expiry-date-column | fixed |
 | debug | dashboard-invalid-org-id-type | fixed |
 | debug | dashboard-payment-month-missing | fixed |

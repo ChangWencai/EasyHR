@@ -12,25 +12,15 @@
 
 ## Current State
 
-**v1.3 shipped (2026-04-19)** — H5 管理后台功能全面优化
+**v1.4 shipped (2026-04-21)** — 用户体验优化 + 合规增强
 
-已交付：待办中心、考勤管理（打卡/审批流/出勤月报）、薪资增强（调薪/个税/绩效/工资条）、社保增强（增减员/渠道/状态）、员工管理增强（看板/架构/登记/离职）
+已交付：员工向导 3 步改造 + Excel 批量导入 + Tour 首次引导 + API 错误映射、中文 PDF 合同电子签署、考勤合规报表（加班/请假/异常/月度汇总）、工资条确认回执、组织架构图增强（岗位管理 + 拖拽 + 右键菜单）
 
 技术栈：Go 1.25 + Gin v1.12 + GORM + PostgreSQL + Vue 3 + Element Plus + ECharts + asynq + gocron
 
-详见：[.planning/milestones/v1.3-ROADMAP.md](.planning/milestones/v1.3-ROADMAP.md)
+代码规模：~94K LOC Go, ~156K LOC Vue/TS
 
-## Current Milestone: v1.4 用户体验 + 合规增强
-
-**Goal:** 优化操作体验（精简步骤/完善提示/帮助引导）并增强合规能力（合同电子签/考勤报表/工资条签收）
-
-**Target features:**
-- 操作步骤精简：核心功能 ≤ 3 步完成
-- 错误提示完善：友好错误消息 + 解决方案引导
-- 帮助引导：首次使用引导、空状态提示、操作提示
-- 劳动合同电子签：电子合同生成 + 签署流程
-- 考勤合规报表：加班/请假/出勤统计合规报表
-- 工资条签收确认：员工确认收到工资条
+详见：[.planning/milestones/v1.4-ROADMAP.md](.planning/milestones/v1.4-ROADMAP.md)
 
 ## Validated Requirements
 
@@ -61,6 +51,29 @@
 - [x] **COMP-06**: 请假合规报表（年假额度/已用/剩余，病假，事假）
 - [x] **COMP-07**: 出勤异常报表（迟到/早退/缺勤，异常行红色高亮 late>3 or absent>1）
 - [x] **COMP-08**: 月度考勤汇总 Excel 导出（Blob download，12列统计表）
+
+### v1.4 (shipped 2026-04-21)
+
+- [x] **UX-01**: 员工向导 3 步改造（填写→选择→确认发送）
+- [x] **UX-02**: Excel 批量导入（模板→预览→确认 3 步）
+- [x] **UX-03**: Tour 首次引导 + 操作提示
+- [x] **UX-04**: 表单错误实时校验 + 友好提示
+- [x] **UX-05**: API 错误映射（ERROR_MESSAGES + useMessage）
+- [x] **UX-06**: 操作失败重试引导（500/502/503/timeout 可重试）
+- [x] **UX-07**: 各模块空状态设计 + 引导操作
+- [x] **UX-08**: Toast 统一优化（3 秒自动关闭）
+- [x] **UX-09**: 关键页面工具提示（hover tooltip）
+- [x] **COMP-01**: 劳动合同模板管理（标准模板 + 自定义）
+- [x] **COMP-02**: 合同生成（员工信息填充 PDF）
+- [x] **COMP-03**: 签署流程（手机验证码签署）
+- [x] **COMP-04**: 合同存档与查询
+- [x] **COMP-09**: 工资条确认回执（confirmed 状态）
+- [x] **COMP-10**: 确认记录存档（confirmed_at + 日志）
+- [x] **COMP-11**: 未确认提醒（gocron 每日 9:00 + asynq）
+- [x] **ORG-01**: 岗位管理（Position CRUD + 跨部门复用）
+- [x] **ORG-02**: 组织架构图增强（拖拽 + 搜索 + 展开/折叠）
+- [x] **ORG-03**: 部门管理完善（内联编辑 + 删除转移引导）
+- [x] **ORG-04**: 员工关联（el-select 下拉选岗位）
 
 ## Out of Scope
 
@@ -122,10 +135,14 @@
 | 协办邀请复用 Token 机制 | 纯填写无需登录，和 Registration 模块共享 generateToken 模式 | ✅ Phase 09 |
 | 加班分类: ClassifyOvertimeCategory 复用 AttendanceRule.Holidays | 法定节假日加班按 IsHoliday 判断，周末按 Weekday 判断 | ✅ Phase 12 |
 | 异常阈值: late>3 OR absent>1 → 红色高亮 | 异常员工数和异常时长双维度统计 | ✅ Phase 12 |
+| 岗位建模: 独立 Position 表（department_id=NULL） | 通用岗位跨部门复用，减少重复配置 | ✅ Phase 14 |
+| 架构图支持拖拽调整部门层级 | ECharts tree + 右键菜单交互，老板直观调整组织结构 | ✅ Phase 14 |
+| 工资条确认用 confirmed 状态替代 signed | signed 法律含义过重，confirmed 更贴合实际场景 | ✅ Phase 13 |
+| 部门删除引导转移员工 | 防止误删导致员工数据孤立，引导转移后再删除 | ✅ Phase 14 |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-20 — v1.4 Phase 12 考勤合规报表 shipped*
+*Last updated: 2026-04-21 — v1.4 milestone shipped*
