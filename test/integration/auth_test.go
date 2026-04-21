@@ -64,7 +64,7 @@ func setupIntegrationTest(t *testing.T) (*gin.Engine, *redis.Client) {
 	v1 := r.Group("/api/v1")
 	{
 		userHandler.RegisterRoutes(v1, authMiddleware)
-		city.NewHandler().RegisterRoutes(v1)
+		city.NewHandler(db).RegisterRoutes(v1)
 		audit.NewHandler(audit.NewRepository(db)).RegisterRoutes(v1)
 		v1.GET("/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})

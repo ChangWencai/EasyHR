@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/wencai/easyhr/internal/city"
 	"github.com/wencai/easyhr/internal/common/crypto"
 	"github.com/wencai/easyhr/internal/common/middleware"
 	"github.com/wencai/easyhr/internal/common/model"
@@ -18,13 +19,14 @@ import (
 
 // WXMPRepositoryImpl 实现 WXMPRepository 接口
 type WXMPRepositoryImpl struct {
-	db      *gorm.DB
-	crypto  []byte // AES key for phone decryption
+	db       *gorm.DB
+	crypto   []byte // AES key for phone decryption
+	cityRepo *city.Repository
 }
 
 // NewRepository 创建 WXMPRepository 实现
 func NewRepository(db *gorm.DB, aesKey string) *WXMPRepositoryImpl {
-	return &WXMPRepositoryImpl{db: db, crypto: []byte(aesKey)}
+	return &WXMPRepositoryImpl{db: db, crypto: []byte(aesKey), cityRepo: city.NewRepository(db)}
 }
 
 // GetMemberByPhone 通过手机号哈希查找会员
@@ -283,7 +285,7 @@ func (r *WXMPRepositoryImpl) ListSocialInsurance(ctx context.Context, orgID, emp
 			}
 		}
 
-		cityName := getCityName(rec.CityID)
+		cityName := r.cityRepo.GetNameByCode(rec.CityCode)
 		dto := SocialInsuranceDTO{
 			PaymentMonth:  rec.StartMonth,
 			City:          cityName,
@@ -296,26 +298,6 @@ func (r *WXMPRepositoryImpl) ListSocialInsurance(ctx context.Context, orgID, emp
 		result = append(result, dto)
 	}
 	return result, nil
-}
-
-// getCityName 根据 cityID 获取城市名称
-func getCityName(cityID int) string {
-	cityNames := map[int]string{
-		1:  "北京", 2: "上海", 3: "广州", 4: "深圳",
-		5:  "杭州", 6: "南京", 7: "苏州", 8: "成都",
-		9:  "武汉", 10: "西安", 11: "天津", 12: "重庆",
-		13: "大连", 14: "青岛", 15: "宁波", 16: "厦门",
-		17: "济南", 18: "哈尔滨", 19: "长春", 20: "沈阳",
-		21: "福州", 22: "郑州", 23: "长沙", 24: "昆明",
-		25: "贵阳", 26: "南宁", 27: "海口", 28: "太原",
-		29: "石家庄", 30: "兰州", 31: "乌鲁木齐", 32: "呼和浩特",
-		33: "拉萨", 34: "银川", 35: "西宁", 36: "东莞",
-		37: "佛山",
-	}
-	if name, ok := cityNames[cityID]; ok {
-		return name
-	}
-	return fmt.Sprintf("城市%d", cityID)
 }
 
 // ListExpenses 查询员工报销单列表
