@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: context exhaustion at 91% (2026-04-20)
-last_updated: "2026-04-20T14:58:42.410Z"
-last_activity: 2026-04-20
+stopped_at: Phase 14 context gathered (2026-04-21)
+last_updated: "2026-04-21T00:00:00.000Z"
+last_activity: 2026-04-21
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** 简单，好用，省时间 -- 老板3步完成核心人事操作，无需专业知识
-**Current focus:** Phase 13 — 工资合规（已完成）
+**Current focus:** Phase 14 — 组织架构图（部门+岗位管理）— Context gathered
 
 ## Current Position
 
-Phase: 13 (工资合规) — **Complete (2/2 plans)**
+Phase: 14 (组织架构图) — **Context gathered (discuss-phase complete)**
 
-Status: Phase 11 complete | Phase 12 complete | Phase 13 complete
-Last activity: 2026-04-20
+Status: Phase 10 complete | Phase 11 complete | Phase 12 complete | Phase 13 complete | Phase 14 context done
+Last activity: 2026-04-21
 
 Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 
@@ -40,6 +40,17 @@ Progress: [▌▌▌▌▌▌▌▌▌▌] 100%
 | 11 | 合同合规 | COMP-01~04 (4个) | **COMPLETE** |
 | 12 | 考勤合规报表 | COMP-05~08 (4个) | **COMPLETE** |
 | 13 | 工资合规 | COMP-09~11 (3个) | **COMPLETE** |
+| 14 | 组织架构图（部门+岗位管理） | ORG-01~04 (4个) | **Context ready** |
+
+## v1.4 Phase 14 Summary
+
+| Decision | Value |
+|----------|-------|
+| 岗位建模 | 新建 Position 表（独立管理） |
+| 岗位归属 | 通用岗位（department_id=NULL，跨部门复用） |
+| 架构图交互 | 支持拖拽调整部门层级 |
+| 部门删除 | 引导转移员工后再删除 |
+| 员工岗位 | el-select 下拉选择（部门联动过滤） |
 
 ## v1.4 Phase 13 Summary
 
@@ -115,6 +126,7 @@ Recent decisions affecting current work:
 - [Phase 10 P03]: Tour高亮使用非scoped全局CSS `.tour-highlight` + `!important`，gridItems通过dataTour属性而非DOM操作
 - [Phase 10 P03]: request.ts用ERROR_MESSAGES映射表+useMessage，可重试错误(500/502/503/timeout/network)传showActions:true
 - [Phase 13]: 工资条确认使用 `confirmed` 状态替代 `signed`；gocron每日9:00 CST入队asynq任务；TodoCenter幂等通过 SourceType+SourceID 实现
+- [Phase 14]: Position 表（通用岗位 department_id=NULL）；Employee.position_id FK；架构图支持拖拽；部门删除引导转移；员工岗位 el-select 下拉
 
 ### Roadmap Evolution
 
