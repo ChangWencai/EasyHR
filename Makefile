@@ -63,7 +63,18 @@ fe/test: ## Run vitest unit tests
 	cd $(FE_DIR) && npm run test:unit
 
 # =============================================================================
-# Docker
+# Database
+# =============================================================================
+.PHONY: db/reset db/migrate
+RESET_CMD := github.com/wencai/easyhr/cmd/reset
+
+db/reset: ## 删除数据库所有表（谨慎使用）
+	CGO_ENABLED=0 go build -o ./reset $(RESET_CMD)
+	@echo "警告：即将删除数据库中的所有表！"
+	@./reset
+
+db/migrate: go/build ## 运行数据库迁移（启动服务自动执行）
+	./server migrate
 # =============================================================================
 .PHONY: docker/build docker/up docker/down docker/ps
 docker/build: ## Build production Docker image
