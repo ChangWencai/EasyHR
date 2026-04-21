@@ -23,14 +23,16 @@ type Service struct {
 	repo         *Repository
 	empRepo      *employee.Repository
 	positionRepo *position.Repository
+	positionSvc  *position.Service
 }
 
 // NewService 创建部门 Service
-func NewService(repo *Repository, empRepo *employee.Repository, positionRepo *position.Repository) *Service {
+func NewService(repo *Repository, empRepo *employee.Repository, positionRepo *position.Repository, positionSvc *position.Service) *Service {
 	return &Service{
 		repo:         repo,
 		empRepo:      empRepo,
 		positionRepo: positionRepo,
+		positionSvc:  positionSvc,
 	}
 }
 
@@ -154,6 +156,9 @@ func (s *Service) GetDepartment(orgID, id int64) (*DepartmentResponse, error) {
 
 // GetTree 获取组织架构树（部门->岗位->员工三层）
 func (s *Service) GetTree(orgID int64) ([]*TreeNode, error) {
+	// 按需迁移：如果该企业还没有 position 记录，自动从 Employee.position 文本迁移
+	s.positionSvc.MigrateFromEmployeePositions(orgID)
+
 	departments, err := s.repo.ListAll(orgID)
 	if err != nil {
 		return nil, fmt.Errorf("查询部门失败: %w", err)

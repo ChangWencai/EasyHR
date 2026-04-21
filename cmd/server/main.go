@@ -23,6 +23,7 @@ import (
 	"github.com/wencai/easyhr/internal/department"
 	"github.com/wencai/easyhr/internal/employee"
 	"github.com/wencai/easyhr/internal/finance"
+	"github.com/wencai/easyhr/internal/position"
 	"github.com/wencai/easyhr/internal/salary"
 	"github.com/wencai/easyhr/internal/socialinsurance"
 	"github.com/wencai/easyhr/internal/tax"
@@ -74,6 +75,7 @@ func initApp() {
 		&employee.Contract{},
 		&employee.Registration{},
 		&department.Department{},
+		&position.Position{},
 		&socialinsurance.SocialInsurancePolicy{},
 		&socialinsurance.SocialInsuranceRecord{},
 		&socialinsurance.ChangeHistory{},
@@ -178,7 +180,13 @@ func main() {
 
 	// 部门模块依赖注入
 	deptRepo := department.NewRepository(db)
-	deptSvc := department.NewService(deptRepo, empRepo)
+
+	// 岗位模块依赖注入（Phase 14）
+	posRepo := position.NewRepository(db)
+	posSvc := position.NewService(posRepo, empRepo)
+	posHandler := position.NewPositionHandler(posSvc)
+
+	deptSvc := department.NewService(deptRepo, empRepo, posRepo, posSvc)
 	deptHandler := department.NewDepartmentHandler(deptSvc)
 
 	// 社保模块依赖注入（前置，供离职模块使用）
@@ -281,6 +289,7 @@ func main() {
 		userHandler.RegisterRoutes(v1, authMiddleware)
 		empHandler.RegisterRoutes(v1, authMiddleware)
 		deptHandler.RegisterRoutes(v1, authMiddleware)
+		posHandler.RegisterRoutes(v1, authMiddleware)
 		invHandler.RegisterRoutes(v1, authMiddleware)
 		regHandler.RegisterRoutes(v1, authMiddleware)
 		obHandler.RegisterRoutes(v1, authMiddleware)
