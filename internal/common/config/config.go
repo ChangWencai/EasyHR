@@ -41,6 +41,7 @@ type DatabaseConfig struct {
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
 	SSLMode  string `mapstructure:"sslmode"`
+	SQLLog   bool   `mapstructure:"sql_log"` // 是否开启 SQL 日志
 }
 
 type RedisConfig struct {

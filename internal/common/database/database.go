@@ -15,12 +15,17 @@ func Init(cfg *config.DatabaseConfig) *gorm.DB {
 	dsn := "host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=Asia/Shanghai"
 	dsn = fmt.Sprintf(dsn, cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, cfg.SSLMode)
 
+	gormLogLevel := logger.Warn
+	if cfg.SQLLog {
+		gormLogLevel = logger.Info
+	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.New(
 			zap.NewStdLog(zap.L().Named("gorm")),
 			logger.Config{
 				SlowThreshold:             200 * time.Millisecond,
-				LogLevel:                  logger.Warn,
+				LogLevel:                  gormLogLevel,
 				IgnoreRecordNotFoundError: true,
 			},
 		),
@@ -45,12 +50,17 @@ func InitAdmin(cfg *config.DatabaseConfig) *gorm.DB {
 	dsn := "host=%s port=%d user=%s password=%s dbname=postgres sslmode=%s TimeZone=Asia/Shanghai"
 	dsn = fmt.Sprintf(dsn, cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.SSLMode)
 
+	gormLogLevel := logger.Warn
+	if cfg.SQLLog {
+		gormLogLevel = logger.Info
+	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.New(
 			zap.NewStdLog(zap.L().Named("gorm")),
 			logger.Config{
 				SlowThreshold:             200 * time.Millisecond,
-				LogLevel:                  logger.Warn,
+				LogLevel:                  gormLogLevel,
 				IgnoreRecordNotFoundError: true,
 			},
 		),
