@@ -65,8 +65,9 @@ fe/test: ## Run vitest unit tests
 # =============================================================================
 # Database
 # =============================================================================
-.PHONY: db/reset db/migrate
+.PHONY: db/reset db/migrate db/init
 RESET_CMD := github.com/wencai/easyhr/cmd/reset
+INIT_CMD  := github.com/wencai/easyhr/cmd/init
 
 db/reset: ## 删除数据库所有表（谨慎使用）
 	CGO_ENABLED=0 go build -o ./reset $(RESET_CMD)
@@ -75,6 +76,11 @@ db/reset: ## 删除数据库所有表（谨慎使用）
 
 db/migrate: go/build ## 运行数据库迁移（启动服务自动执行）
 	./server migrate
+
+db/init: go/build ## 初始化数据库基础数据（区划编码等）
+	CGO_ENABLED=0 go build -o ./init $(INIT_CMD)
+	@echo "初始化数据库基础数据..."
+	@./init
 # =============================================================================
 .PHONY: docker/build docker/up docker/down docker/ps
 docker/build: ## Build production Docker image
