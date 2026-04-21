@@ -31,7 +31,7 @@ type FiveInsurances struct {
 // 政策库为全局共享数据，OrgID 设为 0（不使用 TenantScope）
 type SocialInsurancePolicy struct {
 	model.BaseModel
-	CityID        int                               `gorm:"column:city_id;not null;index;comment:城市ID" json:"city_id"`
+	CityCode      int64                              `gorm:"column:city_code;not null;index;comment:城市行政区划编码" json:"city_code"`
 	EffectiveYear int                               `gorm:"column:effective_year;not null;index;comment:生效年份" json:"effective_year"`
 	Config        datatypes.JSONType[FiveInsurances] `gorm:"column:config;type:jsonb;comment:五险一金配置（各险种缴费比例和基数上下限）" json:"config"`
 }
@@ -60,7 +60,7 @@ type SocialInsuranceRecord struct {
 	model.BaseModel
 	EmployeeID    int64          `gorm:"column:employee_id;not null;index;comment:员工ID，外键到employees.id" json:"employee_id"`
 	EmployeeName  string         `gorm:"column:employee_name;type:varchar(50);not null;comment:员工姓名" json:"employee_name"`
-	CityID        int            `gorm:"column:city_id;not null;comment:参保城市ID" json:"city_id"`
+	CityCode      int64     `gorm:"column:city_code;not null;comment:参保城市行政区划编码" json:"city_code"`
 	PolicyID      int64          `gorm:"column:policy_id;not null;comment:社保政策ID，外键到social_insurance_policies.id" json:"policy_id"`
 	BaseAmount    float64        `gorm:"column:base_amount;not null;comment:社保缴费基数" json:"base_amount"`
 	Status        string         `gorm:"column:status;type:varchar(20);not null;default:pending;comment:参保状态（pending/active/stopped）" json:"status"`

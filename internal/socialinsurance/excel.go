@@ -44,7 +44,7 @@ func paymentStatusLabel(status PaymentStatus) string {
 
 // ExportSIRecordsWithDetails 导出参保记录 Excel（含五险分项列，per D-SI-13）
 // 列：员工姓名/缴费城市/社保基数/参保月/缴费渠道/状态/6险×2列/合计单位/合计个人/欠缴金额/备注
-func ExportSIRecordsWithDetails(c *gin.Context, records []SocialInsuranceRecord, includeDetails bool) error {
+func ExportSIRecordsWithDetails(c *gin.Context, records []SocialInsuranceRecord, includeDetails bool, svc *Service) error {
 	f := excelize.NewFile()
 	defer f.Close()
 
@@ -112,7 +112,7 @@ func ExportSIRecordsWithDetails(c *gin.Context, records []SocialInsuranceRecord,
 		}
 
 		// 基本信息列
-		cityName := getCityName(record.CityID)
+		cityName := svc.getCityName(record.CityCode)
 		cell, _ := excelize.CoordinatesToCellName(col, row)
 		f.SetCellValue(sheetName, cell, record.EmployeeName)
 		col++
@@ -261,7 +261,7 @@ func ExportSIRecordsWithDetails(c *gin.Context, records []SocialInsuranceRecord,
 }
 
 // generatePaymentDetailExcel 生成缴费明细 Excel
-func generatePaymentDetailExcel(records []SocialInsuranceRecord) ([]byte, error) {
+func generatePaymentDetailExcel(records []SocialInsuranceRecord, self *Service) ([]byte, error) {
 	f := excelize.NewFile()
 	defer f.Close()
 
@@ -311,7 +311,7 @@ func generatePaymentDetailExcel(records []SocialInsuranceRecord) ([]byte, error)
 		}
 
 		// 基本信息列
-		cityName := getCityName(record.CityID)
+		cityName := self.getCityName(record.CityCode)
 		f.SetCellValue(sheetName, fmt.Sprintf("A%d", rowNum), record.EmployeeName)
 		f.SetCellValue(sheetName, fmt.Sprintf("B%d", rowNum), cityName)
 		f.SetCellValue(sheetName, fmt.Sprintf("C%d", rowNum), record.StartMonth)

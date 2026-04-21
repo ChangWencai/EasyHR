@@ -12,14 +12,15 @@ import (
 
 // Service 社保业务逻辑层
 type Service struct {
-	repo        *Repository
-	empQuerier  EmployeeQuerier
+	repo         *Repository
+	empQuerier   EmployeeQuerier
 	reminderRepo *ReminderRepository
+	cityRepo     *city.Repository
 }
 
 // NewService 创建社保 Service
-func NewService(repo *Repository, empQuerier EmployeeQuerier, reminderRepo *ReminderRepository) *Service {
-	return &Service{repo: repo, empQuerier: empQuerier, reminderRepo: reminderRepo}
+func NewService(repo *Repository, empQuerier EmployeeQuerier, reminderRepo *ReminderRepository, cityRepo *city.Repository) *Service {
+	return &Service{repo: repo, empQuerier: empQuerier, reminderRepo: reminderRepo, cityRepo: cityRepo}
 }
 
 // ========== 政策管理 ==========
@@ -39,7 +40,7 @@ func (s *Service) GetPolicy(id int64) (*PolicyResponse, error) {
 }
 
 // ListPolicies 政策列表（关联城市名称）
-func (s *Service) ListPolicies(cityID int, page, pageSize int) ([]PolicyResponse, int64, error) {
+func (s *Service) ListPolicies(cityID int64, page, pageSize int) ([]PolicyResponse, int64, error) {
 	policies, total, err := s.repo.List(cityID, page, pageSize)
 	if err != nil {
 		return nil, 0, err
@@ -66,7 +67,7 @@ func (s *Service) DeletePolicy(id int64) error {
 }
 
 // CalculateInsuranceAmounts 根据城市+薪资计算各险种缴费金额
-func (s *Service) CalculateInsuranceAmounts(cityID int, salary float64, year int) (*CalculateResponse, error) {
+func (s *Service) CalculateInsuranceAmounts(cityID int64, salary float64, year int) (*CalculateResponse, error) {
 	// 1. 查询适用政策
 	policy, err := s.repo.FindByCityAndYear(cityID, year)
 	if err != nil {
@@ -74,7 +75,7 @@ func (s *Service) CalculateInsuranceAmounts(cityID int, salary float64, year int
 	}
 
 	// 2. 获取城市名称
-	cityName := getCityName(cityID)
+	cityName := s.getCityName(cityID)
 
 	// 3. 计算各险种
 	details := calculateDetails(policy.Config.Data(), salary)
@@ -196,7 +197,7 @@ func (s *Service) BatchEnroll(orgID, userID int64, req *BatchEnrollRequest) (*Ba
 		record := &SocialInsuranceRecord{
 			EmployeeID:    empID,
 			EmployeeName:  emp.Name,
-			CityID:        req.CityID,
+			CityCode:      req.CityID,
 			PolicyID:      policy.ID,
 			BaseAmount:    details[0].Base,
 			Status:        SIStatusActive,
@@ -340,8 +341,8 @@ func (s *Service) ListRecords(orgID int64, params RecordListQueryParams) ([]Reco
 			ID:            r.ID,
 			EmployeeID:    r.EmployeeID,
 			EmployeeName:  r.EmployeeName,
-			CityID:        r.CityID,
-			CityName:      getCityName(r.CityID),
+			CityID:        r.CityCode,
+			CityName:      s.getCityName(r.CityCode),
 			BaseAmount:    r.BaseAmount,
 			Status:        r.Status,
 			StartMonth:    r.StartMonth,
@@ -380,8 +381,8 @@ func (s *Service) GetMyRecords(orgID, userID int64) ([]RecordResponse, error) {
 			ID:            r.ID,
 			EmployeeID:    r.EmployeeID,
 			EmployeeName:  r.EmployeeName,
-			CityID:        r.CityID,
-			CityName:      getCityName(r.CityID),
+			CityID:        r.CityCode,
+			CityName:      s.getCityName(r.CityCode),
 			BaseAmount:    r.BaseAmount,
 			Status:        r.Status,
 			StartMonth:    r.StartMonth,
@@ -472,8 +473,8 @@ func (s *Service) GetSocialInsuranceDeduction(orgID, employeeID int64, month str
 func (s *Service) toPolicyResponse(policy *SocialInsurancePolicy) *PolicyResponse {
 	return &PolicyResponse{
 		ID:            policy.ID,
-		CityID:        policy.CityID,
-		CityName:      getCityName(policy.CityID),
+		CityID:        policy.CityCode,
+		CityName:      s.getCityName(policy.CityCode),
 		EffectiveYear: policy.EffectiveYear,
 		Config:        policy.Config.Data(),
 		CreatedAt:     policy.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -528,13 +529,11 @@ func clamp(value, lower, upper float64) float64 {
 }
 
 // getCityName 根据 cityID 获取城市名称
-func getCityName(cityID int) string {
-	for _, c := range city.Cities {
-		if c.ID == cityID {
-			return c.Name
-		}
+func (s *Service) getCityName(cityID int64) string {
+	if s.cityRepo == nil {
+		return "未知城市"
 	}
-	return "未知城市"
+	return s.cityRepo.GetNameByCode(cityID)
 }
 
 // ========== 提醒相关方法 ==========
@@ -726,7 +725,7 @@ func (s *Service) ExportPaymentDetailExcel(orgID int64, params RecordListQueryPa
 		return nil, fmt.Errorf("查询参保记录失败: %w", err)
 	}
 
-	return generatePaymentDetailExcel(records)
+	return generatePaymentDetailExcel(records, s)
 }
 
 // GenerateEnrollmentPDF 生成参保材料 PDF（SOCL-02）
@@ -745,7 +744,7 @@ func (s *Service) GenerateEnrollmentPDF(orgID, recordID int64) ([]byte, error) {
 
 	data := &EnrollmentPDFData{
 		EmployeeName: record.EmployeeName,
-		CityName:     getCityName(record.CityID),
+		CityName:     s.getCityName(record.CityCode),
 		BaseAmount:   record.BaseAmount,
 		StartMonth:   record.StartMonth,
 		Items:        details,

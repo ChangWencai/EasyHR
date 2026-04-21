@@ -72,10 +72,10 @@ func (h *Handler) CreatePolicy(c *gin.Context) {
 	}
 
 	userID := c.GetInt64("user_id")
-	logger.SugarLogger.Debugw("CreatePolicy: 创建", "user_id", userID, "city_id", req.CityID)
+	logger.SugarLogger.Debugw("CreatePolicy: 创建", "user_id", userID, "city_code", req.CityCode)
 
 	policy := &SocialInsurancePolicy{
-		CityID:        req.CityID,
+		CityCode:      req.CityCode,
 		EffectiveYear: req.EffectiveYear,
 		Config:        newJSONType(req.Config),
 	}
@@ -128,7 +128,7 @@ func (h *Handler) ListPolicies(c *gin.Context) {
 		query.PageSize = 20
 	}
 
-	logger.SugarLogger.Debugw("ListPolicies: 查询", "city_id", query.CityID, "page", query.Page)
+	logger.SugarLogger.Debugw("ListPolicies: 查询", "city_code", query.CityID, "page", query.Page)
 	policies, total, err := h.svc.ListPolicies(query.CityID, query.Page, query.PageSize)
 	if err != nil {
 		logger.SugarLogger.Debugw("ListPolicies: 失败", "error", err.Error())
@@ -655,7 +655,7 @@ func (h *Handler) ExportSIRecords(c *gin.Context) {
 		return
 	}
 
-	if err := ExportSIRecordsWithDetails(c, records, includeDetails); err != nil {
+	if err := ExportSIRecordsWithDetails(c, records, includeDetails, h.svc); err != nil {
 		logger.SugarLogger.Debugw("ExportSIRecords: 导出失败", "error", err.Error(), "org_id", orgID)
 		response.Error(c, http.StatusInternalServerError, 30309, "导出失败")
 		return

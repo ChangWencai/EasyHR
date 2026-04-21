@@ -2,7 +2,7 @@ package socialinsurance
 
 // CreatePolicyRequest 创建社保政策请求
 type CreatePolicyRequest struct {
-	CityID        int            `json:"city_id" binding:"required"`
+	CityCode      int64          `json:"city_code" binding:"required"`
 	EffectiveYear int            `json:"effective_year" binding:"required"`
 	Config        FiveInsurances `json:"config" binding:"required"`
 }
@@ -15,7 +15,7 @@ type UpdatePolicyRequest struct {
 // PolicyResponse 社保政策响应
 type PolicyResponse struct {
 	ID            int64          `json:"id"`
-	CityID        int            `json:"city_id"`
+	CityID        int64          `json:"city_code"`
 	CityName      string         `json:"city_name"`
 	EffectiveYear int            `json:"effective_year"`
 	Config        FiveInsurances `json:"config"`
@@ -25,7 +25,7 @@ type PolicyResponse struct {
 
 // CalculateRequest 社保计算请求
 type CalculateRequest struct {
-	CityID int     `json:"city_id" binding:"required"`
+	CityID int64     `json:"city_code" binding:"required"`
 	Salary float64 `json:"salary" binding:"required,gt=0"`
 	Year   int     `json:"year" binding:"required"`
 }
@@ -52,7 +52,7 @@ type CalculateResponse struct {
 
 // PolicyListQuery 政策列表查询参数
 type PolicyListQuery struct {
-	CityID   int `form:"city_id"`
+	CityID   int64 `form:"city_code"`
 	Page     int `form:"page" binding:"omitempty,min=1"`
 	PageSize int `form:"page_size" binding:"omitempty,min=1,max=100"`
 }
@@ -62,7 +62,7 @@ type PolicyListQuery struct {
 // BatchEnrollRequest 批量参保请求
 type BatchEnrollRequest struct {
 	EmployeeIDs []int64 `json:"employee_ids" binding:"required,min=1"`
-	CityID      int     `json:"city_id" binding:"required"`
+	CityID      int64     `json:"city_code" binding:"required"`
 	StartMonth  string  `json:"start_month" binding:"required"`
 	Salary      float64 `json:"salary"`    // 社保基数（单个增员时传入）
 	HFBase      float64 `json:"hf_base"`   // 公积金基数
@@ -72,7 +72,7 @@ type BatchEnrollRequest struct {
 // EnrollPreviewRequest 参保预览请求
 type EnrollPreviewRequest struct {
 	EmployeeIDs []int64 `json:"employee_ids" binding:"required,min=1"`
-	CityID      int     `json:"city_id" binding:"required"`
+	CityID      int64     `json:"city_code" binding:"required"`
 }
 
 // EnrollPreviewItem 参保预览单项
@@ -136,7 +136,7 @@ type RecordResponse struct {
 	ID            int64                  `json:"id"`
 	EmployeeID    int64                  `json:"employee_id"`
 	EmployeeName  string                 `json:"employee_name"`
-	CityID        int                    `json:"city_id"`
+	CityID        int64                  `json:"city_code"`
 	CityName      string                 `json:"city_name"`
 	BaseAmount    float64                `json:"base_amount"`
 	Status        string                 `json:"status"`
@@ -206,7 +206,7 @@ type OverdueItem struct {
 type EnrollRequest struct {
 	EmployeeID     int64   `json:"employee_id" binding:"required"`
 	StartYearMonth string  `json:"start_year_month"`                          // 可选近3个月，默认当月
-	CityID         int     `json:"city_id" binding:"required"`
+	CityID         int64   `json:"city_code" binding:"required"`
 	SIBase         float64 `json:"si_base" binding:"required,gt=0"`           // 社保基数
 	HFBase         float64 `json:"hf_base"`                                    // 公积金基数（可选，默认与社保同步）
 	HFRatio        float64 `json:"hf_ratio"`                                   // 公积金比例（可选）

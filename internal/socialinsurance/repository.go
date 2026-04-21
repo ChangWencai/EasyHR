@@ -63,11 +63,11 @@ func (r *Repository) FindByID(id int64) (*SocialInsurancePolicy, error) {
 }
 
 // FindByCityAndYear 根据城市ID和年度查询最新有效政策
-// 查询条件: city_id = ? AND effective_year <= ? AND org_id = 0
+// 查询条件: city_code = ? AND effective_year <= ? AND org_id = 0
 // 按 effective_year DESC 排序取第一条
-func (r *Repository) FindByCityAndYear(cityID int, year int) (*SocialInsurancePolicy, error) {
+func (r *Repository) FindByCityAndYear(cityCode int64, year int) (*SocialInsurancePolicy, error) {
 	var policy SocialInsurancePolicy
-	err := r.db.Where("city_id = ? AND effective_year <= ? AND org_id = 0", cityID, year).
+	err := r.db.Where("city_code = ? AND effective_year <= ? AND org_id = 0", cityCode, year).
 		Order("effective_year DESC").
 		First(&policy).Error
 	if err != nil {
@@ -77,14 +77,14 @@ func (r *Repository) FindByCityAndYear(cityID int, year int) (*SocialInsurancePo
 }
 
 // List 政策列表分页查询（支持按城市筛选）
-func (r *Repository) List(cityID int, page, pageSize int) ([]SocialInsurancePolicy, int64, error) {
+func (r *Repository) List(cityCode int64, page, pageSize int) ([]SocialInsurancePolicy, int64, error) {
 	var policies []SocialInsurancePolicy
 	var total int64
 
 	q := r.db.Model(&SocialInsurancePolicy{}).Where("org_id = 0")
 
-	if cityID > 0 {
-		q = q.Where("city_id = ?", cityID)
+	if cityCode > 0 {
+		q = q.Where("city_code = ?", cityCode)
 	}
 
 	if err := q.Count(&total).Error; err != nil {

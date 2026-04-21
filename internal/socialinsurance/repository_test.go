@@ -21,7 +21,7 @@ func TestPolicyCRUD(t *testing.T) {
 	// Read
 	found, err := repo.FindByID(originalID)
 	require.NoError(t, err)
-	assert.Equal(t, 1, found.CityID)
+	assert.Equal(t, int64(110100000000), found.CityCode)
 	assert.Equal(t, 2025, found.EffectiveYear)
 	config := found.Config.Data()
 	assert.InDelta(t, 0.16, config.Pension.CompanyRate, 0.001)
@@ -56,17 +56,17 @@ func TestFindByCityAndYear_MultipleYears(t *testing.T) {
 	}
 
 	// 查询2025年 -> 应返回2025年政策
-	found, err := repo.FindByCityAndYear(1, 2025)
+	found, err := repo.FindByCityAndYear(110100000000, 2025)
 	require.NoError(t, err)
 	assert.Equal(t, 2025, found.EffectiveYear)
 
 	// 查询2023年 -> 应返回2023年政策
-	found, err = repo.FindByCityAndYear(1, 2023)
+	found, err = repo.FindByCityAndYear(110100000000, 2023)
 	require.NoError(t, err)
 	assert.Equal(t, 2023, found.EffectiveYear)
 
 	// 查询2026年（未来年份，存在2025年政策）-> 应返回2025年政策
-	found, err = repo.FindByCityAndYear(1, 2026)
+	found, err = repo.FindByCityAndYear(110100000000, 2026)
 	require.NoError(t, err)
 	assert.Equal(t, 2025, found.EffectiveYear)
 
@@ -82,7 +82,7 @@ func TestListPolicies_Pagination(t *testing.T) {
 	// 创建5条政策（不同城市）
 	for i := 1; i <= 5; i++ {
 		policy := createBeijing2025Policy()
-		policy.CityID = i
+		policy.CityCode = int64(i)
 		require.NoError(t, repo.Create(policy))
 	}
 
@@ -109,7 +109,7 @@ func TestListPolicies_Pagination(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, policies, 1)
-	assert.Equal(t, 3, policies[0].CityID)
+	assert.Equal(t, int64(3), policies[0].CityCode)
 }
 
 func TestSoftDelete(t *testing.T) {
@@ -150,13 +150,13 @@ func TestRecordCRUD(t *testing.T) {
 
 	// 创建政策
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
-	policy, _ := repo.FindByCityAndYear(1, 2025)
+	policy, _ := repo.FindByCityAndYear(110100000000, 2025)
 
 	// Create Record
 	record := &SocialInsuranceRecord{
 		EmployeeID:    1,
 		EmployeeName:  "张三",
-		CityID:        1,
+		CityCode:        110100000000,
 		PolicyID:      policy.ID,
 		BaseAmount:    7162.0,
 		Status:        SIStatusActive,
@@ -208,7 +208,7 @@ func TestListRecords_WithFilters(t *testing.T) {
 		record := &SocialInsuranceRecord{
 			EmployeeID:    int64(i),
 			EmployeeName:  string(rune('张' + i - 1)),
-			CityID:        1,
+			CityCode:        110100000000,
 			PolicyID:      1,
 			BaseAmount:    7162.0,
 			Status:        SIStatusActive,

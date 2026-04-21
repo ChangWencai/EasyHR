@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wencai/easyhr/internal/city"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -24,9 +25,18 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
+// setupTestDBWithCityRepo 返回 db 和 cityRepo（用于需要 CityName 的测试）
+func setupTestDBWithCityRepo(t *testing.T) (*gorm.DB, *city.Repository) {
+	db := setupTestDB(t)
+	require.NoError(t, db.AutoMigrate(&city.AreaCode{}))
+	cityRepo := city.NewRepository(db)
+	db.Create(&city.AreaCode{Code: 110100000000, Name: "北京", Level: 2, Pcode: 110000000000})
+	return db, cityRepo
+}
+
 func createBeijing2025Policy() *SocialInsurancePolicy {
 	return &SocialInsurancePolicy{
-		CityID:        1,
+		CityCode:        110100000000,
 		EffectiveYear: 2025,
 		Config: newJSONType(FiveInsurances{
 			Pension: InsuranceItem{
@@ -111,15 +121,15 @@ func (m *mockEmployeeQuerier) FindEmployeeByUserID(orgID int64, userID int64) (*
 // --- Service Tests: Policy & Calculate (keep existing) ---
 
 func TestCalculateInsuranceAmounts(t *testing.T) {
-	db := setupTestDB(t)
+	db, cityRepo := setupTestDBWithCityRepo(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil, NewReminderRepository(db))
+	svc := NewService(repo, nil, NewReminderRepository(db), cityRepo)
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
 	require.NoError(t, err)
 
-	resp, err := svc.CalculateInsuranceAmounts(1, 10000, 2025)
+	resp, err := svc.CalculateInsuranceAmounts(110100000000, 10000, 2025)
 	require.NoError(t, err)
 
 	assert.Equal(t, "北京", resp.CityName)
@@ -143,13 +153,13 @@ func TestCalculateInsuranceAmounts(t *testing.T) {
 func TestCalculateInsuranceAmounts_BelowLower(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil, NewReminderRepository(db))
+	svc := NewService(repo, nil, NewReminderRepository(db), nil)
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
 	require.NoError(t, err)
 
-	resp, err := svc.CalculateInsuranceAmounts(1, 3000, 2025)
+	resp, err := svc.CalculateInsuranceAmounts(110100000000, 3000, 2025)
 	require.NoError(t, err)
 
 	// 薪资3000低于下限7162，基数应使用下限7162
@@ -169,13 +179,13 @@ func TestCalculateInsuranceAmounts_BelowLower(t *testing.T) {
 func TestCalculateInsuranceAmounts_AboveUpper(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil, NewReminderRepository(db))
+	svc := NewService(repo, nil, NewReminderRepository(db), nil)
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
 	require.NoError(t, err)
 
-	resp, err := svc.CalculateInsuranceAmounts(1, 50000, 2025)
+	resp, err := svc.CalculateInsuranceAmounts(110100000000, 50000, 2025)
 	require.NoError(t, err)
 
 	// 薪资50000高于上限35811，基数应使用上限35811
@@ -195,13 +205,13 @@ func TestCalculateInsuranceAmounts_AboveUpper(t *testing.T) {
 func TestWorkInjuryAndMaternityPersonalRateZero(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
-	svc := NewService(repo, nil, NewReminderRepository(db))
+	svc := NewService(repo, nil, NewReminderRepository(db), nil)
 
 	policy := createBeijing2025Policy()
 	err := repo.Create(policy)
 	require.NoError(t, err)
 
-	resp, err := svc.CalculateInsuranceAmounts(1, 10000, 2025)
+	resp, err := svc.CalculateInsuranceAmounts(110100000000, 10000, 2025)
 	require.NoError(t, err)
 
 	// 工伤保险个人缴费金额必须为0
@@ -229,7 +239,7 @@ func TestEnrollEmployees(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	// 创建政策
 	policy := createBeijing2025Policy()
@@ -243,7 +253,7 @@ func TestEnrollEmployees(t *testing.T) {
 	// 批量参保
 	result, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1, 2, 3},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -258,7 +268,7 @@ func TestEnrollEmployees(t *testing.T) {
 	assert.Equal(t, SIStatusActive, record1.Status)
 	assert.Equal(t, "张三", record1.EmployeeName)
 	assert.Equal(t, "2025-07", record1.StartMonth)
-	assert.Equal(t, 1, record1.CityID)
+	assert.Equal(t, int64(110100000000), record1.CityCode)
 	assert.Equal(t, policy.ID, record1.PolicyID)
 	assert.InDelta(t, 7162.0, record1.BaseAmount, 0.01)
 	// 企业合计：基数7162时 1145.92+701.88+35.81+14.32+57.30+859.44=2814.67
@@ -275,7 +285,7 @@ func TestEnrollEmployees_DuplicateEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	// 创建政策
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
@@ -286,7 +296,7 @@ func TestEnrollEmployees_DuplicateEnrollment(t *testing.T) {
 	// 第一次参保
 	result, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -295,7 +305,7 @@ func TestEnrollEmployees_DuplicateEnrollment(t *testing.T) {
 	// 重复参保应失败
 	result, err = svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-08",
 	})
 	require.NoError(t, err)
@@ -308,14 +318,14 @@ func TestEnrollEmployees_NoPolicy(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	// 不创建政策
 	mockEmp.addEmployee(1, "张三", 100, nil)
 
 	result, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      999, // 不存在的城市
+		CityID:      999999999999, // 不存在的城市
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -328,7 +338,7 @@ func TestEnrollEmployees_PartialFailure(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	// 只为城市1创建政策
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
@@ -341,7 +351,7 @@ func TestEnrollEmployees_PartialFailure(t *testing.T) {
 	// 1号员工先参保（制造重复）
 	_, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -350,7 +360,7 @@ func TestEnrollEmployees_PartialFailure(t *testing.T) {
 	// 注意：这里3个员工使用城市1，但1号已参保，所以2成功1失败
 	result, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1, 2, 3},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -366,7 +376,7 @@ func TestStopEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -374,7 +384,7 @@ func TestStopEnrollment(t *testing.T) {
 	// 先参保
 	enrollResult, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -424,7 +434,7 @@ func TestStopEnrollment_NotActive(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -432,7 +442,7 @@ func TestStopEnrollment_NotActive(t *testing.T) {
 	// 参保
 	enrollResult, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -464,7 +474,7 @@ func TestBatchStopEnrollment(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -474,7 +484,7 @@ func TestBatchStopEnrollment(t *testing.T) {
 	// 批量参保
 	enrollResult, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1, 2, 3},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -516,7 +526,7 @@ func TestListRecords_FilterByStatus(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -525,7 +535,7 @@ func TestListRecords_FilterByStatus(t *testing.T) {
 	// 参保2个员工
 	_, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1, 2},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -566,7 +576,7 @@ func TestGetMyRecords_MemberRole(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 
@@ -577,7 +587,7 @@ func TestGetMyRecords_MemberRole(t *testing.T) {
 	// 参保
 	_, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -597,7 +607,7 @@ func TestGetChangeHistory(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -605,7 +615,7 @@ func TestGetChangeHistory(t *testing.T) {
 	// 参保（生成 enroll 历史）
 	_, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
@@ -638,7 +648,7 @@ func TestGetSocialInsuranceDeduction(t *testing.T) {
 	db := setupTestDB(t)
 	repo := NewRepository(db)
 	mockEmp := newMockEmployeeQuerier()
-	svc := NewService(repo, mockEmp, NewReminderRepository(db))
+	svc := NewService(repo, mockEmp, NewReminderRepository(db), nil)
 
 	require.NoError(t, repo.Create(createBeijing2025Policy()))
 	mockEmp.addEmployee(1, "张三", 100, nil)
@@ -646,7 +656,7 @@ func TestGetSocialInsuranceDeduction(t *testing.T) {
 	// 参保
 	_, err := svc.BatchEnroll(100, 1, &BatchEnrollRequest{
 		EmployeeIDs: []int64{1},
-		CityID:      1,
+		CityID:      110100000000,
 		StartMonth:  "2025-07",
 	})
 	require.NoError(t, err)
