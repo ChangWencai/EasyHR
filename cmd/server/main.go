@@ -105,6 +105,9 @@ func initApp() {
 		// 待办中心模型
 		&todo.TodoItem{},
 		&todo.CarouselItem{},
+
+		// 邮箱模板模型
+		&email_template.EmailTemplate{},
 		&todo.TodoInvite{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
