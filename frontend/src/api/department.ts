@@ -5,6 +5,7 @@ export interface Department {
   name: string
   parent_id: number | null
   sort_order: number
+  employee_count?: number
 }
 
 export interface PaginatedResponse<T> {

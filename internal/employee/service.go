@@ -9,13 +9,15 @@ import (
 
 	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/crypto"
+	"github.com/wencai/easyhr/internal/position"
 )
 
 // Service 员工业务逻辑层
 type Service struct {
-	repo      *Repository
-	cryptoCfg config.CryptoConfig
-	todoSvc   TodoCreator // interface to avoid circular import
+	repo        *Repository
+	cryptoCfg   config.CryptoConfig
+	todoSvc     TodoCreator          // interface to avoid circular import
+	positionSvc *position.Service    // 用于按名称查找/创建岗位并关联 PositionID
 }
 
 // TodoCreator interface for creating todo items (avoids circular import from todo package)
@@ -25,11 +27,12 @@ type TodoCreator interface {
 }
 
 // NewService 创建员工 Service
-func NewService(repo *Repository, cryptoCfg config.CryptoConfig, todoSvc TodoCreator) *Service {
+func NewService(repo *Repository, cryptoCfg config.CryptoConfig, todoSvc TodoCreator, positionSvc *position.Service) *Service {
 	return &Service{
-		repo:      repo,
-		cryptoCfg: cryptoCfg,
-		todoSvc:   todoSvc,
+		repo:        repo,
+		cryptoCfg:   cryptoCfg,
+		todoSvc:     todoSvc,
+		positionSvc: positionSvc,
 	}
 }
 
@@ -80,8 +83,20 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 	emp.Gender = gender
 	emp.BirthDate = &birthDate
 	emp.Position = req.Position
+	emp.DepartmentID = req.DepartmentID
 	emp.HireDate = hireDate
 	emp.Status = StatusPending
+
+	// PositionID 关联：如果请求中已指定则直接使用；否则按 Position 名称查找或创建岗位
+	if req.PositionID != nil {
+		emp.PositionID = req.PositionID
+	} else if req.Position != "" && s.positionSvc != nil {
+		posID, err := s.positionSvc.FindOrCreateByName(orgID, userID, req.Position, nil)
+		if err == nil {
+			emp.PositionID = &posID
+		}
+		// 查找失败不影响员工创建，仅记录日志
+	}
 
 	// 可选字段：银行卡
 	if req.BankName != "" || req.BankAccount != "" {
@@ -195,6 +210,19 @@ func (s *Service) UpdateEmployee(orgID, userID, id int64, req *UpdateEmployeeReq
 	}
 	if req.Position != nil {
 		updates["position"] = *req.Position
+		// 同时更新 PositionID：按新 Position 文本查找或创建岗位
+		if s.positionSvc != nil {
+			posID, err := s.positionSvc.FindOrCreateByName(orgID, userID, *req.Position, nil)
+			if err == nil {
+				updates["position_id"] = posID
+			}
+		}
+	}
+	if req.PositionID != nil {
+		updates["position_id"] = *req.PositionID
+	}
+	if req.DepartmentID != nil {
+		updates["department_id"] = *req.DepartmentID
 	}
 	if req.HireDate != nil {
 		hireDate, err := time.Parse("2006-01-02", *req.HireDate)
@@ -309,6 +337,44 @@ func (s *Service) GetSensitiveInfo(orgID, id int64) (*SensitiveInfoResponse, err
 	}
 
 	return resp, nil
+}
+
+// PositionCount 岗位员工数量
+type PositionCount struct {
+	PositionID int64 `json:"position_id"`
+	Count     int64 `json:"count"`
+}
+
+// ListPositionCounts 获取每个岗位的员工数量
+func (s *Service) ListPositionCounts(orgID int64) ([]PositionCount, error) {
+	rows, err := s.repo.CountByPositionIDGrouped(orgID)
+	if err != nil {
+		return nil, err
+	}
+	counts := make([]PositionCount, len(rows))
+	for i, r := range rows {
+		counts[i] = PositionCount{PositionID: r.PositionID, Count: r.Count}
+	}
+	return counts, nil
+}
+
+// DeptCount 部门员工数量
+type DeptCount struct {
+	DepartmentID int64 `json:"department_id"`
+	Count       int64 `json:"count"`
+}
+
+// ListDeptCounts 获取每个部门的员工数量
+func (s *Service) ListDeptCounts(orgID int64) ([]DeptCount, error) {
+	rows, err := s.repo.CountByDepartmentIDGrouped(orgID)
+	if err != nil {
+		return nil, err
+	}
+	counts := make([]DeptCount, len(rows))
+	for i, r := range rows {
+		counts[i] = DeptCount{DepartmentID: r.DepartmentID, Count: r.Count}
+	}
+	return counts, nil
 }
 
 // ListRoster 花名册查询（聚合薪资/年限/合同到期/部门/手机号）
@@ -549,18 +615,20 @@ func (s *Service) toResponse(emp *Employee) (*EmployeeResponse, error) {
 	idCard, _ := crypto.Decrypt(emp.IDCardEncrypted, aesKey)
 
 	resp := &EmployeeResponse{
-		ID:        emp.ID,
-		Name:      emp.Name,
-		Phone:     crypto.MaskPhone(phone),
-		IDCard:    crypto.MaskIDCard(idCard),
-		Gender:    emp.Gender,
-		BirthDate: emp.BirthDate,
-		Position:  emp.Position,
-		HireDate:  emp.HireDate,
-		Status:    emp.Status,
-		Address:   emp.Address,
-		Remark:    emp.Remark,
-		CreatedAt: emp.CreatedAt,
+		ID:           emp.ID,
+		Name:         emp.Name,
+		Phone:        crypto.MaskPhone(phone),
+		IDCard:       crypto.MaskIDCard(idCard),
+		Gender:       emp.Gender,
+		BirthDate:    emp.BirthDate,
+		Position:     emp.Position,
+		PositionID:   emp.PositionID,
+		DepartmentID: emp.DepartmentID,
+		HireDate:     emp.HireDate,
+		Status:       emp.Status,
+		Address:      emp.Address,
+		Remark:       emp.Remark,
+		CreatedAt:    emp.CreatedAt,
 	}
 
 	// 银行卡信息

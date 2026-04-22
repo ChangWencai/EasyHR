@@ -3,8 +3,6 @@ package position
 import (
 	"errors"
 	"fmt"
-
-	"github.com/wencai/easyhr/internal/employee"
 )
 
 var (
@@ -18,16 +16,12 @@ var (
 
 // Service 岗位业务逻辑层
 type Service struct {
-	repo    *Repository
-	empRepo *employee.Repository
+	repo *Repository
 }
 
 // NewService 创建岗位 Service
-func NewService(repo *Repository, empRepo *employee.Repository) *Service {
-	return &Service{
-		repo:    repo,
-		empRepo: empRepo,
-	}
+func NewService(repo *Repository) *Service {
+	return &Service{repo: repo}
 }
 
 // CreatePosition 创建岗位（含去重校验）
@@ -153,6 +147,8 @@ func (s *Service) GetSelectOptions(orgID int64, deptID *int64) (*PositionSelectO
 			commonPositions = append(commonPositions, opt)
 		} else if deptID != nil && *p.DepartmentID == *deptID {
 			deptPositions = append(deptPositions, opt)
+		} else if deptID == nil {
+			deptPositions = append(deptPositions, opt)
 		}
 	}
 
@@ -164,8 +160,11 @@ func (s *Service) GetSelectOptions(orgID int64, deptID *int64) (*PositionSelectO
 }
 
 // MigrateFromEmployeePositions 迁移现有员工 position 文本到 Position 表
-// 仅在 Position 表为空时执行，幂等操作
-func (s *Service) MigrateFromEmployeePositions(orgID int64) error {
+// 仅在 Position 表为空时执行，幂等操作。employees 由调用方传入，避免循环依赖
+func (s *Service) MigrateFromEmployeePositions(orgID int64, employees []struct {
+	Name     string
+	Position string
+}) error {
 	// 检查是否已迁移
 	existing, err := s.repo.ListByOrg(orgID)
 	if err != nil {
@@ -173,12 +172,6 @@ func (s *Service) MigrateFromEmployeePositions(orgID int64) error {
 	}
 	if len(existing) > 0 {
 		return nil // 已迁移，跳过
-	}
-
-	// 获取所有在职员工
-	employees, err := s.empRepo.ListAllByOrg(orgID)
-	if err != nil {
-		return fmt.Errorf("查询员工列表失败: %w", err)
 	}
 
 	// 收集唯一岗位名称
@@ -203,6 +196,40 @@ func (s *Service) MigrateFromEmployeePositions(orgID int64) error {
 	}
 
 	return nil
+}
+
+// FindOrCreateByName 按岗位名称查找或创建岗位，并返回其 ID
+// 如果同名岗位已存在（无论部门归属），直接返回；否则创建新的通用岗位
+func (s *Service) FindOrCreateByName(orgID, userID int64, name string, deptID *int64) (int64, error) {
+	if name == "" {
+		return 0, errors.New("岗位名称不能为空")
+	}
+
+	// 查找同名岗位（跨部门唯一性）
+	positions, err := s.repo.ListByOrg(orgID)
+	if err != nil {
+		return 0, fmt.Errorf("查询岗位列表失败: %w", err)
+	}
+	for _, p := range positions {
+		if p.Name == name {
+			return p.ID, nil
+		}
+	}
+
+	// 不存在：创建通用岗位（department_id=nil）
+	pos := &Position{
+		Name:         name,
+		DepartmentID: nil, // 始终创建为通用岗位
+		SortOrder:    0,
+	}
+	pos.OrgID = orgID
+	pos.CreatedBy = userID
+	pos.UpdatedBy = userID
+
+	if err := s.repo.Create(pos); err != nil {
+		return 0, fmt.Errorf("创建岗位失败: %w", err)
+	}
+	return pos.ID, nil
 }
 
 // toPositionResponse 将 Position 转为 PositionResponse

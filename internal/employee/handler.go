@@ -31,6 +31,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	authGroup.GET("/employees", h.ListEmployees)
 	authGroup.GET("/employees/roster", h.ListRoster)
 	authGroup.GET("/employees/export", middleware.RequireRole("owner", "admin"), h.ExportExcel)
+	authGroup.GET("/employees/position-counts", h.ListPositionCounts)
+	authGroup.GET("/employees/dept-counts", h.ListDeptCounts)
 	authGroup.GET("/employees/:id", h.GetEmployee)
 	authGroup.PUT("/employees/:id", middleware.RequireRole("owner", "admin"), h.UpdateEmployee)
 	authGroup.DELETE("/employees/:id", middleware.RequireRole("owner", "admin"), h.DeleteEmployee)
@@ -217,4 +219,32 @@ func (h *Handler) GetSensitiveInfo(c *gin.Context) {
 	}
 
 	response.Success(c, info)
+}
+
+// ListPositionCounts 获取每个岗位的员工数量
+func (h *Handler) ListPositionCounts(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+
+	counts, err := h.svc.ListPositionCounts(orgID)
+	if err != nil {
+		logger.SugarLogger.Debugw("ListPositionCounts: 失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 20108, "查询失败")
+		return
+	}
+
+	response.Success(c, counts)
+}
+
+// ListDeptCounts 获取每个部门的员工数量
+func (h *Handler) ListDeptCounts(c *gin.Context) {
+	orgID := c.GetInt64("org_id")
+
+	counts, err := h.svc.ListDeptCounts(orgID)
+	if err != nil {
+		logger.SugarLogger.Debugw("ListDeptCounts: 失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 20109, "查询失败")
+		return
+	}
+
+	response.Success(c, counts)
 }

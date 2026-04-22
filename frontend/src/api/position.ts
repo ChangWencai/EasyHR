@@ -5,6 +5,7 @@ export interface Position {
   name: string
   department_id: number | null
   sort_order: number
+  employee_count?: number
 }
 
 export interface PositionSelectOptions {
@@ -15,12 +16,12 @@ export interface PositionSelectOptions {
 
 export const positionApi = {
   list: (department_id?: number) =>
-    request.get<Position[]>('/positions', department_id !== undefined ? { params: { department_id } } : {}),
+    request.get<Position[]>('/positions', department_id !== undefined ? { params: { department_id } } : {}).then(r => r.data),
 
   getSelectOptions: (department_id?: number) =>
     request.get<PositionSelectOptions>('/positions/select-options', {
       params: department_id !== undefined ? { department_id } : {},
-    }),
+    }).then(r => r.data),
 
   create: (data: { name: string; department_id?: number | null; sort_order?: number }) =>
     request.post<Position>('/positions', data),

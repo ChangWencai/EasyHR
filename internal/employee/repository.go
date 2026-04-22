@@ -376,6 +376,48 @@ func (r *Repository) GetContractExpiryDays(orgID int64, employeeIDs []int64) (ma
 	return result, nil
 }
 
+// positionCountRow 岗位员工数量行
+type positionCountRow struct {
+	PositionID int64
+	Count      int64
+}
+
+// deptCountRow 部门员工数量行
+type deptCountRow struct {
+	DepartmentID int64
+	Count       int64
+}
+
+// CountByDepartmentIDGrouped 批量获取每个部门的员工数量
+func (r *Repository) CountByDepartmentIDGrouped(orgID int64) ([]deptCountRow, error) {
+	var results []deptCountRow
+	err := r.db.Model(&Employee{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Select("department_id, COUNT(*) as count").
+		Where("department_id IS NOT NULL").
+		Group("department_id").
+		Scan(&results).Error
+	if err != nil {
+		return nil, fmt.Errorf("count by department_id: %w", err)
+	}
+	return results, nil
+}
+
+// CountByPositionIDGrouped 批量获取每个岗位的员工数量
+func (r *Repository) CountByPositionIDGrouped(orgID int64) ([]positionCountRow, error) {
+	var results []positionCountRow
+	err := r.db.Model(&Employee{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Select("position_id, COUNT(*) as count").
+		Where("position_id IS NOT NULL").
+		Group("position_id").
+		Scan(&results).Error
+	if err != nil {
+		return nil, fmt.Errorf("count by position_id: %w", err)
+	}
+	return results, nil
+}
+
 // GetDepartmentNames 批量获取部门名称
 func (r *Repository) GetDepartmentNames(orgID int64, deptIDs []int64) (map[int64]string, error) {
 	result := make(map[int64]string)

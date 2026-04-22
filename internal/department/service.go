@@ -156,23 +156,56 @@ func (s *Service) GetDepartment(orgID, id int64) (*DepartmentResponse, error) {
 
 // GetTree 获取组织架构树（部门->岗位->员工三层）
 func (s *Service) GetTree(orgID int64) ([]*TreeNode, error) {
+	// 获取所有在职员工（用于迁移和构建树）
+	employees, err := s.empRepo.ListAllByOrg(orgID)
+	if err != nil {
+		return nil, fmt.Errorf("查询员工失败: %w", err)
+	}
+
 	// 按需迁移：如果该企业还没有 position 记录，自动从 Employee.position 文本迁移
-	s.positionSvc.MigrateFromEmployeePositions(orgID)
+	empStructs := make([]struct {
+		Name     string
+		Position string
+	}, len(employees))
+	for i, e := range employees {
+		empStructs[i] = struct {
+			Name     string
+			Position string
+		}{Name: e.Name, Position: e.Position}
+	}
+	s.positionSvc.MigrateFromEmployeePositions(orgID, empStructs)
 
 	departments, err := s.repo.ListAll(orgID)
 	if err != nil {
 		return nil, fmt.Errorf("查询部门失败: %w", err)
 	}
 
-	employees, err := s.empRepo.ListAllByOrg(orgID)
-	if err != nil {
-		return nil, fmt.Errorf("查询员工失败: %w", err)
-	}
-
 	// 获取岗位列表（BuildTree v2 使用真实岗位节点）
 	positions, err := s.positionRepo.ListByOrg(orgID)
 	if err != nil {
 		return nil, fmt.Errorf("查询岗位失败: %w", err)
+	}
+
+	// 修复历史数据：将 position_id 为 NULL 的员工按 position 文本关联到对应岗位
+	// 背景：MigrateFromEmployeePositions 只创建了 Position 记录，未反向更新 employee.position_id
+	if len(positions) > 0 {
+		posMap := make(map[string]int64, len(positions))
+		for _, p := range positions {
+			posMap[p.Name] = p.ID
+		}
+		needReload := false
+		for _, emp := range employees {
+			if emp.PositionID == nil && emp.Position != "" {
+				if posID, ok := posMap[emp.Position]; ok {
+					if err := s.empRepo.Update(orgID, emp.ID, map[string]interface{}{"position_id": posID}); err == nil {
+						needReload = true
+					}
+				}
+			}
+		}
+		if needReload {
+			employees, _ = s.empRepo.ListAllByOrg(orgID)
+		}
 	}
 
 	tree := s.BuildTree(departments, employees, positions)

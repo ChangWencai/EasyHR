@@ -4,17 +4,19 @@ import "time"
 
 // CreateEmployeeRequest 创建员工请求（手动录入）
 type CreateEmployeeRequest struct {
-	Name             string `json:"name" binding:"required,min=2,max=50"`
-	Phone            string `json:"phone" binding:"required,len=11"`
-	IDCard           string `json:"id_card" binding:"required,len=18"`
-	Position         string `json:"position" binding:"required,min=1,max=100"`
-	HireDate         string `json:"hire_date" binding:"required"`
-	BankName         string `json:"bank_name" binding:"omitempty,max=100"`
-	BankAccount      string `json:"bank_account" binding:"omitempty"`
-	EmergencyContact string `json:"emergency_contact" binding:"omitempty,max=50"`
-	EmergencyPhone   string `json:"emergency_phone" binding:"omitempty,len=11"`
-	Address          string `json:"address" binding:"omitempty,max=500"`
-	Remark           string `json:"remark" binding:"omitempty"`
+	Name             string  `json:"name" binding:"required,min=2,max=50"`
+	Phone            string  `json:"phone" binding:"required,len=11"`
+	IDCard           string  `json:"id_card" binding:"required,len=18"`
+	Position         string  `json:"position" binding:"required,min=1,max=100"`
+	PositionID       *int64  `json:"position_id"` // 岗位ID（可选，自动从 Position 文本匹配）
+	DepartmentID     *int64  `json:"department_id"` // 部门ID（可选）
+	HireDate         string  `json:"hire_date" binding:"required"`
+	BankName         string  `json:"bank_name" binding:"omitempty,max=100"`
+	BankAccount      string  `json:"bank_account" binding:"omitempty"`
+	EmergencyContact string  `json:"emergency_contact" binding:"omitempty,max=50"`
+	EmergencyPhone   string  `json:"emergency_phone" binding:"omitempty,len=11"`
+	Address          string  `json:"address" binding:"omitempty,max=500"`
+	Remark           string  `json:"remark" binding:"omitempty"`
 }
 
 // UpdateEmployeeRequest 更新员工请求（部分更新，仅非 nil 字段更新）
@@ -23,6 +25,8 @@ type UpdateEmployeeRequest struct {
 	Phone            *string `json:"phone" binding:"omitempty,len=11"`
 	IDCard           *string `json:"id_card" binding:"omitempty,len=18"`
 	Position         *string `json:"position" binding:"omitempty,min=1,max=100"`
+	PositionID       *int64  `json:"position_id" binding:"omitempty"`
+	DepartmentID     *int64  `json:"department_id" binding:"omitempty"`
 	HireDate         *string `json:"hire_date" binding:"omitempty"`
 	BankName         *string `json:"bank_name" binding:"omitempty,max=100"`
 	BankAccount      *string `json:"bank_account" binding:"omitempty"`
@@ -41,6 +45,8 @@ type EmployeeResponse struct {
 	Gender           string     `json:"gender"`
 	BirthDate        *time.Time `json:"birth_date"`
 	Position         string     `json:"position"`
+	PositionID       *int64     `json:"position_id"`
+	DepartmentID     *int64     `json:"department_id"`
 	HireDate         time.Time  `json:"hire_date"`
 	Status           string     `json:"status"`
 	BankName         string     `json:"bank_name,omitempty"`

@@ -8,6 +8,7 @@ import (
 	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/crypto"
 	"github.com/wencai/easyhr/internal/common/middleware"
+	"github.com/wencai/easyhr/internal/position"
 	"gorm.io/gorm"
 )
 
@@ -19,17 +20,19 @@ var (
 
 // RegistrationService 员工信息登记业务逻辑层
 type RegistrationService struct {
-	regRepo    *RegistrationRepository
-	empRepo    *Repository
-	cryptoCfg  config.CryptoConfig
+	regRepo      *RegistrationRepository
+	empRepo      *Repository
+	cryptoCfg    config.CryptoConfig
+	positionSvc  *position.Service // 用于按名称查找/创建岗位并关联 PositionID
 }
 
 // NewRegistrationService 创建登记 Service
-func NewRegistrationService(regRepo *RegistrationRepository, empRepo *Repository, cryptoCfg config.CryptoConfig) *RegistrationService {
+func NewRegistrationService(regRepo *RegistrationRepository, empRepo *Repository, cryptoCfg config.CryptoConfig, positionSvc *position.Service) *RegistrationService {
 	return &RegistrationService{
-		regRepo:   regRepo,
-		empRepo:   empRepo,
-		cryptoCfg: cryptoCfg,
+		regRepo:     regRepo,
+		empRepo:     empRepo,
+		cryptoCfg:   cryptoCfg,
+		positionSvc: positionSvc,
 	}
 }
 
@@ -229,6 +232,14 @@ func (s *RegistrationService) SubmitRegistration(token string, req *SubmitRegist
 			if req.EmergencyContact != "" {
 				updates["emergency_contact"] = req.EmergencyContact
 			}
+			// 更新岗位：按 Position 文本查找或创建岗位并关联 PositionID
+			if reg.Position != "" && s.positionSvc != nil {
+				updates["position"] = reg.Position
+				posID, err := s.positionSvc.FindOrCreateByName(reg.OrgID, reg.CreatedBy, reg.Position, reg.DepartmentID)
+				if err == nil {
+					updates["position_id"] = posID
+				}
+			}
 
 			if len(updates) > 0 {
 				updates["updated_by"] = reg.CreatedBy
@@ -248,6 +259,13 @@ func (s *RegistrationService) SubmitRegistration(token string, req *SubmitRegist
 			emp.IDCardHash = idCardHash
 			emp.Position = reg.Position
 			emp.DepartmentID = reg.DepartmentID
+			// 设置 PositionID：按 Position 文本查找或创建岗位
+			if reg.Position != "" && s.positionSvc != nil {
+				posID, err := s.positionSvc.FindOrCreateByName(reg.OrgID, reg.CreatedBy, reg.Position, reg.DepartmentID)
+				if err == nil {
+					emp.PositionID = &posID
+				}
+			}
 			emp.Address = req.Address
 			emp.BankName = req.BankName
 			emp.BankAccountEncrypted = bankAccountEncrypted

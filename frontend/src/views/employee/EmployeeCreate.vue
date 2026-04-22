@@ -61,6 +61,22 @@
                       style="width: 100%"
                     />
                   </el-form-item>
+                  <el-form-item label="部门" prop="department_id" class="form-item">
+                    <el-select
+                      v-model="form.department_id"
+                      placeholder="请选择部门"
+                      clearable
+                      size="large"
+                      style="width: 100%"
+                    >
+                      <el-option
+                        v-for="dept in flatDepartments"
+                        :key="dept.id"
+                        :value="dept.id"
+                        :label="dept.name"
+                      />
+                    </el-select>
+                  </el-form-item>
                   <el-form-item label="岗位" prop="position_id" class="form-item">
                     <el-select
                       v-model="form.position_id"
@@ -69,7 +85,6 @@
                       size="large"
                       style="width: 100%"
                     >
-                      <el-option value="" label="未分配岗位" />
                       <el-option-group v-if="deptPositions.length" label="部门专属岗位">
                         <el-option
                           v-for="p in deptPositions"
@@ -222,6 +237,22 @@
                 </el-option-group>
               </el-select>
             </el-form-item>
+            <el-form-item label="部门" prop="department_id" class="form-item">
+              <el-select
+                v-model="form.department_id"
+                placeholder="请选择部门"
+                clearable
+                size="large"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="dept in flatDepartments"
+                  :key="dept.id"
+                  :value="dept.id"
+                  :label="dept.name"
+                />
+              </el-select>
+            </el-form-item>
             <el-form-item label="入职日期" prop="entry_date" class="form-item">
               <el-date-picker
                 v-model="form.entry_date"
@@ -361,7 +392,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
 import { positionApi } from '@/api/position'
-import type { PositionSelectOptions } from '@/api/position'
+import { departmentApi } from '@/api/department'
+import type { Department } from '@/api/department'
 import StepWizard from '@/components/common/StepWizard.vue'
 import StepCard from '@/components/common/StepCard.vue'
 import { useMessage } from '@/composables/useMessage'
@@ -395,6 +427,7 @@ const steps = [
 
 const deptPositions = ref<Array<{ id: number; name: string }>>([])
 const commonPositions = ref<Array<{ id: number; name: string }>>([])
+const flatDepartments = ref<Department[]>([])
 
 const form = reactive({
   name: '',
@@ -402,6 +435,7 @@ const form = reactive({
   id_number: '',
   position: '',
   position_id: null as number | null,
+  department_id: null as number | null,
   entry_date: '',
   salary: undefined as number | undefined,
   probation_salary: undefined as number | undefined,
@@ -494,6 +528,7 @@ async function loadEmployee() {
       id_number: emp.id_number,
       position: emp.position,
       position_id: (emp as unknown as Record<string, unknown>).position_id as number | null ?? null,
+      department_id: (emp as unknown as Record<string, unknown>).department_id as number | null ?? null,
       entry_date: emp.entry_date,
       salary: emp.salary,
       probation_salary: emp.probation_salary,
@@ -508,14 +543,21 @@ async function loadEmployee() {
 
 async function loadPositionOptions(deptId?: number | null) {
   try {
-    const res = await positionApi.getSelectOptions(deptId ?? undefined)
-    const data = (res as { data?: PositionSelectOptions }).data
-      ?? (res as unknown as PositionSelectOptions)
+    const data = await positionApi.getSelectOptions(deptId ?? undefined)
     deptPositions.value = data.dept_positions ?? []
     commonPositions.value = data.common_positions ?? []
   } catch {
     deptPositions.value = []
     commonPositions.value = []
+  }
+}
+
+async function loadDepartments() {
+  try {
+    const data = await departmentApi.list()
+    flatDepartments.value = Array.isArray(data) ? data : []
+  } catch {
+    flatDepartments.value = []
   }
 }
 
@@ -530,6 +572,7 @@ function resolvePositionName(): string {
 
 onMounted(() => {
   loadEmployee()
+  loadDepartments()
   loadPositionOptions(undefined)
 })
 </script>

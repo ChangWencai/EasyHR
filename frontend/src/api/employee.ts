@@ -6,6 +6,8 @@ export interface Employee {
   phone: string
   id_number: string
   position: string
+  position_id?: number | null
+  department_id?: number | null
   entry_date: string
   status: string
   salary?: number

@@ -66,6 +66,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/employee/OrgChart.vue'),
       },
       {
+        path: '/employee/positions',
+        name: 'employee-positions',
+        component: () => import('@/views/employee/PositionManage.vue'),
+      },
+      {
         path: '/employee/registrations',
         name: 'employee-registrations',
         component: () => import('@/views/employee/RegistrationList.vue'),

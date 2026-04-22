@@ -167,9 +167,14 @@ func main() {
 	todoRepoForDI := todo.NewRepository(db)
 	todoSvcForDI := todo.NewService(todoRepoForDI)
 
-	// 员工模块依赖注入
+	// 岗位模块依赖注入（Phase 14，需在员工模块之前创建）
 	empRepo := employee.NewRepository(db)
-	empSvc := employee.NewService(empRepo, cfg.Crypto, todoSvcForDI)
+	posRepo := position.NewRepository(db)
+	posSvc := position.NewService(posRepo)
+	posHandler := position.NewPositionHandler(posSvc)
+
+	// 员工模块依赖注入
+	empSvc := employee.NewService(empRepo, cfg.Crypto, todoSvcForDI, posSvc)
 	empHandler := employee.NewHandler(empSvc)
 
 	// 邀请模块依赖注入
@@ -179,17 +184,11 @@ func main() {
 
 	// 员工信息登记模块依赖注入
 	regRepo := employee.NewRegistrationRepository(db)
-	regSvc := employee.NewRegistrationService(regRepo, empRepo, cfg.Crypto)
+	regSvc := employee.NewRegistrationService(regRepo, empRepo, cfg.Crypto, posSvc)
 	regHandler := employee.NewRegistrationHandler(regSvc, smsClient)
 
 	// 部门模块依赖注入
 	deptRepo := department.NewRepository(db)
-
-	// 岗位模块依赖注入（Phase 14）
-	posRepo := position.NewRepository(db)
-	posSvc := position.NewService(posRepo, empRepo)
-	posHandler := position.NewPositionHandler(posSvc)
-
 	deptSvc := department.NewService(deptRepo, empRepo, posRepo, posSvc)
 	deptHandler := department.NewDepartmentHandler(deptSvc)
 
