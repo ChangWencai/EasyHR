@@ -11,6 +11,11 @@
       <el-table :data="list" stripe v-loading="loading">
         <el-table-column prop="name" label="姓名" min-width="80" />
         <el-table-column prop="phone" label="手机号" min-width="120" />
+        <el-table-column prop="channel" label="推送方式" min-width="100">
+          <template #default="{ row }">
+            {{ row.channel === 'wechat' ? '微信小程序' : '邮箱' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" min-width="90">
           <template #default="{ row }">
             <el-tag :type="invitationStatusTagType[row.status]" size="small">
@@ -51,18 +56,36 @@
     </el-card>
 
     <!-- 发送邀请对话框 -->
-    <el-dialog v-model="showDialog" title="发送入职邀请" width="400px">
+    <el-dialog v-model="showDialog" title="发送入职邀请" width="440px" destroy-on-close>
       <el-form ref="dialogFormRef" :model="dialogForm" :rules="dialogRules" label-width="80px">
+        <el-form-item label="推送方式" prop="channel">
+          <el-radio-group v-model="dialogForm.channel" @change="handleChannelChange">
+            <el-radio value="wechat">微信小程序</el-radio>
+            <el-radio value="email">邮箱</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="姓名" prop="name">
           <el-input v-model="dialogForm.name" placeholder="请输入员工姓名" />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="dialogForm.phone" placeholder="请输入手机号" maxlength="11" />
-        </el-form-item>
+        <template v-if="dialogForm.channel === 'wechat'">
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="dialogForm.phone" placeholder="请输入手机号" maxlength="11" />
+          </el-form-item>
+          <el-form-item label="岗位" prop="position">
+            <el-input v-model="dialogForm.position" placeholder="请输入岗位" maxlength="100" />
+          </el-form-item>
+        </template>
+        <template v-if="dialogForm.channel === 'email'">
+          <el-form-item label="邮箱模板" prop="email_template_id">
+            <el-select v-model="dialogForm.email_template_id" placeholder="请选择邮箱模板" style="width: 100%">
+              <el-option label="默认模板" :value="1" />
+            </el-select>
+          </el-form-item>
+        </template>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" :loading="sending" @click="handleSend">发送</el-button>
+        <el-button type="primary" :loading="sending" @click="handleSend">发送邀请</el-button>
       </template>
     </el-dialog>
   </div>
@@ -85,13 +108,22 @@ const sending = ref(false)
 const dialogFormRef = ref<FormInstance>()
 const inviteUrl = ref('')
 
-const dialogForm = reactive({ name: '', phone: '' })
+const dialogForm = reactive({ channel: 'wechat', name: '', phone: '', position: '', email_template_id: undefined as number | undefined })
 const dialogRules: FormRules = {
+  channel: [{ required: true, message: '请选择推送方式', trigger: 'change' }],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
   ],
+  position: [],
+  email_template_id: [],
+}
+
+function handleChannelChange() {
+  dialogForm.phone = ''
+  dialogForm.position = ''
+  dialogForm.email_template_id = undefined
 }
 
 async function load(p = 1) {
@@ -124,8 +156,11 @@ async function handleSend() {
     inviteUrl.value = fullUrl
     ElMessage.success('邀请已发送')
     showDialog.value = false
+    dialogForm.channel = 'wechat'
     dialogForm.name = ''
     dialogForm.phone = ''
+    dialogForm.position = ''
+    dialogForm.email_template_id = undefined
     load()
     // auto copy
     copyLink(fullUrl)

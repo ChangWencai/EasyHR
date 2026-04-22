@@ -64,10 +64,17 @@ func (s *InvitationService) CreateInvitation(orgID, userID int64, req *CreateInv
 	inv := &Invitation{
 		OrgID:     orgID,
 		Token:     token,
+		Channel:   req.Channel,
+		Name:      req.Name,
+		Phone:     req.Phone,
 		Position:  req.Position,
 		Status:    InvitationStatusPending,
 		CreatedBy: userID,
 		ExpiresAt: expiresAt,
+	}
+
+	if req.Channel == "email" && req.EmailTemplateID != nil {
+		inv.EmailTemplateID = req.EmailTemplateID
 	}
 
 	if err := s.invRepo.Create(inv); err != nil {
@@ -77,6 +84,8 @@ func (s *InvitationService) CreateInvitation(orgID, userID int64, req *CreateInv
 	return &CreateInvitationResponse{
 		Token:     token,
 		InviteURL: "/invite/" + token,
+		Channel:   req.Channel,
+		Name:      req.Name,
 		ExpiresAt: expiresAt.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
@@ -247,14 +256,18 @@ func (s *InvitationService) ListInvitations(orgID int64, query ListInvitationsQu
 	items := make([]InvitationListItem, 0, len(invitations))
 	for _, inv := range invitations {
 		item := InvitationListItem{
-			ID:         inv.ID,
-			Token:      inv.Token,
-			Position:   inv.Position,
-			Status:     inv.Status,
-			CreatedAt:  inv.CreatedAt,
-			ExpiresAt:  inv.ExpiresAt,
-			UsedAt:     inv.UsedAt,
-			EmployeeID: inv.EmployeeID,
+			ID:               inv.ID,
+			Token:            inv.Token,
+			Name:             inv.Name,
+			Phone:            inv.Phone,
+			Channel:          inv.Channel,
+			Position:         inv.Position,
+			Status:           inv.Status,
+			CreatedAt:        inv.CreatedAt,
+			ExpiresAt:        inv.ExpiresAt,
+			UsedAt:           inv.UsedAt,
+			EmployeeID:       inv.EmployeeID,
+			EmailTemplateID:  inv.EmailTemplateID,
 		}
 
 		// 如果邀请已使用且有员工 ID，查询员工姓名

@@ -10,8 +10,12 @@ type Invitation struct {
 	ID         int64      `gorm:"primaryKey;autoIncrement;comment:主键ID" json:"id"`
 	OrgID      int64      `gorm:"column:org_id;index;not null;comment:所属企业ID" json:"org_id"`
 	Token      string     `gorm:"column:token;type:varchar(64);uniqueIndex;not null;comment:邀请Token" json:"token"`
+	Channel    string     `gorm:"column:channel;type:varchar(20);not null;default:wechat;comment:推送渠道:wechat=微信小程序,email=邮箱" json:"channel"`
+	Name       string     `gorm:"column:name;type:varchar(50);comment:员工姓名" json:"name"`
+	Phone      string     `gorm:"column:phone;type:varchar(20);comment:手机号(用于微信渠道)" json:"phone"`
 	Position   string     `gorm:"column:position;type:varchar(100);comment:岗位" json:"position"`
 	Status     string     `gorm:"column:status;type:varchar(20);not null;default:pending;comment:状态（pending/used/expired/cancelled）" json:"status"`
+	EmailTemplateID *int64 `gorm:"column:email_template_id;comment:邮箱模板ID(用于邮箱渠道)" json:"email_template_id"`
 	CreatedBy  int64      `gorm:"column:created_by;not null;comment:创建人ID" json:"created_by"`
 	CreatedAt  time.Time  `gorm:"column:created_at;autoCreateTime;comment:创建时间" json:"created_at"`
 	ExpiresAt  time.Time  `gorm:"column:expires_at;not null;comment:邀请过期时间" json:"expires_at"`

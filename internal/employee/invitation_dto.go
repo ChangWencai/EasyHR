@@ -4,7 +4,11 @@ import "time"
 
 // CreateInvitationRequest 老板创建邀请请求
 type CreateInvitationRequest struct {
-	Position string `json:"position" binding:"omitempty,max=100"` // 预设岗位（可选）
+	Channel         string `json:"channel" binding:"required,oneof=wechat email"`
+	Name            string `json:"name" binding:"required,min=2,max=50"`
+	Phone           string `json:"phone" binding:"required_if=Channel wechat,max=11"`
+	Position        string `json:"position" binding:"required_if=Channel wechat,max=100"`
+	EmailTemplateID *int64 `json:"email_template_id" binding:"required_if=Channel email"`
 }
 
 // ListInvitationsQuery 邀请列表查询参数
@@ -33,20 +37,26 @@ type InvitationDetailResponse struct {
 
 // InvitationListItem 邀请列表响应项
 type InvitationListItem struct {
-	ID           int64      `json:"id"`
-	Token        string     `json:"token"`
-	Position     string     `json:"position"`
-	Status       string     `json:"status"`
-	CreatedAt    time.Time  `json:"created_at"`
-	ExpiresAt    time.Time  `json:"expires_at"`
-	UsedAt       *time.Time `json:"used_at"`
-	EmployeeID   *int64     `json:"employee_id"`
-	EmployeeName string     `json:"employee_name,omitempty"`
+	ID               int64      `json:"id"`
+	Token            string     `json:"token"`
+	Name             string     `json:"name,omitempty"`
+	Phone            string     `json:"phone,omitempty"`
+	Channel          string     `json:"channel"`
+	Position         string     `json:"position"`
+	Status           string     `json:"status"`
+	CreatedAt        time.Time  `json:"created_at"`
+	ExpiresAt        time.Time  `json:"expires_at"`
+	UsedAt           *time.Time `json:"used_at"`
+	EmployeeID       *int64     `json:"employee_id"`
+	EmployeeName     string     `json:"employee_name,omitempty"`
+	EmailTemplateID  *int64     `json:"email_template_id,omitempty"`
 }
 
 // CreateInvitationResponse 创建邀请响应
 type CreateInvitationResponse struct {
 	Token     string `json:"token"`
 	InviteURL string `json:"invite_url"` // /invite/{token}
+	Channel   string `json:"channel"`
+	Name      string `json:"name"`
 	ExpiresAt string `json:"expires_at"`
 }
