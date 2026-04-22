@@ -78,7 +78,12 @@
         <template v-if="dialogForm.channel === 'email'">
           <el-form-item label="邮箱模板" prop="email_template_id">
             <el-select v-model="dialogForm.email_template_id" placeholder="请选择邮箱模板" style="width: 100%">
-              <el-option label="默认模板" :value="1" />
+              <el-option
+                v-for="tpl in emailTemplates"
+                :key="tpl.id"
+                :label="tpl.name"
+                :value="tpl.id"
+              />
             </el-select>
           </el-form-item>
         </template>
@@ -94,6 +99,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { employeeApi } from '@/api/employee'
+import { emailTemplateApi } from '@/api/email_template'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { invitationStatusMap, invitationStatusTagType } from './statusMap'
 
@@ -107,6 +113,16 @@ const showDialog = ref(false)
 const sending = ref(false)
 const dialogFormRef = ref<FormInstance>()
 const inviteUrl = ref('')
+const emailTemplates = ref<any[]>([])
+
+async function loadEmailTemplates() {
+  try {
+    const res = await emailTemplateApi.list({ page: 1, page_size: 100 })
+    emailTemplates.value = res?.list ?? []
+  } catch {
+    emailTemplates.value = []
+  }
+}
 
 const dialogForm = reactive({ channel: 'wechat', name: '', phone: '', position: '', email_template_id: undefined as number | undefined })
 const dialogRules: FormRules = {
@@ -195,7 +211,10 @@ async function handleCancel(id: number) {
   }
 }
 
-onMounted(() => load())
+onMounted(() => {
+  load()
+  loadEmailTemplates()
+})
 </script>
 
 <style scoped lang="scss">

@@ -22,6 +22,7 @@ import (
 	"github.com/wencai/easyhr/internal/dashboard"
 	"github.com/wencai/easyhr/internal/department"
 	"github.com/wencai/easyhr/internal/employee"
+	"github.com/wencai/easyhr/internal/email_template"
 	"github.com/wencai/easyhr/internal/finance"
 	"github.com/wencai/easyhr/internal/position"
 	"github.com/wencai/easyhr/internal/salary"
@@ -189,6 +190,11 @@ func main() {
 	deptSvc := department.NewService(deptRepo, empRepo, posRepo, posSvc)
 	deptHandler := department.NewDepartmentHandler(deptSvc)
 
+	// 邮箱模板模块依赖注入
+	emailTplRepo := email_template.NewRepository(db)
+	emailTplSvc := email_template.NewService(emailTplRepo)
+	emailTplHandler := email_template.NewHandler(emailTplSvc)
+
 	// 社保模块依赖注入（前置，供离职模块使用）
 	siRepo := socialinsurance.NewRepository(db)
 	siReminderRepo := socialinsurance.NewReminderRepository(db)
@@ -296,6 +302,7 @@ func main() {
 		contractHandler.RegisterRoutes(v1, authMiddleware)
 		contractHandler.RegisterSignRoutes(v1)
 		siHandler.RegisterRoutes(v1, authMiddleware)
+		emailTplHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
 		salarySlipSendHandler.RegisterRoutes(v1, authMiddleware)

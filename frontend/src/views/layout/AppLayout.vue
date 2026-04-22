@@ -81,6 +81,7 @@
             </template>
             <el-menu-item index="/tool">工具概览</el-menu-item>
             <el-menu-item index="/tool/salary">薪资管理</el-menu-item>
+            <el-menu-item index="/tool/email-templates">邮箱模板</el-menu-item>
             <el-menu-item index="/tool/socialinsurance">社保管理</el-menu-item>
             <el-menu-item index="/tool/tax">个税申报</el-menu-item>
           </el-sub-menu>
@@ -258,6 +259,7 @@ const pageTitleMap: Record<string, string> = {
   '/tool': '人事工具',
   '/tool/salary': '薪资管理',
   '/tool/socialinsurance': '社保管理',
+  '/tool/email-templates': '邮箱模板',
   '/tool/tax': '个税申报',
   '/finance': '财务记账',
   '/finance/accounts': '科目管理',

@@ -128,6 +128,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/tool/SITool.vue'),
       },
       {
+        path: '/tool/email-templates',
+        name: 'tool-email-templates',
+        component: () => import('@/views/tool/EmailTemplateList.vue'),
+      },
+      {
         path: '/tool/tax',
         name: 'tool-tax',
         component: () => import('@/views/tool/TaxTool.vue'),
