@@ -41,6 +41,30 @@ func (r *Repository) SeedPresets(orgID int64) error {
 			Content:   "亲爱的 {{name}}：\n\n恭喜您！您已成功加入 {{company}}，担任 {{position}} 一职。\n\n以下是入职准备须知：\n1. 请准备好身份证、学历证书原件\n2. 熟悉公司规章制度\n3. 按要求完成入职培训\n\n如有疑问，请联系 HR。\n\n{{company}}",
 			IsDefault: false,
 		},
+		{
+			Name:      "工资条发放通知",
+			Subject:   "{{company}} 工资条发放通知",
+			Content:   "亲爱的 {{name}}：\n\n您好！您本月的工资条已生成，请登录 {{company}} 薪资系统查看。\n\n如对工资明细有疑问，请联系 HR。\n\n{{company}}",
+			IsDefault: false,
+		},
+		{
+			Name:      "社保操作通知",
+			Subject:   "{{company}} 社保操作通知",
+			Content:   "亲爱的 {{name}}：\n\n您的社保关系变更已处理完成，请知悉。\n\n\n如需了解详细社保缴纳情况，请登录系统查看。\n\n如有疑问，请联系 HR。\n\n\n{{company}}",
+			IsDefault: false,
+		},
+		{
+			Name:      "合同签署提醒",
+			Subject:   "{{company}} 劳动合同签署提醒",
+			Content:   "亲爱的 {{name}}：\n\n您的劳动合同待签署，请尽快登录系统完成签署操作。\n劳动合同是保障您合法权益的重要文件，请务必及时签署。\n\n\n如有疑问，请联系 HR。\n\n{{company}}",
+			IsDefault: false,
+		},
+		{
+			Name:      "考勤异常提醒",
+			Subject:   "{{company}} 考勤异常提醒",
+			Content:   "亲爱的 {{name}}：\n\n您的本月考勤记录存在异常，请尽快登录系统核实并提交说明。\n\n如已自行处理或为特殊情况，请忽略此邮件。\n\n\n{{company}} HR",
+			IsDefault: false,
+		},
 	}
 
 	for i := range presets {
