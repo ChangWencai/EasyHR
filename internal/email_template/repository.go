@@ -20,6 +20,46 @@ func (r *Repository) Create(tpl *EmailTemplate) error {
 	return r.db.Create(tpl).Error
 }
 
+// SeedPresets 为指定企业创建预置邮件模板（幂等）
+func (r *Repository) SeedPresets(orgID int64) error {
+	presets := []EmailTemplate{
+		{
+			Name:      "入职邀请",
+			Subject:   "{{company}} 诚挚邀请您加入我们",
+			Content:   "亲爱的 {{name}}：\n\n您好！感谢您应聘 {{company}} 的 {{position}} 岗位，您的申请已通过审核。\n\n请点击以下链接完成入职信息填写：\n{{invite_url}}\n\n该链接有效期为7天，请尽快完成操作。\n\n如有任何疑问，请联系我们。\n\n{{company}} 招聘团队",
+			IsDefault: true,
+		},
+		{
+			Name:      "入职确认提醒",
+			Subject:   "{{company}} 提醒您：入职邀请即将过期",
+			Content:   "亲爱的 {{name}}：\n\n您还未完成 {{company}} 的入职信息填写，您收到的邀请链接将于近期过期。\n\n请尽快点击以下链接完成操作：\n{{invite_url}}\n\n如已自行入职，请忽略此邮件。\n\n{{company}} 招聘团队",
+			IsDefault: false,
+		},
+		{
+			Name:      "入职流程说明",
+			Subject:   "{{name}}，欢迎加入 {{company}}！入职准备须知",
+			Content:   "亲爱的 {{name}}：\n\n恭喜您！您已成功加入 {{company}}，担任 {{position}} 一职。\n\n以下是入职准备须知：\n1. 请准备好身份证、学历证书原件\n2. 熟悉公司规章制度\n3. 按要求完成入职培训\n\n如有疑问，请联系 HR。\n\n{{company}}",
+			IsDefault: false,
+		},
+	}
+
+	for i := range presets {
+		presets[i].OrgID = orgID
+		presets[i].CreatedBy = 0
+
+		var count int64
+		r.db.Model(&EmailTemplate{}).
+			Where("org_id = ? AND name = ?", orgID, presets[i].Name).
+			Count(&count)
+		if count == 0 {
+			if err := r.db.Create(&presets[i]).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // FindByID 根据 ID 查询
 func (r *Repository) FindByID(orgID, id int64) (*EmailTemplate, error) {
 	var tpl EmailTemplate

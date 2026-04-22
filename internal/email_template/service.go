@@ -23,6 +23,12 @@ func (s *Service) CreateTemplate(orgID, userID int64, req *CreateTemplateRequest
 		return nil, errors.New("该模板名称已存在")
 	}
 
+	// 如果企业还没有模板，自动创建3个预置模板
+	tpls, _, _ := s.repo.List(orgID, 1, 1)
+	if len(tpls) == 0 {
+		s.repo.SeedPresets(orgID)
+	}
+
 	// 如果设为默认，先清除其他默认
 	if req.IsDefault {
 		if err := s.repo.ClearDefault(orgID); err != nil {
