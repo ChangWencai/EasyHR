@@ -177,6 +177,7 @@ import {
   Calendar,
   CreditCard,
   Ticket,
+  OfficeBuilding,
 } from '@element-plus/icons-vue'
 import { useDashboardStore } from '@/stores/dashboard'
 import type { TodoItem } from '@/api/dashboard'
@@ -250,6 +251,7 @@ function getTodoIcon(type: string) {
 
 const gridItems = [
   { path: '/employee', label: '员工管理', icon: User, color: '#7C3AED', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)' },
+  { path: '/employee/org-chart', label: '组织架构', icon: OfficeBuilding, color: '#8B5CF6', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)' },
   { path: '/tool/salary', label: '薪资管理', icon: Money, color: '#10B981', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
   { path: '/tool/socialinsurance', label: '社保管理', icon: Umbrella, color: '#F59E0B', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' },
   { path: '/tool/tax', label: '个税申报', icon: Document, color: '#3B82F6', bg: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)' },

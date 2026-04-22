@@ -7,6 +7,10 @@
         <p class="page-subtitle">共 {{ total }} 名员工</p>
       </div>
       <div class="header-actions">
+        <el-button @click="$router.push('/employee/org-chart')">
+          <el-icon><OfficeBuilding /></el-icon>
+          组织架构
+        </el-button>
         <el-button @click="showBatchImport = true">
           <el-icon><Upload /></el-icon>
           批量入职
