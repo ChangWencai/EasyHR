@@ -131,8 +131,8 @@ async function load(p = 1) {
       page_size: pageSize.value,
       status: filterStatus.value || undefined,
     })
-    list.value = res.list
-    total.value = res.total
+    list.value = res?.list ?? []
+    total.value = res?.total ?? 0
   } catch {
     ElMessage.error('加载失败')
   } finally {

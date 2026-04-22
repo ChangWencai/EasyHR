@@ -99,8 +99,8 @@ async function load(p = 1) {
   loading.value = true
   try {
     const res = await employeeApi.invitations({ page: p, page_size: pageSize.value })
-    list.value = res.list
-    total.value = res.total
+    list.value = res?.list ?? []
+    total.value = res?.total ?? 0
   } catch {
     ElMessage.error('加载失败')
   } finally {
@@ -120,14 +120,15 @@ async function handleSend() {
   sending.value = true
   try {
     const res = await employeeApi.createInvitation(dialogForm)
-    inviteUrl.value = res.invite_url
+    const fullUrl = `${window.location.origin}${res.invite_url}`
+    inviteUrl.value = fullUrl
     ElMessage.success('邀请已发送')
     showDialog.value = false
     dialogForm.name = ''
     dialogForm.phone = ''
     load()
     // auto copy
-    copyLink(res.invite_url)
+    copyLink(fullUrl)
   } catch {
     ElMessage.error('发送失败')
   } finally {

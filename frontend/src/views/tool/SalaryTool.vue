@@ -229,8 +229,8 @@ async function loadPayroll(p = 1) {
   loadingPayroll.value = true
   try {
     const res = await salaryApi.list({ year, month, page: p, page_size: payrollPageSize.value })
-    payrollList.value = res.list
-    payrollTotal.value = res.total
+    payrollList.value = res?.list ?? []
+    payrollTotal.value = res?.total ?? 0
   } catch {
     ElMessage.error('加载工资表失败')
   } finally {

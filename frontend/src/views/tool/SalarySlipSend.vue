@@ -276,7 +276,7 @@ async function loadEmployeeList() {
   const [year, month] = sendYM.value.split('-').map(Number)
   try {
     const res = await salaryApi.list({ year, month, page: 1, page_size: 200 })
-    employeeList.value = res.list
+    employeeList.value = res?.list ?? []
   } catch { ElMessage.error('加载员工列表失败') }
 }
 
