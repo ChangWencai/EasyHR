@@ -58,6 +58,18 @@
           </template>
           <el-option v-for="dept in departments" :key="dept.id" :label="dept.name" :value="dept.id" />
         </el-select>
+        <el-select
+          v-model="statusFilter"
+          placeholder="全部状态"
+          clearable
+          class="filter-select"
+          @change="load(1)"
+        >
+          <el-option label="待入职" value="pending" />
+          <el-option label="在职" value="active" />
+          <el-option label="试用期" value="probation" />
+          <el-option label="离职" value="resigned" />
+        </el-select>
         <el-button type="primary" @click="load(1)">
           <el-icon><Search /></el-icon>
           搜索
@@ -78,7 +90,7 @@
         class="modern-table"
         :header-cell-style="{ background: '#F9FAFB', color: '#374151', fontWeight: 600 }"
       >
-        <el-table-column prop="name" label="姓名" min-width="100" fixed="left">
+        <el-table-column prop="name" label="姓名" min-width="120" fixed="left">
           <template #header>
             <el-tooltip content="点击查看员工详情" placement="top" :show-after="500">
               <span>姓名</span>
@@ -93,7 +105,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" label="状态" width="120" align="center">
           <template #default="{ row }">
             <span class="status-badge" :class="`status--${row.status}`">
               {{ statusMap[row.status] }}
@@ -105,7 +117,7 @@
             <span class="department-tag">{{ row.department_name || '—' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="岗位薪资" min-width="130">
+        <el-table-column label="岗位薪资" min-width="120">
           <template #default="{ row }">
             <span v-if="row.salary_amount > 0" class="salary-value">
               ¥{{ row.salary_amount.toLocaleString() }}
@@ -113,10 +125,10 @@
             <span v-else class="salary-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="years_of_service" label="在职年限" width="100">
+        <el-table-column prop="years_of_service" label="在职年限" width="90">
           <template #default="{ row }">
             <span v-if="row.years_of_service" class="years-value">
-              {{ row.years_of_service }}年
+              {{ row.years_of_service }}
             </span>
             <span v-else class="salary-empty">—</span>
           </template>
@@ -149,7 +161,7 @@
             <span class="phone-value">{{ formatPhone(row.phone) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #header>
             <el-tooltip content="编辑、查看员工信息" placement="top" :show-after="500">
               <span>操作</span>
@@ -178,7 +190,7 @@
           :page-size="pageSize"
           :total="total"
           layout="total, prev, pager, next, sizes"
-          small
+          size="small"
           @current-change="load"
         />
       </div>
@@ -232,6 +244,7 @@ import EmployeeDrawer from '@/views/employee/EmployeeDrawer.vue'
 
 const search = ref('')
 const departmentId = ref<number | undefined>(undefined)
+const statusFilter = ref<string | undefined>(undefined)
 const departments = ref<Department[]>([])
 const list = ref<EmployeeRosterItem[]>([])
 const total = ref(0)
@@ -273,7 +286,7 @@ async function load(p = 1) {
   page.value = p
   loading.value = true
   try {
-    const params: { page: number; page_size: number; search?: string; department_id?: number } = {
+    const params: { page: number; page_size: number; search?: string; department_id?: number; status?: string } = {
       page: p,
       page_size: pageSize.value,
     }
@@ -282,6 +295,9 @@ async function load(p = 1) {
     }
     if (departmentId.value !== undefined) {
       params.department_id = departmentId.value
+    }
+    if (statusFilter.value) {
+      params.status = statusFilter.value
     }
     const res = await employeeApi.getRoster(params)
     list.value = res.list || []
@@ -394,7 +410,7 @@ onMounted(() => {
 
 :deep(.modern-table) {
   .el-table__header th {
-    padding: 16px 12px;
+    padding: 12px 10px;
     font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -409,7 +425,7 @@ onMounted(() => {
   }
 
   .el-table__cell {
-    padding: 16px 12px;
+    padding: 12px 10px;
     border-bottom: 1px solid #F3F4F6;
   }
 }
@@ -438,10 +454,15 @@ onMounted(() => {
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 2px 8px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 20px;
+  border-radius: 4px;
+
+  &.status--pending {
+    background: #EDE9FE;
+    color: #7C3AED;
+  }
 
   &.status--active {
     background: #D1FAE5;
@@ -486,6 +507,8 @@ onMounted(() => {
 
 .years-value {
   color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .contract-status {
@@ -516,18 +539,19 @@ onMounted(() => {
 
 .action-btns {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 
   :deep(.el-button) {
-    padding: 6px 12px;
+    padding: 5px 10px;
     border-radius: var(--radius-sm);
-    font-size: 13px;
+    font-size: 12px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    white-space: nowrap;
 
     .el-icon {
-      font-size: 14px;
+      font-size: 13px;
     }
   }
 }

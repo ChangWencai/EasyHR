@@ -56,6 +56,18 @@
             />
           </el-tab-pane>
         </el-tabs>
+
+        <!-- 操作按钮 -->
+        <div v-if="detail?.status === 'pending'" class="action-section">
+          <el-button type="info" size="large" :loading="abandoning" @click="handleAbandonOnboarding">
+            <el-icon><Close /></el-icon>
+            放弃入职
+          </el-button>
+          <el-button type="success" size="large" :loading="confirming" @click="handleConfirmOnboarding">
+            <el-icon><Check /></el-icon>
+            确认入职
+          </el-button>
+        </div>
       </template>
     </div>
   </el-drawer>
@@ -65,6 +77,8 @@
 import { ref, watch } from 'vue'
 import { employeeApi } from '@/api/employee'
 import { statusMap, statusTagType } from '@/views/employee/statusMap'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Check, Close } from '@element-plus/icons-vue'
 import ContractList from './components/ContractList.vue'
 
 interface EmployeeDetail {
@@ -100,12 +114,65 @@ const emit = defineEmits<{
 }>()
 
 const loading = ref(false)
+const confirming = ref(false)
+const abandoning = ref(false)
 const detail = ref<EmployeeDetail | null>(null)
 const activeTab = ref('basic')
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
   return dateStr
+}
+
+async function handleConfirmOnboarding() {
+  if (!detail.value) return
+
+  // 检查入职日期是否超过30天
+  if (detail.value.hire_date) {
+    const hireDateStr = detail.value.hire_date.split('T')[0]  // 提取 YYYY-MM-DD 部分
+    const hireDate = new Date(hireDateStr)
+    const now = new Date()
+    const daysDiff = Math.floor((now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysDiff > 30) {
+      ElMessage.warning(`该员工入职日期已超过30天（${daysDiff}天），请确认是否仍需入职`)
+    }
+  }
+
+  confirming.value = true
+  try {
+    await employeeApi.confirmOnboarding(detail.value.id)
+    ElMessage.success('入职确认成功')
+    detail.value.status = 'active'
+    emit('update:modelValue', false)
+  } catch {
+    ElMessage.error('确认入职失败')
+  } finally {
+    confirming.value = false
+  }
+}
+
+async function handleAbandonOnboarding() {
+  if (!detail.value) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要放弃入职吗？员工"${detail.value.name}"将被删除。`,
+      '放弃入职',
+      { confirmButtonText: '确定放弃', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  abandoning.value = true
+  try {
+    await employeeApi.delete(detail.value.id)
+    ElMessage.success('已放弃入职')
+    emit('update:modelValue', false)
+  } catch {
+    ElMessage.error('操作失败')
+  } finally {
+    abandoning.value = false
+  }
 }
 
 async function loadDetail() {
@@ -174,6 +241,19 @@ watch(() => props.modelValue, (val) => {
   }
   :deep(.el-tabs__item):not(.is-active) {
     color: var(--el-text-color-secondary);
+  }
+}
+
+.action-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--el-border-color);
+  display: flex;
+  gap: 12px;
+
+  :deep(.el-button) {
+    flex: 1;
+    font-weight: 600;
   }
 }
 </style>

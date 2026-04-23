@@ -1,4 +1,5 @@
 export const statusMap: Record<string, string> = {
+  pending: '待入职',
   active: '在职',
   probation: '试用期',
   resigned: '离职',
@@ -6,6 +7,7 @@ export const statusMap: Record<string, string> = {
 }
 
 export const statusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+  pending: 'primary',
   active: 'success',
   probation: 'warning',
   resigned: 'info',
