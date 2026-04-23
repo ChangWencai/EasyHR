@@ -53,13 +53,70 @@ func generateToken() (string, error) {
 
 // CreateInvitation 创建入职邀请
 func (s *InvitationService) CreateInvitation(orgID, userID int64, req *CreateInvitationRequest) (*CreateInvitationResponse, error) {
+	now := time.Now()
+	expiresAt := now.Add(InvitationExpiryDuration)
+
+	// 如果选择 both，同时创建微信和邮箱两条邀请
+	if req.Channel == "both" {
+		var wechatToken, emailToken string
+		var err error
+
+		// 创建微信邀请
+		wechatToken, err = generateToken()
+		if err != nil {
+			return nil, err
+		}
+		wechatInv := &Invitation{
+			OrgID:     orgID,
+			Token:     wechatToken,
+			Channel:   "wechat",
+			Name:      req.Name,
+			Phone:     req.Phone,
+			Position:  req.Position,
+			Status:    InvitationStatusPending,
+			CreatedBy: userID,
+			ExpiresAt: expiresAt,
+		}
+		if err := s.invRepo.Create(wechatInv); err != nil {
+			return nil, fmt.Errorf("创建微信邀请失败: %w", err)
+		}
+
+		// 创建邮箱邀请
+		if req.EmailTemplateID != nil {
+			emailToken, err = generateToken()
+			if err != nil {
+				return nil, err
+			}
+			emailInv := &Invitation{
+				OrgID:           orgID,
+				Token:           emailToken,
+				Channel:         "email",
+				Name:            req.Name,
+				Position:        req.Position,
+				Status:          InvitationStatusPending,
+				CreatedBy:       userID,
+				ExpiresAt:       expiresAt,
+				EmailTemplateID: req.EmailTemplateID,
+			}
+			if err := s.invRepo.Create(emailInv); err != nil {
+				return nil, fmt.Errorf("创建邮箱邀请失败: %w", err)
+			}
+		}
+
+		return &CreateInvitationResponse{
+			Token:     wechatToken,
+			InviteURL: "/invite/" + wechatToken,
+			Channel:   "both",
+			Name:      req.Name,
+			ExpiresAt: expiresAt.Format("2006-01-02T15:04:05Z07:00"),
+		}, nil
+	}
+
+	// 单渠道逻辑
 	token, err := generateToken()
 	if err != nil {
 		return nil, err
 	}
-
-	now := time.Now()
-	expiresAt := now.Add(InvitationExpiryDuration)
 
 	inv := &Invitation{
 		OrgID:     orgID,

@@ -157,8 +157,8 @@ export const employeeApi = {
   invitations: (params?: { page: number; page_size?: number }) =>
     request.get<InvitationListResponse>('/invitations', { params }).then(r => r.data),
 
-  createInvitation: (data: { name: string; phone: string }) =>
-    request.post<{ invite_url: string }>('/invitations', data).then(r => r.data),
+  createInvitation: (data: { name: string; phone: string; channel: string; position?: string; email_template_id?: number }) =>
+    request.post<{ invite_url: string; channel: string }>('/invitations', data).then(r => r.data),
 
   cancelInvitation: (id: number) => request.delete(`/invitations/${id}`),
 

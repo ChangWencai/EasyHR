@@ -4,11 +4,12 @@ import "time"
 
 // CreateInvitationRequest 老板创建邀请请求
 type CreateInvitationRequest struct {
-	Channel         string `json:"channel" binding:"required,oneof=wechat email"`
+	// Channel 推送渠道：wechat/email/both（三选一或两者都发）
+	Channel         string `json:"channel" binding:"required,oneof=wechat email both"`
 	Name            string `json:"name" binding:"required,min=2,max=50"`
-	Phone           string `json:"phone" binding:"required_if=Channel wechat,max=11"`
-	Position        string `json:"position" binding:"required_if=Channel wechat,max=100"`
-	EmailTemplateID *int64 `json:"email_template_id" binding:"required_if=Channel email"`
+	Phone           string `json:"phone" binding:"max=11"`
+	Position        string `json:"position" binding:"max=100"`
+	EmailTemplateID *int64 `json:"email_template_id"`
 }
 
 // ListInvitationsQuery 邀请列表查询参数

@@ -56,42 +56,57 @@
     </el-card>
 
     <!-- 发送邀请对话框 -->
-    <el-dialog v-model="showDialog" title="发送入职邀请" width="440px" destroy-on-close>
-      <el-form ref="dialogFormRef" :model="dialogForm" :rules="dialogRules" label-width="80px">
-        <el-form-item label="推送方式" prop="channel">
-          <el-radio-group v-model="dialogForm.channel" @change="handleChannelChange">
-            <el-radio value="wechat">微信小程序</el-radio>
-            <el-radio value="email">邮箱</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="dialogForm.name" placeholder="请输入员工姓名" />
-        </el-form-item>
-        <template v-if="dialogForm.channel === 'wechat'">
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="dialogForm.phone" placeholder="请输入手机号" maxlength="11" />
-          </el-form-item>
-          <el-form-item label="岗位" prop="position">
-            <el-input v-model="dialogForm.position" placeholder="请输入岗位" maxlength="100" />
-          </el-form-item>
-        </template>
-        <template v-if="dialogForm.channel === 'email'">
-          <el-form-item label="邮箱模板" prop="email_template_id">
-            <el-select v-model="dialogForm.email_template_id" placeholder="请选择邮箱模板" style="width: 100%">
-              <el-option
-                v-for="tpl in emailTemplates"
-                :key="tpl.id"
-                :label="tpl.name"
-                :value="tpl.id"
-              />
-            </el-select>
-          </el-form-item>
-        </template>
+    <el-dialog v-model="showDialog" title="发送入职邀请" width="500px" destroy-on-close @close="dialogStep = 0">
+      <el-form ref="dialogFormRef" :model="dialogForm" :rules="dialogRules" label-width="90px">
+        <StepWizard
+          :steps="dialogSteps"
+          v-model:current-step="dialogStep"
+          finish-text="发送邀请"
+          @complete="handleSend"
+        >
+          <template #default="{ step }">
+            <!-- Step 0: 填写基本信息 -->
+            <div v-show="step === 0">
+              <el-form-item label="姓名" prop="name">
+                <el-input v-model="dialogForm.name" placeholder="请输入员工姓名" maxlength="50" />
+              </el-form-item>
+              <el-form-item label="手机号" prop="phone">
+                <el-input v-model="dialogForm.phone" placeholder="请输入手机号" maxlength="11" />
+              </el-form-item>
+              <el-form-item label="岗位" prop="position">
+                <el-input v-model="dialogForm.position" placeholder="请输入岗位（可选）" maxlength="100" />
+              </el-form-item>
+            </div>
+
+            <!-- Step 1: 选择推送方式 -->
+            <div v-show="step === 1">
+              <el-form-item label="推送方式" prop="channel">
+                <el-radio-group v-model="dialogForm.channel">
+                  <el-radio value="wechat">微信小程序</el-radio>
+                  <el-radio value="email">邮箱</el-radio>
+                  <el-radio value="both">两者都发</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <template v-if="dialogForm.channel === 'email' || dialogForm.channel === 'both'">
+                <el-form-item label="邮箱模板" prop="email_template_id" :required="dialogForm.channel === 'email'">
+                  <el-select v-model="dialogForm.email_template_id" placeholder="请选择邮箱模板" style="width: 100%">
+                    <el-option
+                      v-for="tpl in emailTemplates"
+                      :key="tpl.id"
+                      :label="tpl.name"
+                      :value="tpl.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </template>
+              <div v-if="dialogForm.channel === 'both'" class="channel-hint">
+                <el-icon><InfoFilled /></el-icon>
+                将同时发送微信小程序邀请和邮箱邀请
+              </div>
+            </div>
+          </template>
+        </StepWizard>
       </el-form>
-      <template #footer>
-        <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" :loading="sending" @click="handleSend">发送邀请</el-button>
-      </template>
     </el-dialog>
   </div>
 </template>
@@ -100,8 +115,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { employeeApi } from '@/api/employee'
 import { emailTemplateApi } from '@/api/email_template'
+import StepWizard from '@/components/common/StepWizard.vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { invitationStatusMap, invitationStatusTagType } from './statusMap'
+import { InfoFilled } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const list = ref<any[]>([])
@@ -111,9 +128,15 @@ const pageSize = ref(20)
 
 const showDialog = ref(false)
 const sending = ref(false)
+const dialogStep = ref(0)
 const dialogFormRef = ref<FormInstance>()
 const inviteUrl = ref('')
 const emailTemplates = ref<any[]>([])
+
+const dialogSteps = [
+  { title: '填写信息' },
+  { title: '选择推送' },
+]
 
 async function loadEmailTemplates() {
   try {
@@ -126,17 +149,20 @@ async function loadEmailTemplates() {
 
 const dialogForm = reactive({ channel: 'wechat', name: '', phone: '', position: '', email_template_id: undefined as number | undefined })
 const dialogRules: FormRules = {
-  channel: [{ required: true, message: '请选择推送方式', trigger: 'change' }],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
   ],
   position: [],
-  email_template_id: [],
+  channel: [{ required: true, message: '请选择推送方式', trigger: 'change' }],
+  email_template_id: [{ required: true, message: '请选择邮箱模板', trigger: 'change' }],
 }
 
-function handleChannelChange() {
+function resetDialogForm() {
+  dialogStep.value = 0
+  dialogForm.channel = 'wechat'
+  dialogForm.name = ''
   dialogForm.phone = ''
   dialogForm.position = ''
   dialogForm.email_template_id = undefined
@@ -170,15 +196,12 @@ async function handleSend() {
     const res = await employeeApi.createInvitation(dialogForm)
     const fullUrl = `${window.location.origin}${res.invite_url}`
     inviteUrl.value = fullUrl
-    ElMessage.success('邀请已发送')
+
+    const channelMsg = res.channel === 'both' ? '微信和邮箱' : (res.channel === 'wechat' ? '微信小程序' : '邮箱')
+    ElMessage.success(`${channelMsg}邀请已发送`)
     showDialog.value = false
-    dialogForm.channel = 'wechat'
-    dialogForm.name = ''
-    dialogForm.phone = ''
-    dialogForm.position = ''
-    dialogForm.email_template_id = undefined
+    resetDialogForm()
     load()
-    // auto copy
     copyLink(fullUrl)
   } catch {
     ElMessage.error('发送失败')
@@ -227,5 +250,13 @@ onMounted(() => {
 }
 .mt-4 {
   margin-top: 16px;
+}
+.channel-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #909399;
+  font-size: 13px;
+  margin-top: 12px;
 }
 </style>
