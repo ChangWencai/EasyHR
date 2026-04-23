@@ -15,7 +15,7 @@
     <!-- 创建模式：步骤向导 -->
     <div v-if="!isEdit" class="form-container">
       <el-form
-        ref="createFormRef"
+        ref="formRef"
         :model="form"
         :rules="rules"
         label-position="left"
@@ -413,6 +413,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
 import { positionApi } from '@/api/position'
 import { departmentApi } from '@/api/department'
+import { salaryApi } from '@/api/salary'
 import type { Department } from '@/api/department'
 import StepWizard from '@/components/common/StepWizard.vue'
 import StepCard from '@/components/common/StepCard.vue'
@@ -487,6 +488,8 @@ async function handleCreate() {
       position_id: form.position_id,
       department_id: form.department_id,
       hire_date: form.entry_date,
+      salary: form.salary,
+      probation_salary: form.probation_salary,
       bank_account: form.bank_card,
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
@@ -503,16 +506,22 @@ async function handleCreate() {
 
 async function handleSubmit() {
   if (saving.value) return
-  if (!formRef.value) return
-  try {
-    await formRef.value.validate()
-  } catch {
-    return
-  }
 
   saving.value = true
   try {
-    const data = { ...form }
+    // 转换字段名以匹配后端 DTO
+    const data = {
+      name: form.name,
+      phone: form.phone,
+      id_card: form.id_number,
+      position: form.position,
+      position_id: form.position_id,
+      department_id: form.department_id,
+      hire_date: form.entry_date,
+      bank_account: form.bank_card,
+      emergency_contact: form.emergency_contact,
+      emergency_phone: form.emergency_phone,
+    }
     if (isEdit.value) {
       await employeeApi.update(Number(route.params.id), data)
       $msg.success('保存成功')
@@ -521,7 +530,8 @@ async function handleSubmit() {
       $msg.success('创建成功')
     }
     router.push('/employee')
-  } catch {
+  } catch (e) {
+    console.error('保存失败:', e)
     $msg.error(isEdit.value ? '保存失败' : '创建失败')
   } finally {
     saving.value = false
@@ -531,21 +541,42 @@ async function handleSubmit() {
 async function loadEmployee() {
   if (!isEdit.value) return
   try {
-    const emp = await employeeApi.get(Number(route.params.id))
+    const emp = await employeeApi.get(Number(route.params.id)) as any
     Object.assign(form, {
-      name: emp.name,
-      phone: emp.phone,
-      id_number: emp.id_number,
-      position: emp.position,
-      position_id: (emp as unknown as Record<string, unknown>).position_id as number | null ?? null,
-      department_id: (emp as unknown as Record<string, unknown>).department_id as number | null ?? null,
-      entry_date: emp.entry_date,
+      name: emp.name || '',
+      phone: emp.phone || '',
+      id_number: emp.id_card || emp.id_number || '',  // 后端返回 id_card，前端用 id_number
+      position: emp.position || '',
+      position_id: emp.position_id ?? null,
+      department_id: emp.department_id ?? null,
+      entry_date: emp.hire_date ? emp.hire_date.split('T')[0] : '',  // 后端返回 hire_date，前端用 entry_date
       salary: emp.salary,
       probation_salary: emp.probation_salary,
       bank_card: emp.bank_card || '',
       emergency_contact: emp.emergency_contact || '',
       emergency_phone: emp.emergency_phone || '',
     })
+
+    // 加载薪资数据
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    try {
+      const salaryItems = await salaryApi.employeeItems(Number(route.params.id), currentMonth) as any[]
+      if (salaryItems && salaryItems.length > 0) {
+        // 查找基本工资项
+        const baseSalary = salaryItems.find((item) => item.name === '基本工资' || item.name === '岗位工资')
+        if (baseSalary) {
+          form.salary = baseSalary.amount
+        }
+        // 查找试用期工资项
+        const probationSalary = salaryItems.find((item) => item.name === '试用期工资')
+        if (probationSalary) {
+          form.probation_salary = probationSalary.amount
+        }
+      }
+    } catch {
+      // 薪资加载失败不影响员工信息显示
+    }
   } catch {
     $msg.error('加载失败')
   }

@@ -100,6 +100,11 @@ const routes: RouteRecordRaw[] = [
         name: 'employee-detail',
         component: () => import('@/views/employee/EmployeeDetail.vue'),
       },
+      {
+        path: '/employee/:id/edit',
+        name: 'employee-edit',
+        component: () => import('@/views/employee/EmployeeCreate.vue'),
+      },
 
       // 工具
       {
