@@ -7,9 +7,9 @@ type CreateEmployeeRequest struct {
 	Name             string  `json:"name" binding:"required,min=2,max=50"`
 	Phone            string  `json:"phone" binding:"required,len=11"`
 	IDCard           string  `json:"id_card" binding:"required,len=18"`
-	Position         string  `json:"position" binding:"required,min=1,max=100"`
-	PositionID       *int64  `json:"position_id"` // 岗位ID（可选，自动从 Position 文本匹配）
-	DepartmentID     *int64  `json:"department_id"` // 部门ID（可选）
+	Position         string  `json:"position" binding:"omitempty,max=100"` // 岗位名称（可选，position_id 关联时可不填）
+	PositionID       *int64  `json:"position_id"`                         // 岗位ID（可选）
+	DepartmentID     *int64  `json:"department_id"`                        // 部门ID（可选）
 	HireDate         string  `json:"hire_date" binding:"required"`
 	BankName         string  `json:"bank_name" binding:"omitempty,max=100"`
 	BankAccount      string  `json:"bank_account" binding:"omitempty"`
