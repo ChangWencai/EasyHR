@@ -181,11 +181,17 @@ export const employeeApi = {
     request.get<EmployeeDashboard>('/dashboard/employee-dashboard').then(r => r.data),
 
   getRoster: (params: { page: number; page_size: number; search?: string; status?: string; department_id?: number }) =>
-    request.get<{ list: EmployeeRosterItem[]; total: number }>('/employees/roster', { params }).then(r => r.data),
+    request.get('/employees/roster', { params }).then((r: any) => ({
+      list: r.data || [],
+      total: r.meta?.total || 0,
+    })),
 
   getSensitiveInfo: (id: number) =>
     request.post<Employee>(`/employees/${id}/sensitive`).then(r => r.data),
 
   batchImportEmployees: (rows: Record<string, unknown>[]): Promise<{ success: number; failed: number }> =>
     request.post('/employees/batch-import', { employees: rows }).then(r => r.data as Promise<{ success: number; failed: number }>),
+
+  confirmOnboarding: (id: number) =>
+    request.post(`/employees/${id}/confirm`),
 }

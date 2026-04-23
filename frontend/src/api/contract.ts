@@ -95,8 +95,10 @@ export interface GetSignedPdfResponse {
 export const contractApi = {
   // 合同列表
   list: (employeeId: number) =>
-    (request.get<ContractListResponse>(`/employees/${employeeId}/contracts`) as Promise<{ data: ContractListResponse }>)
-      .then(r => r.data),
+    request.get(`/employees/${employeeId}/contracts`).then((r: any) => ({
+      list: r.data || [],
+      total: r.meta?.total || 0,
+    })),
 
   // 创建合同（draft）
   // BLOCKER-5 fix: D-11-02 means salary not in PDF body, not absent from data model.

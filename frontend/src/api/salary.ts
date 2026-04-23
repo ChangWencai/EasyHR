@@ -161,9 +161,9 @@ export const salaryApi = {
     request.put<SalaryTemplate>('/salary/template', data),
 
   employeeItems: (employeeId: number, month: string) =>
-    request.get<EmployeeSalaryItem[]>('/salary/items', {
+    request.get('/salary/items', {
       params: { employee_id: employeeId, month },
-    }).then(r => r.data),
+    }).then((r: any) => r.data || []),
 
   setEmployeeItems: (
     employeeId: number,
