@@ -166,40 +166,6 @@
                 </div>
               </StepCard>
             </div>
-
-            <!-- Step 1: 选择推送方式 -->
-            <div v-show="step === 1">
-              <StepCard title="发送方式" description="选择入职邀请的推送方式">
-                <div class="confirm-summary">
-                  <p>员工「{{ form.name }}」信息已填写，确认创建并发送入职邀请。</p>
-                  <div class="confirm-details">
-                    <div class="detail-row"><span>手机号：</span>{{ form.phone }}</div>
-                    <div class="detail-row"><span>入职日期：</span>{{ form.entry_date }}</div>
-                    <div class="detail-row"><span>岗位：</span>{{ resolvePositionName() }}</div>
-                    <div class="detail-row"><span>薪资：</span>{{ form.salary ? '¥' + form.salary + '/月' : '未设置' }}</div>
-                  </div>
-                  <el-form-item label="推送方式" prop="invite_channel" class="channel-select">
-                    <el-radio-group v-model="form.invite_channel">
-                      <el-radio value="wechat">微信小程序</el-radio>
-                      <el-radio value="email">邮箱</el-radio>
-                      <el-radio value="both">两者都发</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
-                  <template v-if="form.invite_channel === 'email' || form.invite_channel === 'both'">
-                    <el-form-item label="邮箱模板" prop="invite_email_template_id" class="channel-select">
-                      <el-select v-model="form.invite_email_template_id" placeholder="请选择邮箱模板" style="width: 100%">
-                        <el-option
-                          v-for="tpl in emailTemplates"
-                          :key="tpl.id"
-                          :label="tpl.name"
-                          :value="tpl.id"
-                        />
-                      </el-select>
-                    </el-form-item>
-                  </template>
-                </div>
-              </StepCard>
-            </div>
           </template>
         </StepWizard>
       </el-form>
@@ -447,7 +413,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { employeeApi } from '@/api/employee'
 import { positionApi } from '@/api/position'
 import { departmentApi } from '@/api/department'
-import { emailTemplateApi } from '@/api/email_template'
 import type { Department } from '@/api/department'
 import StepWizard from '@/components/common/StepWizard.vue'
 import StepCard from '@/components/common/StepCard.vue'
@@ -457,8 +422,6 @@ import {
   ArrowLeft,
   UserFilled,
   User,
-  Coin,
-  InfoFilled,
   Phone,
   Postcard,
   Check,
@@ -470,13 +433,11 @@ const formRef = ref<FormInstance>()
 const saving = ref(false)
 const $msg = useMessage()
 const currentStep = ref(0)
-const createdEmployeeId = ref<number | null>(null)
 
 const isEdit = computed(() => !!route.params.id)
 
 const steps = [
   { title: '填写信息' },
-  { title: '确认发送' },
 ]
 
 const deptPositions = ref<Array<{ id: number; name: string }>>([])
@@ -496,11 +457,7 @@ const form = reactive({
   bank_card: '',
   emergency_contact: '',
   emergency_phone: '',
-  invite_channel: 'wechat',
-  invite_email_template_id: undefined as number | undefined,
 })
-
-const emailTemplates = ref<any[]>([])
 
 const rules: FormRules = {
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -519,33 +476,10 @@ const rules: FormRules = {
 async function handleCreate() {
   if (saving.value) return
 
-  // 验证推送方式必填字段
-  if ((form.invite_channel === 'email' || form.invite_channel === 'both') && !form.invite_email_template_id) {
-    $msg.warning('请选择邮箱模板')
-    return
-  }
-
   saving.value = true
   try {
-    // 移除邀请相关字段，不传给创建员工接口
-    const { invite_channel, invite_email_template_id, ...createData } = form
-    const result = await employeeApi.create(createData)
-    createdEmployeeId.value = result.data?.id ?? 0
-
-    // 发送入职邀请
-    const inviteData: any = {
-      channel: form.invite_channel,
-      name: form.name,
-      phone: form.phone,
-      position: resolvePositionName() !== '未分配岗位' ? resolvePositionName() : '',
-    }
-    if (form.invite_channel === 'email' || form.invite_channel === 'both') {
-      inviteData.email_template_id = form.invite_email_template_id
-    }
-    await employeeApi.createInvitation(inviteData)
-
-    const channelMsg = form.invite_channel === 'both' ? '微信和邮箱' : (form.invite_channel === 'wechat' ? '微信小程序' : '邮箱')
-    $msg.success(`员工创建成功，${channelMsg}邀请已发送`)
+    await employeeApi.create(form)
+    $msg.success('员工创建成功')
     router.push('/employee')
   } catch {
     $msg.error('创建失败，请稍后重试')
@@ -624,29 +558,10 @@ async function loadDepartments() {
   }
 }
 
-function resolvePositionName(): string {
-  if (form.position_id) {
-    const allPositions = [...deptPositions.value, ...commonPositions.value]
-    const found = allPositions.find(p => p.id === form.position_id)
-    if (found) return found.name
-  }
-  return form.position || '未分配岗位'
-}
-
-async function loadEmailTemplates() {
-  try {
-    const res = await emailTemplateApi.list({ page: 1, page_size: 100 })
-    emailTemplates.value = res?.list ?? []
-  } catch {
-    emailTemplates.value = []
-  }
-}
-
 onMounted(() => {
   loadEmployee()
   loadDepartments()
   loadPositionOptions(undefined)
-  loadEmailTemplates()
 })
 </script>
 
