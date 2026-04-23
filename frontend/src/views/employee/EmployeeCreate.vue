@@ -478,7 +478,20 @@ async function handleCreate() {
 
   saving.value = true
   try {
-    await employeeApi.create(form)
+    // 转换字段名以匹配后端 DTO
+    const createData = {
+      name: form.name,
+      phone: form.phone,
+      id_card: form.id_number,
+      position: form.position,
+      position_id: form.position_id,
+      department_id: form.department_id,
+      hire_date: form.entry_date,
+      bank_account: form.bank_card,
+      emergency_contact: form.emergency_contact,
+      emergency_phone: form.emergency_phone,
+    }
+    await employeeApi.create(createData)
     $msg.success('员工创建成功')
     router.push('/employee')
   } catch {
