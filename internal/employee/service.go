@@ -90,6 +90,12 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 	// PositionID 关联：如果请求中已指定则直接使用；否则按 Position 名称查找或创建岗位
 	if req.PositionID != nil {
 		emp.PositionID = req.PositionID
+		// 如果 Position 文本为空，根据 PositionID 查询岗位名称填充
+		if req.Position == "" && s.positionSvc != nil {
+			if pos, err := s.positionSvc.GetPositionByID(*req.PositionID); err == nil {
+				emp.Position = pos.Name
+			}
+		}
 	} else if req.Position != "" && s.positionSvc != nil {
 		posID, err := s.positionSvc.FindOrCreateByName(orgID, userID, req.Position, nil)
 		if err == nil {

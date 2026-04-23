@@ -30,6 +30,16 @@ func (r *Repository) FindByID(orgID, id int64) (*Position, error) {
 	return &pos, nil
 }
 
+// FindByIDWithoutTenant 根据 ID 查找岗位（不校验租户）
+func (r *Repository) FindByIDWithoutTenant(id int64) (*Position, error) {
+	var pos Position
+	err := r.db.Where("id = ?", id).First(&pos).Error
+	if err != nil {
+		return nil, err
+	}
+	return &pos, nil
+}
+
 // Update 更新岗位信息（部分更新）
 func (r *Repository) Update(orgID, id int64, updates map[string]interface{}) error {
 	result := r.db.Model(&Position{}).Scopes(middleware.TenantScope(orgID)).Where("id = ?", id).Updates(updates)

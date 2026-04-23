@@ -24,6 +24,11 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
+// GetPositionByID 根据 ID 获取岗位（不校验租户）
+func (s *Service) GetPositionByID(id int64) (*Position, error) {
+	return s.repo.FindByIDWithoutTenant(id)
+}
+
 // CreatePosition 创建岗位（含去重校验）
 func (s *Service) CreatePosition(orgID, userID int64, req *CreatePositionRequest) (*PositionResponse, error) {
 	// 检查同部门同名岗位
