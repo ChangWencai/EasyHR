@@ -32,6 +32,8 @@ type Employee struct {
 	EmergencyPhoneEncrypted string     `gorm:"column:emergency_phone_encrypted;type:varchar(200);comment:加密紧急联系人电话" json:"-"`
 	EmergencyPhoneHash      string     `gorm:"column:emergency_phone_hash;type:varchar(64);comment:紧急联系人电话哈希索引" json:"-"`
 	Address                 string     `gorm:"column:address;type:varchar(500);comment:居住地址" json:"address"`
+	Salary                  *float64   `gorm:"column:salary;type:decimal(12,2);comment:正式薪资（月）" json:"salary"`
+	ProbationSalary         *float64   `gorm:"column:probation_salary;type:decimal(12,2);comment:试用期薪资（月）" json:"probation_salary"`
 	Remark                  string     `gorm:"column:remark;type:text;comment:备注" json:"remark"`
 	ResignationDate         *time.Time `gorm:"column:resignation_date;type:date;comment:离职日期" json:"resignation_date"`
 	ResignationReason       string     `gorm:"column:resignation_reason;type:varchar(500);comment:离职原因" json:"resignation_reason"`

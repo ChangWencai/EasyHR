@@ -101,7 +101,14 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 		if err == nil {
 			emp.PositionID = &posID
 		}
-		// 查找失败不影响员工创建，仅记录日志
+	}
+
+	// 保存薪资信息（如果有）
+	if req.Salary != nil {
+		emp.Salary = req.Salary
+	}
+	if req.ProbationSalary != nil {
+		emp.ProbationSalary = req.ProbationSalary
 	}
 
 	// 可选字段：银行卡

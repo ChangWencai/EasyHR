@@ -4,19 +4,21 @@ import "time"
 
 // CreateEmployeeRequest 创建员工请求（手动录入）
 type CreateEmployeeRequest struct {
-	Name             string  `json:"name" binding:"required,min=2,max=50"`
-	Phone            string  `json:"phone" binding:"required,len=11"`
-	IDCard           string  `json:"id_card" binding:"required,len=18"`
-	Position         string  `json:"position" binding:"omitempty,max=100"` // 岗位名称（可选，position_id 关联时可不填）
-	PositionID       *int64  `json:"position_id"`                         // 岗位ID（可选）
-	DepartmentID     *int64  `json:"department_id"`                        // 部门ID（可选）
-	HireDate         string  `json:"hire_date" binding:"required"`
-	BankName         string  `json:"bank_name" binding:"omitempty,max=100"`
-	BankAccount      string  `json:"bank_account" binding:"omitempty"`
-	EmergencyContact string  `json:"emergency_contact" binding:"omitempty,max=50"`
-	EmergencyPhone   string  `json:"emergency_phone" binding:"omitempty,len=11"`
-	Address          string  `json:"address" binding:"omitempty,max=500"`
-	Remark           string  `json:"remark" binding:"omitempty"`
+	Name             string   `json:"name" binding:"required,min=2,max=50"`
+	Phone            string   `json:"phone" binding:"required,len=11"`
+	IDCard           string   `json:"id_card" binding:"required,len=18"`
+	Position         string   `json:"position" binding:"omitempty,max=100"` // 岗位名称（可选，position_id 关联时可不填）
+	PositionID       *int64   `json:"position_id"`                         // 岗位ID（可选）
+	DepartmentID     *int64   `json:"department_id"`                       // 部门ID（可选）
+	HireDate         string   `json:"hire_date" binding:"required"`
+	Salary           *float64 `json:"salary"`           // 正式薪资（月）
+	ProbationSalary  *float64 `json:"probation_salary"`  // 试用期薪资（月）
+	BankName         string   `json:"bank_name" binding:"omitempty,max=100"`
+	BankAccount      string   `json:"bank_account" binding:"omitempty"`
+	EmergencyContact string   `json:"emergency_contact" binding:"omitempty,max=50"`
+	EmergencyPhone   string   `json:"emergency_phone" binding:"omitempty,len=11"`
+	Address          string   `json:"address" binding:"omitempty,max=500"`
+	Remark           string   `json:"remark" binding:"omitempty"`
 }
 
 // UpdateEmployeeRequest 更新员工请求（部分更新，仅非 nil 字段更新）
