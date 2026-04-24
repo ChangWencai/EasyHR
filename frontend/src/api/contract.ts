@@ -30,6 +30,8 @@ export interface Contract {
   signed_pdf_url: string | null
   // salary 字段用于传给后端，但不显示在 PDF 正文中（D-11-02）
   salary?: number
+  probation_months?: number
+  probation_salary?: number
 }
 
 export interface ContractListResponse {
@@ -42,8 +44,9 @@ export interface CreateContractData {
   contract_type: ContractType
   start_date: string
   end_date: string | null
-  // D-11-02: salary stored in DB but NOT in PDF body
   salary?: number
+  probation_months?: number
+  probation_salary?: number
 }
 
 export interface GeneratePdfResponse {
@@ -103,14 +106,26 @@ export const contractApi = {
   // 创建合同（draft）
   // BLOCKER-5 fix: D-11-02 means salary not in PDF body, not absent from data model.
   // Send actual salary to satisfy backend binding:"required,gt=0".
-  create: (data: CreateContractData, employeeSalary?: number) =>
-    (request.post<Contract>(`/employees/${data.employee_id}/contracts`, {
-      contract_type: data.contract_type,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      salary: employeeSalary ?? data.salary ?? 0, // send actual salary to satisfy backend validation
-    }) as Promise<{ data: Contract }>)
-      .then(r => r.data),
+create: (data: CreateContractData, employeeSalary?: number, probationSalary?: number) => {
+      const payload: Record<string, unknown> = {
+        contract_type: data.contract_type,
+        start_date: data.start_date,
+        end_date: data.end_date,
+      }
+      const salary = employeeSalary ?? data.salary
+      if (salary != null && salary > 0) {
+        payload.salary = salary
+      }
+      const pSalary = probationSalary ?? data.probation_salary
+      if (pSalary != null && pSalary > 0) {
+        payload.probation_salary = pSalary
+      }
+      if (data.probation_months != null && data.probation_months > 0) {
+        payload.probation_months = data.probation_months
+      }
+      return (request.post<Contract>(`/employees/${data.employee_id}/contracts`, payload) as Promise<{ data: Contract }>)
+        .then(r => r.data)
+    },
 
   // 发起签署（生成PDF + 上传OSS + 发短信）
   sendSignLink: (contractId: number) =>
@@ -143,9 +158,18 @@ export const contractApi = {
       terminate_date: terminateDate,
     }),
 
+  // 更新合同（仅草稿/待签状态）
+  update: (contractId: number, data: Partial<CreateContractData>) =>
+    (request.put<Contract>(`/contracts/${contractId}`, data) as Promise<{ data: Contract }>)
+      .then(r => r.data),
+
+  // 删除合同（仅草稿/待签状态）
+  delete: (contractId: number) =>
+    request.delete(`/contracts/${contractId}`),
+
   // 生成PDF预览（返回PDF文件）
   generatePdfBlob: (contractId: number): Promise<Blob> =>
-    (request.get(`/contracts/${contractId}/generate-pdf`, {
+    (request.post(`/contracts/${contractId}/generate-pdf`, {}, {
       responseType: 'blob',
     } as AxiosRequestConfig) as Promise<Blob>),
 }
