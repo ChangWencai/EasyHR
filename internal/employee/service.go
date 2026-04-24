@@ -3,12 +3,14 @@ package employee
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/xuri/excelize/v2"
 
 	"github.com/wencai/easyhr/internal/common/config"
 	"github.com/wencai/easyhr/internal/common/crypto"
+	"github.com/wencai/easyhr/internal/common/model"
 	"github.com/wencai/easyhr/internal/position"
 )
 
@@ -80,7 +82,13 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 	emp.PhoneHash = phoneHash
 	emp.IDCardEncrypted = idCardEncrypted
 	emp.IDCardHash = idCardHash
-	emp.Gender = gender
+	// 性别：优先使用前端传入的值，否则从身份证号自动提取
+	if req.Gender != "" {
+		emp.Gender = req.Gender
+	} else {
+		emp.Gender = gender
+	}
+	emp.Email = req.Email
 	emp.BirthDate = &birthDate
 	emp.Position = req.Position
 	emp.DepartmentID = req.DepartmentID
@@ -137,8 +145,22 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 
 	emp.Address = req.Address
 	emp.Remark = req.Remark
+	if req.Remark != "" {
+		emp.Remark = req.Remark
+	}
 
- if err := s.repo.Create(emp); err != nil {
+ // 构建关联的 member 用户账号（手机号与员工相同）
+	phoneEncryptedForUser, _ := crypto.Encrypt(req.Phone, aesKey)
+	memberUser := &model.User{
+		BaseModel:  model.BaseModel{OrgID: orgID},
+		Phone:      phoneEncryptedForUser,
+		PhoneHash:  phoneHash,
+		Name:       req.Name,
+		Role:       "member",
+		Status:     "active",
+	}
+
+	if err := s.repo.CreateEmployeeAndUser(emp, memberUser); err != nil {
 		if err == ErrPhoneDuplicate {
 			return nil, fmt.Errorf("该手机号已存在")
 		}
@@ -256,6 +278,18 @@ func (s *Service) UpdateEmployee(orgID, userID, id int64, req *UpdateEmployeeReq
 	if req.Remark != nil {
 		updates["remark"] = *req.Remark
 	}
+if req.Gender != nil {
+		updates["gender"] = *req.Gender
+	}
+	if req.Email != nil {
+		updates["email"] = *req.Email
+	}
+	if req.Salary != nil {
+		updates["salary"] = *req.Salary
+	}
+	if req.ProbationSalary != nil {
+		updates["probation_salary"] = *req.ProbationSalary
+	}
 
 	// 敏感字段更新：需要重新加密+哈希
 	if req.Phone != nil {
@@ -270,19 +304,24 @@ func (s *Service) UpdateEmployee(orgID, userID, id int64, req *UpdateEmployeeReq
 	}
 	if req.IDCard != nil {
 		idCard := *req.IDCard
-		idCardHash := crypto.HashSHA256(idCard)
-		idCardEncrypted, err := crypto.Encrypt(idCard, aesKey)
-		if err != nil {
-			return nil, fmt.Errorf("加密身份证号失败: %w", err)
-		}
-		updates["id_card_hash"] = idCardHash
-		updates["id_card_encrypted"] = idCardEncrypted
+		// 脱敏格式（包含 ****）表示用户没有修改身份证号，跳过更新
+		if containsStar(idCard) {
+			// 仅标记为需要更新，但不更新敏感字段
+		} else {
+			idCardHash := crypto.HashSHA256(idCard)
+			idCardEncrypted, err := crypto.Encrypt(idCard, aesKey)
+			if err != nil {
+				return nil, fmt.Errorf("加密身份证号失败: %w", err)
+			}
+			updates["id_card_hash"] = idCardHash
+			updates["id_card_encrypted"] = idCardEncrypted
 
-		// 重新提取性别和出生日期
-		gender, birthDate, err := extractFromIDCard(idCard)
-		if err == nil {
-			updates["gender"] = gender
-			updates["birth_date"] = birthDate
+			// 重新提取性别和出生日期
+			gender, birthDate, err := extractFromIDCard(idCard)
+			if err == nil {
+				updates["gender"] = gender
+				updates["birth_date"] = birthDate
+			}
 		}
 	}
 	if req.BankAccount != nil {
@@ -628,20 +667,24 @@ func (s *Service) toResponse(emp *Employee) (*EmployeeResponse, error) {
 	idCard, _ := crypto.Decrypt(emp.IDCardEncrypted, aesKey)
 
 	resp := &EmployeeResponse{
-		ID:           emp.ID,
-		Name:         emp.Name,
-		Phone:        crypto.MaskPhone(phone),
-		IDCard:       crypto.MaskIDCard(idCard),
-		Gender:       emp.Gender,
-		BirthDate:    emp.BirthDate,
-		Position:     emp.Position,
-		PositionID:   emp.PositionID,
-		DepartmentID: emp.DepartmentID,
-		HireDate:     emp.HireDate,
-		Status:       emp.Status,
-		Address:      emp.Address,
-		Remark:       emp.Remark,
-		CreatedAt:    emp.CreatedAt,
+		ID:              emp.ID,
+		Name:            emp.Name,
+		Phone:           crypto.MaskPhone(phone),
+		IDCard:          crypto.MaskIDCard(idCard),
+		Gender:          emp.Gender,
+		BirthDate:       emp.BirthDate,
+		Position:        emp.Position,
+		PositionID:      emp.PositionID,
+		DepartmentID:    emp.DepartmentID,
+		DepartmentName:  s.getDepartmentName(emp.OrgID, emp.DepartmentID),
+		HireDate:        emp.HireDate,
+		Status:          emp.Status,
+		Salary:          emp.Salary,
+		ProbationSalary: emp.ProbationSalary,
+		Address:         emp.Address,
+		Remark:          emp.Remark,
+		Email:           emp.Email,
+		CreatedAt:       emp.CreatedAt,
 	}
 
 	// 银行卡信息
@@ -659,6 +702,12 @@ func (s *Service) toResponse(emp *Employee) (*EmployeeResponse, error) {
 	if emp.EmergencyContact != "" {
 		resp.EmergencyContact = emp.EmergencyContact
 	}
+	if emp.EmergencyPhoneEncrypted != "" {
+		emergPhone, err := crypto.Decrypt(emp.EmergencyPhoneEncrypted, aesKey)
+		if err == nil {
+			resp.EmergencyPhone = crypto.MaskPhone(emergPhone)
+		}
+	}
 
 	return resp, nil
 }
@@ -669,4 +718,21 @@ func maskBankAccount(account string) string {
 		return account
 	}
 	return "****" + account[len(account)-4:]
+}
+
+// containsStar 检查字符串是否包含脱敏标记 ****
+func containsStar(s string) bool {
+	return strings.Contains(s, "****")
+}
+
+// getDepartmentName 根据部门ID获取部门名称
+func (s *Service) getDepartmentName(orgID int64, deptID *int64) string {
+	if deptID == nil {
+		return ""
+	}
+	deptMap, err := s.repo.GetDepartmentNames(orgID, []int64{*deptID})
+	if err != nil || len(deptMap) == 0 {
+		return ""
+	}
+	return deptMap[*deptID]
 }

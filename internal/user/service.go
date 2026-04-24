@@ -307,16 +307,23 @@ func (s *Service) CreateSubAccount(ctx context.Context, orgID int64, req *Create
 	if existing != nil && existing.OrgID == orgID {
 		return fmt.Errorf("该手机号已存在于企业中")
 	}
+
 	encryptedPhone, _ := crypto.Encrypt(req.Phone, aesKey)
 	user := &model.User{
+		BaseModel: model.BaseModel{OrgID: orgID},
 		Phone:     encryptedPhone,
 		PhoneHash: phoneHash,
 		Name:      req.Name,
 		Role:      req.Role,
 		Status:    "active",
 	}
-	user.OrgID = orgID
-	return s.repo.CreateUser(user)
+
+	_, err := s.repo.CreateUserAndLinkEmployee(orgID, user)
+	if err != nil {
+		return fmt.Errorf("创建子账户失败: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Service) ListSubAccounts(ctx context.Context, orgID int64, page, pageSize int) ([]UserInfoResponse, int64, error) {

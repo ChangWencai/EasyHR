@@ -95,7 +95,26 @@ func (s *ContractService) CreateContract(ctx context.Context, orgID, userID, emp
 	contract.ContractType = req.ContractType
 	contract.StartDate = startDate
 	contract.EndDate = endDate
-	contract.Salary = req.Salary
+
+	// 薪资：优先使用请求中的薪资，否则使用员工档案中的正式薪资
+	if req.Salary != nil && *req.Salary > 0 {
+		contract.Salary = *req.Salary
+	} else if emp.Salary != nil {
+		contract.Salary = *emp.Salary
+	}
+
+	// 试用期薪资：优先使用请求中的，否则使用员工档案中的试用期薪资
+	if req.ProbationSalary != nil && *req.ProbationSalary > 0 {
+		contract.ProbationSalary = *req.ProbationSalary
+	} else if emp.ProbationSalary != nil {
+		contract.ProbationSalary = *emp.ProbationSalary
+	}
+
+	// 试用期月数
+	if req.ProbationMonths != nil {
+		contract.ProbationMonths = *req.ProbationMonths
+	}
+
 	contract.Status = ContractStatusDraft
 
 	if err := s.contractRepo.Create(contract); err != nil {
@@ -129,18 +148,31 @@ func (s *ContractService) GeneratePDF(ctx context.Context, orgID, contractID int
 	aesKey := s.aesKey()
 	idCard, _ := crypto.Decrypt(emp.IDCardEncrypted, aesKey)
 
+	// 薪资：合同薪资 > 0 则用合同薪资，否则用员工薪资
+	salary := contract.Salary
+	if salary <= 0 && emp.Salary != nil {
+		salary = *emp.Salary
+	}
+	probationSalary := contract.ProbationSalary
+	if probationSalary <= 0 && emp.ProbationSalary != nil {
+		probationSalary = *emp.ProbationSalary
+	}
+
 	// 构建 PDF 数据
 	data := &ContractPDFData{
-		OrgName:      org.Name,
-		CreditCode:   org.CreditCode,
-		EmployeeName: emp.Name,
-		IDCard:       idCard,
-		Position:     emp.Position,
-		City:         org.City,
-		Salary:       contract.Salary,
-		StartDate:    contract.StartDate,
-		EndDate:      contract.EndDate,
-		ContractType: contract.ContractType,
+		OrgName:         org.Name,
+		CreditCode:      org.CreditCode,
+		EmployeeName:    emp.Name,
+		IDCard:          idCard,
+		Position:        emp.Position,
+		City:            org.City,
+		Salary:          salary,
+		ProbationMonths: contract.ProbationMonths,
+		ProbationSalary:  probationSalary,
+		StartDate:       contract.StartDate,
+		EndDate:         contract.EndDate,
+		ContractType:    contract.ContractType,
+		SignDate:        emp.HireDate,
 	}
 
 	// 生成 PDF
@@ -312,8 +344,8 @@ func (s *ContractService) UpdateContract(ctx context.Context, orgID, userID, con
 		return nil, fmt.Errorf("合同不存在")
 	}
 
-	if contract.Status != ContractStatusDraft {
-		return nil, fmt.Errorf("仅草稿状态合同可编辑")
+	if contract.Status != ContractStatusDraft && contract.Status != ContractStatusPendingSign {
+		return nil, fmt.Errorf("仅草稿或待签状态合同可编辑")
 	}
 
 	updates := make(map[string]interface{})
@@ -343,6 +375,12 @@ func (s *ContractService) UpdateContract(ctx context.Context, orgID, userID, con
 	if req.Salary != nil {
 		updates["salary"] = *req.Salary
 	}
+	if req.ProbationMonths != nil {
+		updates["probation_months"] = *req.ProbationMonths
+	}
+	if req.ProbationSalary != nil {
+		updates["probation_salary"] = *req.ProbationSalary
+	}
 
 	if err := s.contractRepo.Update(orgID, contractID, updates); err != nil {
 		return nil, fmt.Errorf("更新合同失败: %w", err)
@@ -351,23 +389,53 @@ func (s *ContractService) UpdateContract(ctx context.Context, orgID, userID, con
 	return s.GetContract(ctx, orgID, contractID)
 }
 
+// DeleteContract 删除合同（仅草稿/待签状态可删除）
+func (s *ContractService) DeleteContract(ctx context.Context, orgID, contractID int64) error {
+	contract, err := s.contractRepo.FindByID(orgID, contractID)
+	if err != nil {
+		return fmt.Errorf("合同不存在")
+	}
+
+	if contract.Status != ContractStatusDraft && contract.Status != ContractStatusPendingSign {
+		return fmt.Errorf("仅草稿或待签状态的合同可删除")
+	}
+
+	return s.contractRepo.Delete(orgID, contractID)
+}
+
+// formatDate converts time.Time to YYYY-MM-DD string
+func formatDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+// formatDatePtr converts *time.Time to *string (YYYY-MM-DD)
+func formatDatePtr(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format("2006-01-02")
+	return &s
+}
+
 // toContractResponse 将 Contract 转换为 ContractResponse
 func (s *ContractService) toContractResponse(c *Contract, empName string) *ContractResponse {
 	resp := &ContractResponse{
-		ID:              c.ID,
-		EmployeeID:      c.EmployeeID,
-		EmployeeName:    empName,
-		ContractType:    c.ContractType,
-		StartDate:       c.StartDate,
-		EndDate:         c.EndDate,
-		Salary:          c.Salary,
-		Status:          c.Status,
-		PDFURL:          c.PDFURL,
-		SignedPDFURL:    c.SignedPDFURL,
-		SignDate:        c.SignDate,
-		TerminateDate:   c.TerminateDate,
-		TerminateReason: c.TerminateReason,
-		CreatedAt:       c.CreatedAt,
+		ID:               c.ID,
+		EmployeeID:       c.EmployeeID,
+		EmployeeName:     empName,
+		ContractType:     c.ContractType,
+		StartDate:        formatDate(c.StartDate),
+		EndDate:          formatDatePtr(c.EndDate),
+		Salary:           c.Salary,
+		ProbationMonths:  c.ProbationMonths,
+		ProbationSalary:  c.ProbationSalary,
+		Status:           c.Status,
+		PDFURL:           c.PDFURL,
+		SignedPDFURL:     c.SignedPDFURL,
+		SignDate:         formatDatePtr(c.SignDate),
+		TerminateDate:    formatDatePtr(c.TerminateDate),
+		TerminateReason:  c.TerminateReason,
+		CreatedAt:        c.CreatedAt.Format(time.RFC3339),
 	}
 	return resp
 }
@@ -454,9 +522,9 @@ func (s *ContractService) SendSignCode(ctx context.Context, contractID int64, ph
 	// 存储验证码（覆盖同合同+手机号的旧记录）
 	signCode := &ContractSignCode{
 		ContractID: contractID,
-		Phone:      phone,
-		Code:       code,
-		ExpiresAt:  time.Now().Add(SignCodeExpiry),
+		Phone:     phone,
+		Code:      code,
+		ExpiresAt: time.Now().Add(SignCodeExpiry),
 	}
 	if err := s.contractRepo.UpsertSignCode(signCode); err != nil {
 		return fmt.Errorf("存储验证码失败: %w", err)
@@ -571,7 +639,7 @@ func (s *ContractService) ConfirmSign(ctx context.Context, contractID int64, sig
 
 	if err := s.contractRepo.Update(orgID, contractID, map[string]interface{}{
 		"status":         status,
-		"sign_date":      now,
+		"sign_date":       now,
 		"signed_pdf_url": signedPdfUrl,
 	}); err != nil {
 		return nil, fmt.Errorf("更新合同状态失败: %w", err)
@@ -579,7 +647,7 @@ func (s *ContractService) ConfirmSign(ctx context.Context, contractID int64, sig
 
 	return &ConfirmSignResponse{
 		SignedPDFURL: signedPdfUrl,
-		Message:      "签署成功",
+		Message:     "签署成功",
 	}, nil
 }
 
