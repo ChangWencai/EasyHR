@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import ContractTypeSelect from './ContractTypeSelect.vue'
 import ContractPeriodPicker from './ContractPeriodPicker.vue'
 import PdfPreview from './PdfPreview.vue'
-import { contractApi, type ContractType } from '@/api/contract'
+import { contractApi, type ContractType, type Contract } from '@/api/contract'
 import { useMessage } from '@/composables/useMessage'
 
 const $msg = useMessage()
@@ -11,7 +11,9 @@ const $msg = useMessage()
 const props = defineProps<{
   employeeId: number
   employeeName: string
-  employeeSalary?: number  // BLOCKER-5 fix: 用于传给 create
+  employeeSalary?: number
+  probationSalary?: number
+  editingContract?: Contract | null
 }>()
 const emit = defineEmits<{
   success: []
@@ -24,10 +26,22 @@ const pdfUrl = ref('')
 
 // Step 1 data
 const contractType = ref<ContractType | null>(null)
-const period = ref({ start: '', end: '' as string | null })
+const period = ref({ start: '', end: '' as string | null, probationMonths: 0 })
 
 // Contract ID after creation
 const contractId = ref<number | null>(null)
+
+// Editing mode: pre-populate from existing contract
+const isEditing = !!props.editingContract
+if (isEditing && props.editingContract) {
+  contractType.value = props.editingContract.contract_type as ContractType
+  period.value = {
+    start: props.editingContract.start_date || '',
+    end: props.editingContract.end_date || null,
+    probationMonths: props.editingContract.probation_months || 0,
+  }
+  contractId.value = props.editingContract.id
+}
 
 // Step 2: PDF preview URL
 const pdfLoading = ref(false)
@@ -51,22 +65,38 @@ async function proceedToStep2() {
   if (!canProceedStep1()) return
   loading.value = true
   try {
-    // Create contract (draft) — BLOCKER-5 fix: send actual salary
-    const contract = await contractApi.create({
-      employee_id: props.employeeId,
-      contract_type: contractType.value!,
-      start_date: period.value.start,
-      end_date: period.value.end,
-    }, props.employeeSalary)
-    contractId.value = contract.id
+    if (isEditing && contractId.value) {
+      // 更新已有合同后直接关闭
+      await contractApi.update(contractId.value, {
+        contract_type: contractType.value!,
+        start_date: period.value.start,
+        end_date: period.value.end,
+        probation_months: period.value.probationMonths,
+        salary: props.employeeSalary,
+        probation_salary: props.probationSalary,
+      })
+      $msg.success('合同已更新')
+      emit('success')
+      return
+    } else {
+      // 创建新合同（draft）
+      const contract = await contractApi.create({
+        employee_id: props.employeeId,
+        contract_type: contractType.value!,
+        start_date: period.value.start,
+        end_date: period.value.end,
+        probation_months: period.value.probationMonths,
+      }, props.employeeSalary, props.probationSalary)
+      contractId.value = contract.id
+    }
 
     // Generate PDF
     pdfLoading.value = true
-    const blob = await contractApi.generatePdfBlob(contract.id)
+    const blob = await contractApi.generatePdfBlob(contractId.value!)
     pdfUrl.value = URL.createObjectURL(blob)
     currentStep.value = 1
   } catch {
-    $msg.error('创建合同失败，请重试')
+    $msg.error(isEditing ? '更新合同失败，请重试' : '创建合同失败，请重试')
   } finally {
     loading.value = false
     pdfLoading.value = false
@@ -160,10 +190,10 @@ function handleClose() {
         :loading="loading"
         @click="proceedToStep2"
       >
-        下一步
+        {{ isEditing ? '保存' : '下一步' }}
       </el-button>
       <el-button
-        v-if="currentStep === 1"
+        v-if="currentStep === 1 && !isEditing"
         type="primary"
         @click="currentStep = 2"
       >
