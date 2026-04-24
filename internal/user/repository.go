@@ -153,3 +153,70 @@ func (r *Repository) CreateOrgAndOwner(org *model.Organization, user *model.User
 		return nil
 	})
 }
+
+// FindEmployeeByPhoneHashAndOrg 根据手机号哈希和企业ID查找员工记录
+func (r *Repository) FindEmployeeByPhoneHashAndOrg(orgID int64, phoneHash string) (employeeID int64, found bool, err error) {
+	var emp struct{ ID int64 }
+	err = r.db.Table("employees").
+		Select("id").
+		Scopes(middleware.TenantScope(orgID)).
+		Where("phone_hash = ? AND deleted_at IS NULL", phoneHash).
+		Scan(&emp).Error
+	if err != nil {
+		return 0, false, err
+	}
+	if emp.ID == 0 {
+		return 0, false, nil
+	}
+	return int64(emp.ID), true, nil
+}
+
+// LinkEmployeeToUser 将员工记录关联到用户账号（在创建子账户时调用）
+func (r *Repository) LinkEmployeeToUser(orgID, employeeID, userID int64) error {
+	result := r.db.Table("employees").
+		Scopes(middleware.TenantScope(orgID)).
+		Where("id = ? AND deleted_at IS NULL", employeeID).
+		Update("user_id", userID)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("员工不存在或无权限")
+	}
+	return nil
+}
+
+// CreateUserAndLinkEmployee 在事务中创建子账户并关联同名员工
+func (r *Repository) CreateUserAndLinkEmployee(orgID int64, user *model.User) (createdUser *model.User, err error) {
+	err = r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return fmt.Errorf("create user: %w", err)
+		}
+
+		// 查找同名下是否有员工档案，若有则关联 user_id
+		var emp struct{ ID int64 }
+		if err := tx.Table("employees").
+			Select("id").
+			Scopes(middleware.TenantScope(orgID)).
+			Where("phone_hash = ? AND deleted_at IS NULL", user.PhoneHash).
+			Scan(&emp).Error; err != nil {
+			logger.SugarLogger.Warnw("FindEmployeeByPhoneHash failed in CreateUserAndLinkEmployee", "error", err.Error())
+		} else if emp.ID > 0 {
+			result := tx.Table("employees").
+				Scopes(middleware.TenantScope(orgID)).
+				Where("id = ? AND deleted_at IS NULL", emp.ID).
+				Update("user_id", user.ID)
+			if result.Error != nil {
+				logger.SugarLogger.Warnw("LinkEmployeeToUser failed", "employeeID", emp.ID, "userID", user.ID, "error", result.Error.Error())
+			} else if result.RowsAffected > 0 {
+				logger.SugarLogger.Infow("Employee linked to user", "employeeID", emp.ID, "userID", user.ID, "phoneHash", user.PhoneHash)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

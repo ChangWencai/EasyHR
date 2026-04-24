@@ -7,6 +7,7 @@ import (
 
 	"github.com/wencai/easyhr/internal/common/crypto"
 	"github.com/wencai/easyhr/internal/common/middleware"
+	"github.com/wencai/easyhr/internal/common/model"
 	"gorm.io/gorm"
 )
 
@@ -284,26 +285,57 @@ func (r *Repository) FindAllForRosterExport(orgID int64, params ListQueryParams)
 	return employees, nil
 }
 
-// GetSalaryAmounts 批量获取员工薪资（取最近生效月份的基本薪资）
+// GetSalaryAmounts 批量获取员工薪资
+// 优先从 employees.salary 字段获取（创建员工时填写），如果没有则从 salary_items 表取最近生效月份的基本薪资
 func (r *Repository) GetSalaryAmounts(orgID int64, employeeIDs []int64) (map[int64]float64, error) {
 	result := make(map[int64]float64)
 	if len(employeeIDs) == 0 {
 		return result, nil
 	}
 
-	// 检查 salary_items 表是否存在
+	// 第一步：从 employees 表获取直接存储的薪资
+	type empRow struct {
+		ID     int64
+		Salary *float64
+	}
+	var empRows []empRow
+	err := r.db.Model(&Employee{}).
+		Select("id, salary").
+		Where("org_id = ? AND id IN ?", orgID, employeeIDs).
+		Find(&empRows).Error
+	if err != nil {
+		return result, fmt.Errorf("get salary from employees: %w", err)
+	}
+	for _, row := range empRows {
+		if row.Salary != nil && *row.Salary > 0 {
+			result[row.ID] = *row.Salary
+		}
+	}
+
+	// 第二步：如果 salary_items 表存在，从那里补充没有薪资的员工数据
 	if !r.db.Migrator().HasTable("salary_items") {
 		return result, nil
 	}
 
-	type row struct {
+	// 找出还没有薪资的员工 IDs
+	missingIDs := make([]int64, 0)
+	for _, id := range employeeIDs {
+		if _, ok := result[id]; !ok {
+			missingIDs = append(missingIDs, id)
+		}
+	}
+	if len(missingIDs) == 0 {
+		return result, nil
+	}
+
+	type itemRow struct {
 		EmployeeID int64
 		Amount     float64
 	}
-	var rows []row
+	var rows []itemRow
 
-	// 子查询：每个员工最近 effective_month 的 "基本工资" 类薪资项
-	err := r.db.Raw(`
+	// 子查询：每个员工最近 effective_month 的薪资项
+	err = r.db.Raw(`
 		SELECT si.employee_id, si.amount
 		FROM salary_items si
 		INNER JOIN (
@@ -313,7 +345,7 @@ func (r *Repository) GetSalaryAmounts(orgID int64, employeeIDs []int64) (map[int
 			GROUP BY employee_id
 		) latest ON si.employee_id = latest.employee_id AND si.effective_month = latest.max_month
 		WHERE si.org_id = ? AND si.employee_id IN ?
-	`, orgID, employeeIDs, orgID, employeeIDs).Scan(&rows).Error
+	`, orgID, missingIDs, orgID, missingIDs).Scan(&rows).Error
 
 	if err != nil {
 		return result, fmt.Errorf("get salary amounts: %w", err)
@@ -345,17 +377,17 @@ func (r *Repository) GetContractExpiryDays(orgID int64, employeeIDs []int64) (ma
 	}
 	var rows []row
 
-	// 取每个员工最近 active/signed 合同
+		// 取每个员工最近 active/signed/pending_sign 合同
 	err := r.db.Raw(`
 		SELECT c.employee_id, c.end_date
 		FROM contracts c
 		INNER JOIN (
 			SELECT employee_id, MAX(created_at) as max_created
 			FROM contracts
-			WHERE org_id = ? AND employee_id IN ? AND status IN ('active', 'signed')
+			WHERE org_id = ? AND employee_id IN ? AND status IN ('active', 'signed', 'pending_sign')
 			GROUP BY employee_id
 		) latest ON c.employee_id = latest.employee_id AND c.created_at = latest.max_created
-		WHERE c.org_id = ? AND c.employee_id IN ? AND c.status IN ('active', 'signed')
+		WHERE c.org_id = ? AND c.employee_id IN ? AND c.status IN ('active', 'signed', 'pending_sign')
 	`, orgID, employeeIDs, orgID, employeeIDs).Scan(&rows).Error
 
 	if err != nil {
@@ -446,6 +478,51 @@ func (r *Repository) GetDepartmentNames(orgID int64, deptIDs []int64) (map[int64
 	}
 
 	return result, nil
+}
+
+// CreateEmployeeAndUser 在事务中创建员工和对应的用户账号（member 角色），并关联 user_id
+func (r *Repository) CreateEmployeeAndUser(emp *Employee, user *model.User) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		// 1. 创建员工（含唯一性校验）
+		if err := createEmployeeTx(tx, emp); err != nil {
+			return err
+		}
+
+		// 2. 创建用户（member 角色，无密码，后续由员工设置或管理员设置）
+		user.OrgID = emp.OrgID
+		if err := tx.Create(user).Error; err != nil {
+			return fmt.Errorf("创建关联账号失败: %w", err)
+		}
+
+		// 3. 回写 employees.user_id
+		if user.ID <= 0 {
+			return fmt.Errorf("创建关联账号失败: userID无效")
+		}
+		if err := tx.Model(&Employee{}).Where("id = ?", emp.ID).Update("user_id", user.ID).Error; err != nil {
+			return fmt.Errorf("关联账号失败: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// createEmployeeTx 事务内创建员工（含唯一性校验）
+func createEmployeeTx(tx *gorm.DB, emp *Employee) error {
+	if emp.PhoneHash != "" {
+		var count int64
+		tx.Model(&Employee{}).Where("org_id = ? AND phone_hash = ?", emp.OrgID, emp.PhoneHash).Count(&count)
+		if count > 0 {
+			return ErrPhoneDuplicate
+		}
+	}
+	if emp.IDCardHash != "" {
+		var count int64
+		tx.Model(&Employee{}).Where("org_id = ? AND id_card_hash = ?", emp.OrgID, emp.IDCardHash).Count(&count)
+		if count > 0 {
+			return ErrIDCardDuplicate
+		}
+	}
+	return tx.Create(emp).Error
 }
 
 // applySearchFilters 应用搜索过滤条件

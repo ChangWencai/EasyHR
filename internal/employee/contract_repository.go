@@ -44,6 +44,18 @@ func (r *ContractRepository) Update(orgID, id int64, updates map[string]interfac
 	return nil
 }
 
+// Delete 删除合同（硬删除，仅限草稿/待签状态）
+func (r *ContractRepository) Delete(orgID, id int64) error {
+	result := r.db.Scopes(middleware.TenantScope(orgID)).Where("id = ?", id).Delete(&Contract{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 // ListByEmployee 按员工查询合同列表（分页）
 func (r *ContractRepository) ListByEmployee(orgID, employeeID int64, page, pageSize int) ([]Contract, int64, error) {
 	var contracts []Contract

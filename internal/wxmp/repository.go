@@ -30,7 +30,8 @@ func NewRepository(db *gorm.DB, aesKey string) *WXMPRepositoryImpl {
 }
 
 // GetMemberByPhone 通过手机号哈希查找会员
-// 关联 users 表和 employees 表，返回 MemberInfo
+// 先在 users 表验证用户，再在 employees 表直接按 phone_hash 查找（不过度依赖 user_id 关联，
+// 因为员工可能由管理员创建时尚未绑定账号，user_id 为 NULL）
 func (r *WXMPRepositoryImpl) GetMemberByPhone(ctx context.Context, phoneHash string) (*MemberInfo, error) {
 	var user model.User
 	err := r.db.Where("phone_hash = ?", phoneHash).First(&user).Error
@@ -44,9 +45,10 @@ func (r *WXMPRepositoryImpl) GetMemberByPhone(ctx context.Context, phoneHash str
 		OrgID  uint
 		UserID uint
 	}
+	// 直接通过 phone_hash 在 employees 表查找，不过度依赖 user_id
 	err = r.db.Table("employees").
 		Select("id, name, org_id, user_id").
-		Where("user_id = ? AND deleted_at IS NULL", user.ID).
+		Where("phone_hash = ? AND deleted_at IS NULL", phoneHash).
 		Scan(&emp).Error
 	if err != nil || emp.ID == 0 {
 		return nil, fmt.Errorf("employee not found for user")
