@@ -15,17 +15,19 @@ var fontFiles embed.FS
 
 // ContractPDFData 合同 PDF 填充数据
 type ContractPDFData struct {
-	OrgName      string
-	CreditCode   string
-	EmployeeName string
-	IDCard       string
-	Position     string
-	City         string
-	Salary       float64
-	StartDate    time.Time
-	EndDate      *time.Time
-	ContractType string
-	SignDate     time.Time
+	OrgName         string
+	CreditCode      string
+	EmployeeName    string
+	IDCard          string
+	Position        string
+	City            string
+	Salary          float64
+	ProbationMonths int
+	ProbationSalary  float64
+	StartDate       time.Time
+	EndDate         *time.Time
+	ContractType    string
+	SignDate        time.Time
 }
 
 // GenerateContractPDF 生成劳动合同 PDF（中文内容 + 中文字体）
@@ -37,17 +39,12 @@ func GenerateContractPDF(data *ContractPDFData) ([]byte, error) {
 	pdf.SetAutoPageBreak(true, 15)
 
 	// 注册中文字体
-	regularFont, err := fontFiles.ReadFile("NotoSansSC-Regular.ttf")
+	regularFont, err := fontFiles.ReadFile("fonts/NotoSansSC-Regular.ttf")
 	if err != nil {
 		return nil, fmt.Errorf("read regular font: %w", err)
 	}
 	pdf.AddUTF8FontFromBytes("NotoSansSC", "", regularFont)
-
-	boldFont, err := fontFiles.ReadFile("NotoSansSC-Bold.ttf")
-	if err != nil {
-		return nil, fmt.Errorf("read bold font: %w", err)
-	}
-	pdf.AddUTF8FontFromBytes("NotoSansSC", "B", boldFont)
+	pdf.AddUTF8FontFromBytes("NotoSansSC", "B", regularFont)
 
 	// 根据合同类型选择模板
 	switch data.ContractType {
@@ -150,7 +147,30 @@ func generateFixedTermPDF(pdf *fpdf.Fpdf, data *ContractPDFData) {
 		"", "L", false)
 	pdf.Ln(2)
 
-	addArticleHeading(pdf, "第五条", "社会保险")
+addArticleHeading(pdf, "第五条", "试用期")
+	pdf.SetFont("NotoSansSC", "", 11)
+	pdf.SetX(25)
+	if data.ProbationMonths > 0 {
+		pdf.MultiCell(165, lineHeight,
+			fmt.Sprintf("试用期自合同生效之日起%d个月。", data.ProbationMonths),
+			"", "L", false)
+		if data.ProbationSalary > 0 {
+			pdf.MultiCell(165, lineHeight,
+				fmt.Sprintf("试用期工资按照%.2f元/月执行，不低于合同约定工资的80%%。", data.ProbationSalary),
+				"", "L", false)
+		} else {
+			pdf.MultiCell(165, lineHeight,
+				fmt.Sprintf("试用期工资按照%.2f元/月执行。", data.Salary),
+				"", "L", false)
+		}
+	} else {
+		pdf.MultiCell(165, lineHeight,
+			"本合同不设试用期。",
+			"", "L", false)
+	}
+	pdf.Ln(2)
+
+	addArticleHeading(pdf, "第六条", "社会保险")
 	pdf.SetFont("NotoSansSC", "", 11)
 	pdf.SetX(25)
 	pdf.MultiCell(165, lineHeight,
@@ -158,7 +178,7 @@ func generateFixedTermPDF(pdf *fpdf.Fpdf, data *ContractPDFData) {
 		"", "L", false)
 	pdf.Ln(2)
 
-	addArticleHeading(pdf, "第六条", "劳动保护和工作条件")
+	addArticleHeading(pdf, "第八条", "劳动保护和工作条件")
 	pdf.SetFont("NotoSansSC", "", 11)
 	pdf.SetX(25)
 	pdf.MultiCell(165, lineHeight,
@@ -166,7 +186,7 @@ func generateFixedTermPDF(pdf *fpdf.Fpdf, data *ContractPDFData) {
 		"", "L", false)
 	pdf.Ln(2)
 
-	addArticleHeading(pdf, "第七条", "合同生效")
+	addArticleHeading(pdf, "第九条", "合同生效")
 	pdf.SetFont("NotoSansSC", "", 11)
 	pdf.SetX(25)
 	pdf.MultiCell(165, lineHeight,

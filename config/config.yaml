@@ -18,7 +18,7 @@ database:
   password: easyhr_dev
   dbname: easyhr
   sslmode: disable
-  sql_log: false  # 是否开启 SQL 日志（生产环境建议关闭）
+  sql_log: true  # 是否开启 SQL 日志（生产环境建议关闭）
 
 redis:
   host: localhost

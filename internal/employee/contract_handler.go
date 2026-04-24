@@ -32,6 +32,7 @@ func (h *ContractHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin
 	authGroup.GET("/employees/:id/contracts", h.ListByEmployee) // 所有角色可查看
 	authGroup.GET("/contracts/:id", h.GetContract)              // 所有角色可查看
 	authGroup.PUT("/contracts/:id", middleware.RequireRole("owner", "admin"), h.UpdateContract)
+	authGroup.DELETE("/contracts/:id", middleware.RequireRole("owner", "admin"), h.DeleteContract)
 	authGroup.POST("/contracts/:id/generate-pdf", middleware.RequireRole("owner", "admin"), h.GeneratePDF)
 	authGroup.POST("/contracts/:id/upload-signed", middleware.RequireRole("owner", "admin"), h.UploadSigned)
 	authGroup.GET("/contracts/:id/upload-url", middleware.RequireRole("owner", "admin"), h.GenerateUploadURL)
@@ -343,4 +344,22 @@ func (h *ContractHandler) GetSignedPdf(c *gin.Context) {
 	}
 
 	response.Success(c, &GetSignedPdfResponse{URL: url})
+}
+
+// DeleteContract 删除合同（仅草稿/待签状态）
+func (h *ContractHandler) DeleteContract(c *gin.Context) {
+	contractID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的合同ID")
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+
+	if err := h.svc.DeleteContract(c.Request.Context(), orgID, contractID); err != nil {
+		response.Error(c, http.StatusBadRequest, 20218, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "合同已删除"})
 }

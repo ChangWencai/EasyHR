@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 	"github.com/wencai/easyhr/internal/attendance"
@@ -134,6 +137,16 @@ func main() {
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// 注册自定义验证器：支持脱敏的身份证号格式（340827****2717）
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		// 身份证号验证：18位数字（17位+末位校验码）或脱敏格式（前6位+****+后4位=14位）
+		idCardRegex := regexp.MustCompile(`^(\d{17}[\dXx]|\d{6}\*{4}\d{4})$`)
+		v.RegisterValidation("idcard", func(fl validator.FieldLevel) bool {
+			idCard := fl.Field().String()
+			return idCardRegex.MatchString(idCard)
+		})
 	}
 
 	r := gin.New()
