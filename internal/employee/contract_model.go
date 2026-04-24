@@ -16,7 +16,9 @@ type Contract struct {
 	StartDate       time.Time  `gorm:"column:start_date;type:date;not null;comment:合同开始日期" json:"start_date"`
 	EndDate         *time.Time `gorm:"column:end_date;type:date;comment:合同结束日期（无固定期限为空）" json:"end_date"`
 	Salary          float64    `gorm:"column:salary;type:decimal(10,2);comment:月薪" json:"salary"`
-	Status          string     `gorm:"column:status;type:varchar(20);not null;default:draft;comment:状态（draft/pending_sign/signed/active/terminated/expired）" json:"status"`
+	ProbationMonths int        `gorm:"column:probation_months;type:int;default:0;comment:试用期月数" json:"probation_months"`
+	ProbationSalary float64    `gorm:"column:probation_salary;type:decimal(10,2);comment:试用期月薪" json:"probation_salary"`
+	Status          string
 	PDFURL          string     `gorm:"column:pdf_url;type:varchar(500);comment:合同PDF模板URL" json:"pdf_url"`
 	SignedPDFURL    string     `gorm:"column:signed_pdf_url;type:varchar(500);comment:已签署合同PDF URL" json:"signed_pdf_url"`
 	SignDate        *time.Time `gorm:"column:sign_date;type:date;comment:签署日期" json:"sign_date"`

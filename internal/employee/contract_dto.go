@@ -1,21 +1,23 @@
 package employee
 
-import "time"
-
 // CreateContractRequest 创建合同请求
 type CreateContractRequest struct {
-	ContractType string  `json:"contract_type" binding:"required,oneof=fixed_term indefinite intern"`
-	StartDate    string  `json:"start_date" binding:"required"` // YYYY-MM-DD
-	EndDate      string  `json:"end_date" binding:"omitempty"`  // 无固定期限不传
-	Salary       float64 `json:"salary" binding:"required,gt=0"`
+	ContractType    string   `json:"contract_type" binding:"required,oneof=fixed_term indefinite intern"`
+	StartDate       string   `json:"start_date" binding:"required"`       // YYYY-MM-DD
+	EndDate         string   `json:"end_date" binding:"omitempty"`        // 无固定期限不传
+	Salary          *float64 `json:"salary" binding:"omitempty,gt=0"`
+	ProbationMonths *int     `json:"probation_months" binding:"omitempty,min=0,max=12"`
+	ProbationSalary *float64 `json:"probation_salary" binding:"omitempty,gt=0"`
 }
 
 // UpdateContractRequest 更新合同请求（部分更新）
 type UpdateContractRequest struct {
-	ContractType *string  `json:"contract_type" binding:"omitempty,oneof=fixed_term indefinite intern"`
-	StartDate    *string  `json:"start_date" binding:"omitempty"`
-	EndDate      *string  `json:"end_date" binding:"omitempty"`
-	Salary       *float64 `json:"salary" binding:"omitempty,gt=0"`
+	ContractType    *string   `json:"contract_type" binding:"omitempty,oneof=fixed_term indefinite intern"`
+	StartDate       *string   `json:"start_date" binding:"omitempty"`
+	EndDate         *string   `json:"end_date" binding:"omitempty"`
+	Salary          *float64  `json:"salary" binding:"omitempty"`
+	ProbationMonths *int      `json:"probation_months" binding:"omitempty,min=0,max=12"`
+	ProbationSalary *float64  `json:"probation_salary" binding:"omitempty,gt=0"`
 }
 
 // UploadSignedRequest 上传签署扫描件请求
@@ -32,20 +34,22 @@ type TerminateContractRequest struct {
 
 // ContractResponse 合同响应
 type ContractResponse struct {
-	ID              int64      `json:"id"`
-	EmployeeID      int64      `json:"employee_id"`
-	EmployeeName    string     `json:"employee_name"`
-	ContractType    string     `json:"contract_type"`
-	StartDate       time.Time  `json:"start_date"`
-	EndDate         *time.Time `json:"end_date"`
-	Salary          float64    `json:"salary"`
-	Status          string     `json:"status"`
-	PDFURL          string     `json:"pdf_url,omitempty"`
-	SignedPDFURL    string     `json:"signed_pdf_url,omitempty"`
-	SignDate        *time.Time `json:"sign_date,omitempty"`
-	TerminateDate   *time.Time `json:"terminate_date,omitempty"`
-	TerminateReason string     `json:"terminate_reason,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
+	ID               int64   `json:"id"`
+	EmployeeID       int64   `json:"employee_id"`
+	EmployeeName     string  `json:"employee_name"`
+	ContractType     string  `json:"contract_type"`
+	StartDate        string  `json:"start_date"`    // YYYY-MM-DD
+	EndDate          *string `json:"end_date"`       // YYYY-MM-DD，无固定期限为 nil
+	Salary           float64 `json:"salary"`
+	ProbationMonths  int     `json:"probation_months"`
+	ProbationSalary  float64 `json:"probation_salary"`
+	Status           string  `json:"status"`
+	PDFURL           string  `json:"pdf_url,omitempty"`
+	SignedPDFURL     string  `json:"signed_pdf_url,omitempty"`
+	SignDate         *string `json:"sign_date,omitempty"`       // YYYY-MM-DD
+	TerminateDate    *string `json:"terminate_date,omitempty"` // YYYY-MM-DD
+	TerminateReason  string  `json:"terminate_reason,omitempty"`
+	CreatedAt        string  `json:"created_at"` // RFC3339
 }
 
 // ContractListQueryParams 合同列表查询参数
