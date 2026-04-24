@@ -12,7 +12,8 @@ const $msg = useMessage()
 const props = defineProps<{
   employeeId?: number
   employeeName?: string
-  employeeSalary?: number  // BLOCKER-5 fix: 用于传给 create
+  employeeSalary?: number
+  probationSalary?: number
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 const contracts = ref<Contract[]>([])
 const loading = ref(false)
 const showWizard = ref(false)
+const editingContract = ref<Contract | null>(null)
 
 // 加载合同列表
 async function loadContracts() {
@@ -74,6 +76,15 @@ async function handleViewPdf(contract: Contract) {
     window.open(contract.signed_pdf_url, '_blank')
   } else if (contract.pdf_url) {
     window.open(contract.pdf_url, '_blank')
+  } else {
+    // 未生成PDF时直接请求
+    try {
+      const blob = await contractApi.generatePdfBlob(contract.id)
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch {
+      $msg.error('生成合同PDF失败')
+    }
   }
 }
 
@@ -85,7 +96,28 @@ function handleOpenWizard() {
 // 签署成功后刷新列表
 function handleWizardSuccess() {
   showWizard.value = false
+  editingContract.value = null
   loadContracts()
+}
+
+// 编辑合同
+function handleEdit(contract: Contract) {
+  editingContract.value = contract
+  showWizard.value = true
+}
+
+// 删除合同
+async function handleDelete(contract: Contract) {
+  try {
+    await ElMessageBox.confirm('确定删除该合同吗？删除后无法恢复。', '删除合同', {
+      confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning'
+    })
+    await contractApi.delete(contract.id)
+    $msg.success('合同已删除')
+    loadContracts()
+  } catch {
+    // 用户取消
+  }
 }
 </script>
 
@@ -95,7 +127,7 @@ function handleWizardSuccess() {
     <div class="contract-list-header">
       <span class="section-title">劳动合同</span>
       <el-button
-        v-if="props.employeeId"
+        v-if="contracts.length > 0 && props.employeeId"
         type="primary"
         size="small"
         @click="handleOpenWizard"
@@ -140,13 +172,21 @@ function handleWizardSuccess() {
         </div>
         <div class="contract-item-footer">
           <ExpiryCountdown
-            v-if="contract.expiry_days !== null"
+            v-if="contract.expiry_days != null"
             :days="contract.expiry_days"
           />
           <div class="contract-item-actions">
             <el-button link size="small" @click="handleViewPdf(contract)">
               查看
             </el-button>
+            <template v-if="contract.status === 'draft' || contract.status === 'pending_sign'">
+              <el-button link size="small" type="primary" @click="handleEdit(contract)">
+                编辑
+              </el-button>
+              <el-button link size="small" type="danger" @click="handleDelete(contract)">
+                删除
+              </el-button>
+            </template>
             <el-button
               v-if="contract.status === 'active'"
               link
@@ -164,7 +204,7 @@ function handleWizardSuccess() {
     <!-- Contract Wizard Dialog -->
     <el-dialog
       v-model="showWizard"
-      title="发起合同"
+      :title="editingContract ? '编辑合同' : '发起合同'"
       width="600px"
       :close-on-click-modal="false"
       destroy-on-close
@@ -174,8 +214,10 @@ function handleWizardSuccess() {
         :employee-id="props.employeeId!"
         :employee-name="props.employeeName || ''"
         :employee-salary="props.employeeSalary"
+        :probation-salary="props.probationSalary"
+        :editing-contract="editingContract"
         @success="handleWizardSuccess"
-        @close="showWizard = false"
+        @close="showWizard = false; editingContract = null"
       />
     </el-dialog>
   </div>

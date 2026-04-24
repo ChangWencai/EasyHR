@@ -42,6 +42,17 @@
                       <template #prefix><el-icon><Phone /></el-icon></template>
                     </el-input>
                   </el-form-item>
+                  <el-form-item label="性别" prop="gender" class="form-item">
+                    <el-select v-model="form.gender" placeholder="请选择性别" clearable size="large" style="width: 100%">
+                      <el-option label="男" value="男" />
+                      <el-option label="女" value="女" />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="邮箱" prop="email" class="form-item">
+                    <el-input v-model="form.email" placeholder="邮箱地址（可选）" maxlength="100" size="large">
+                      <template #prefix><el-icon><Message /></el-icon></template>
+                    </el-input>
+                  </el-form-item>
                   <el-form-item label="身份证号" prop="id_number" class="form-item form-item--full">
                     <el-input v-model="form.id_number" placeholder="请输入18位身份证号" maxlength="18" size="large">
                       <template #prefix><el-icon><Postcard /></el-icon></template>
@@ -129,7 +140,7 @@
                       <template #prefix><span class="currency-prefix">¥</span></template>
                     </el-input-number>
                   </el-form-item>
-                  <el-form-item label="工资卡号" prop="bank_card" class="form-item form-item--full">
+                  <el-form-item label="工资卡号" prop="bank_card" class="form-item">
                     <el-input
                       v-model="form.bank_card"
                       placeholder="银行卡号（可选）"
@@ -138,6 +149,36 @@
                     >
                       <template #prefix><el-icon><Postcard /></el-icon></template>
                     </el-input>
+                  </el-form-item>
+                  <el-form-item label="开户行" prop="bank_name" class="form-item">
+                    <el-input
+                      v-model="form.bank_name"
+                      placeholder="开户银行名称（可选）"
+                      maxlength="100"
+                      size="large"
+                    >
+                      <template #prefix><el-icon><OfficeBuilding /></el-icon></template>
+                    </el-input>
+                  </el-form-item>
+                  <el-form-item label="地址" prop="address" class="form-item form-item--full">
+                    <el-input
+                      v-model="form.address"
+                      placeholder="居住地址（可选）"
+                      maxlength="500"
+                      size="large"
+                    >
+                      <template #prefix><el-icon><Location /></el-icon></template>
+                    </el-input>
+                  </el-form-item>
+                  <el-form-item label="备注" prop="remark" class="form-item form-item--full">
+                    <el-input
+                      v-model="form.remark"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="备注信息（可选）"
+                      maxlength="500"
+                      size="large"
+                    />
                   </el-form-item>
                 </div>
               </StepCard>
@@ -218,6 +259,24 @@
                 </template>
               </el-input>
             </el-form-item>
+            <el-form-item label="性别" prop="gender" class="form-item">
+              <el-select v-model="form.gender" placeholder="请选择性别" clearable size="large" style="width: 100%">
+                <el-option label="男" value="男" />
+                <el-option label="女" value="女" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="邮箱" prop="email" class="form-item">
+              <el-input
+                v-model="form.email"
+                placeholder="邮箱地址（可选）"
+                maxlength="100"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Message /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
             <el-form-item label="身份证号" prop="id_number" class="form-item form-item--full">
               <el-input
                 v-model="form.id_number"
@@ -286,15 +345,15 @@
           </div>
         </div>
 
-        <!-- 薪资信息 -->
+        <!-- 薪资与银行卡 -->
         <div class="form-section glass-card">
           <div class="section-header">
             <div class="section-icon section-icon--salary">
               <el-icon><Coin /></el-icon>
             </div>
             <div class="section-title-group">
-              <h3 class="section-title">薪资信息</h3>
-              <p class="section-desc">设置员工的薪资结构</p>
+              <h3 class="section-title">薪资与银行卡</h3>
+              <p class="section-desc">设置员工的薪资结构和银行卡信息</p>
             </div>
           </div>
           <div class="form-grid">
@@ -332,7 +391,7 @@
                 试用期薪资通常为正式薪资的 80%
               </div>
             </el-form-item>
-            <el-form-item label="工资卡号" prop="bank_card" class="form-item form-item--full">
+            <el-form-item label="工资卡号" prop="bank_card" class="form-item">
               <el-input
                 v-model="form.bank_card"
                 placeholder="银行卡号（可选）"
@@ -344,22 +403,56 @@
                 </template>
               </el-input>
             </el-form-item>
+            <el-form-item label="开户行" prop="bank_name" class="form-item">
+              <el-input
+                v-model="form.bank_name"
+                placeholder="开户银行名称（可选）"
+                maxlength="100"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><OfficeBuilding /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
           </div>
         </div>
 
-        <!-- 紧急联系人 -->
+        <!-- 联系信息 -->
         <div class="form-section glass-card">
           <div class="section-header">
-            <div class="section-icon section-icon--emergency">
-              <el-icon><Phone /></el-icon>
+            <div class="section-icon section-icon--contact">
+              <el-icon><Location /></el-icon>
             </div>
             <div class="section-title-group">
-              <h3 class="section-title">紧急联系人</h3>
-              <p class="section-desc">紧急情况下的联系方式</p>
+              <h3 class="section-title">联系信息</h3>
+              <p class="section-desc">员工的居住地址和紧急联系方式</p>
             </div>
           </div>
           <div class="form-grid">
-            <el-form-item label="联系人姓名" prop="emergency_contact" class="form-item">
+            <el-form-item label="地址" prop="address" class="form-item form-item--full">
+              <el-input
+                v-model="form.address"
+                placeholder="居住地址（可选）"
+                maxlength="500"
+                size="large"
+              >
+                <template #prefix>
+                  <el-icon><Location /></el-icon>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="备注" prop="remark" class="form-item form-item--full">
+              <el-input
+                v-model="form.remark"
+                type="textarea"
+                :rows="2"
+                placeholder="备注信息（可选）"
+                maxlength="500"
+                size="large"
+              />
+            </el-form-item>
+            <el-form-item label="紧急联系人姓名" prop="emergency_contact" class="form-item">
               <el-input
                 v-model="form.emergency_contact"
                 placeholder="紧急联系人姓名（可选）"
@@ -371,7 +464,7 @@
                 </template>
               </el-input>
             </el-form-item>
-            <el-form-item label="联系人电话" prop="emergency_phone" class="form-item">
+            <el-form-item label="紧急联系人电话" prop="emergency_phone" class="form-item">
               <el-input
                 v-model="form.emergency_phone"
                 placeholder="紧急联系人电话（可选）"
@@ -426,6 +519,9 @@ import {
   Phone,
   Postcard,
   Check,
+  OfficeBuilding,
+  Location,
+  Message,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -449,6 +545,8 @@ const form = reactive({
   name: '',
   phone: '',
   id_number: '',
+  gender: '',
+  email: '',
   position: '',
   position_id: null as number | null,
   department_id: null as number | null,
@@ -456,6 +554,9 @@ const form = reactive({
   salary: undefined as number | undefined,
   probation_salary: undefined as number | undefined,
   bank_card: '',
+  bank_name: '',
+  address: '',
+  remark: '',
   emergency_contact: '',
   emergency_phone: '',
 })
@@ -488,9 +589,14 @@ async function handleCreate() {
       position_id: form.position_id,
       department_id: form.department_id,
       hire_date: form.entry_date,
+      gender: form.gender,
+      email: form.email,
       salary: form.salary,
       probation_salary: form.probation_salary,
       bank_account: form.bank_card,
+      bank_name: form.bank_name,
+      address: form.address,
+      remark: form.remark,
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
     }
@@ -518,7 +624,14 @@ async function handleSubmit() {
       position_id: form.position_id,
       department_id: form.department_id,
       hire_date: form.entry_date,
+      gender: form.gender,
+      email: form.email,
+      salary: form.salary,
+      probation_salary: form.probation_salary,
       bank_account: form.bank_card,
+      bank_name: form.bank_name,
+      address: form.address,
+      remark: form.remark,
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
     }
@@ -549,10 +662,15 @@ async function loadEmployee() {
       position: emp.position || '',
       position_id: emp.position_id ?? null,
       department_id: emp.department_id ?? null,
+      gender: emp.gender || '',
+      email: emp.email || '',
       entry_date: emp.hire_date ? emp.hire_date.split('T')[0] : '',  // 后端返回 hire_date，前端用 entry_date
       salary: emp.salary,
       probation_salary: emp.probation_salary,
-      bank_card: emp.bank_card || '',
+      bank_card: emp.bank_account || '',
+      bank_name: emp.bank_name || '',
+      address: emp.address || '',
+      remark: emp.remark || '',
       emergency_contact: emp.emergency_contact || '',
       emergency_phone: emp.emergency_phone || '',
     })
@@ -755,6 +873,11 @@ $radius-xl: 24px;
   &--emergency {
     background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
     color: $error;
+  }
+
+  &--contact {
+    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+    color: #2563EB;
   }
 }
 

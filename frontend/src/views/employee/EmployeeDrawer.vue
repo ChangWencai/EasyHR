@@ -14,7 +14,7 @@
             <div class="section-title">基本信息</div>
             <el-descriptions :column="1" border size="small">
               <el-descriptions-item label="姓名">{{ detail.name }}</el-descriptions-item>
-              <el-descriptions-item label="性别">{{ detail.gender }}</el-descriptions-item>
+              <el-descriptions-item label="性别">{{ detail.gender || '-' }}</el-descriptions-item>
               <el-descriptions-item label="手机号">{{ detail.phone }}</el-descriptions-item>
               <el-descriptions-item label="邮箱">{{ detail.email || '-' }}</el-descriptions-item>
               <el-descriptions-item label="部门">{{ detail.department_name || '-' }}</el-descriptions-item>
@@ -92,7 +92,8 @@ interface EmployeeDetail {
   hire_date: string
   status: string
   id_card: string
-  contract_type: string
+  salary?: number
+  probation_salary?: number
   contract_start_date: string
   contract_end_date: string
   contract_expiry_days: number | null
@@ -188,14 +189,13 @@ async function loadDetail() {
       email: (res.email as string) || '',
       department_name: (res.department_name as string) || '',
       position: (res.position as string) || '',
-      hire_date: (res.entry_date as string) || '',
+      hire_date: (res.hire_date as string) || '',
       status: (res.status as string) || '',
-      id_card: (res.id_number as string) || '',
-      contract_type: (res.contract_type as string) || '',
-      contract_start_date: (res.contract_start_date as string) || '',
+      id_card: (res.id_card as string) || '',
+      salary: (res.salary as number) ?? undefined,
+      probation_salary: (res.probation_salary as number) ?? undefined,
       contract_end_date: (res.contract_end_date as string) || '',
-      contract_expiry_days: (res.contract_expiry_days as number) ?? null,
-      bank_account: (res.bank_card as string) || '',
+      bank_account: (res.bank_account as string) || '',
       bank_name: (res.bank_name as string) || '',
       address: (res.address as string) || '',
       emergency_contact: (res.emergency_contact as string) || '',

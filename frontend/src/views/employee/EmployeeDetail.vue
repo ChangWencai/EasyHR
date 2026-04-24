@@ -49,18 +49,30 @@
                 <span class="info-value">{{ employee.name }}</span>
               </div>
               <div class="info-item">
+                <span class="info-label">性别</span>
+                <span class="info-value">{{ employee.gender || '-' }}</span>
+              </div>
+              <div class="info-item">
                 <span class="info-label">手机号</span>
                 <span class="info-value info-value--mono">{{ employee.phone }}</span>
               </div>
               <div class="info-item">
+                <span class="info-label">邮箱</span>
+                <span class="info-value">{{ employee.email || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">部门</span>
+                <span class="info-value">{{ employee.department_name || '-' }}</span>
+              </div>
+              <div class="info-item">
                 <span class="info-label">身份证号</span>
-                <span class="info-value info-value--mono">{{ employee.id_number }}</span>
+                <span class="info-value info-value--mono">{{ employee.id_card }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">入职日期</span>
                 <span class="info-value">
                   <el-icon><Calendar /></el-icon>
-                  {{ employee.entry_date }}
+                  {{ formatDate(employee.hire_date) }}
                 </span>
               </div>
             </div>
@@ -83,7 +95,7 @@
             </div>
           </div>
 
-          <div class="info-section" v-if="employee.bank_card">
+          <div class="info-section" v-if="employee.bank_account || employee.bank_name">
             <div class="section-title">
               <el-icon><Wallet /></el-icon>
               工资卡信息
@@ -91,7 +103,28 @@
             <div class="info-grid">
               <div class="info-item">
                 <span class="info-label">卡号</span>
-                <span class="info-value info-value--mono">{{ employee.bank_card }}</span>
+                <span class="info-value info-value--mono">{{ employee.bank_account || '-' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">开户行</span>
+                <span class="info-value">{{ employee.bank_name || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section" v-if="employee.address || employee.remark">
+            <div class="section-title">
+              <el-icon><Location /></el-icon>
+              其他信息
+            </div>
+            <div class="info-grid">
+              <div class="info-item" v-if="employee.address">
+                <span class="info-label">居住地址</span>
+                <span class="info-value">{{ employee.address }}</span>
+              </div>
+              <div class="info-item" v-if="employee.remark">
+                <span class="info-label">备注</span>
+                <span class="info-value">{{ employee.remark }}</span>
               </div>
             </div>
           </div>
@@ -131,13 +164,22 @@ import { useRoute } from 'vue-router'
 import { employeeApi } from '@/api/employee'
 import { ElMessage } from 'element-plus'
 import {
-  ArrowLeft, Briefcase, User, Money, Wallet, Phone, Calendar, UserFilled,
+  ArrowLeft, Briefcase, User, Money, Wallet, Phone, Calendar, UserFilled, Location,
 } from '@element-plus/icons-vue'
 import { statusMap } from './statusMap'
 
 const route = useRoute()
 const loading = ref(false)
 const employee = ref<any>(null)
+
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '-'
+  const s = String(dateStr)
+  if (s.includes('T')) {
+    return s.split('T')[0]
+  }
+  return s
+}
 
 async function load() {
   loading.value = true
