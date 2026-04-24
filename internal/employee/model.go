@@ -18,6 +18,7 @@ type Employee struct {
 	IDCardEncrypted         string     `gorm:"column:id_card_encrypted;type:varchar(200);comment:加密身份证号" json:"-"`
 	IDCardHash              string     `gorm:"column:id_card_hash;type:varchar(64);index;comment:身份证号哈希索引" json:"-"`
 	Gender                  string     `gorm:"column:gender;type:varchar(10);comment:性别" json:"gender"`
+	Email                   string     `gorm:"column:email;type:varchar(100);comment:邮箱" json:"email"`
 	BirthDate               *time.Time `gorm:"column:birth_date;type:date;comment:出生日期" json:"birth_date"`
 	Position                string     `gorm:"column:position;type:varchar(100);not null;index;comment:岗位" json:"position"`
 	PositionID              *int64     `gorm:"column:position_id;index;comment:岗位ID（FK，NULL=未分配）" json:"position_id"`

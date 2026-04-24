@@ -6,11 +6,13 @@ import "time"
 type CreateEmployeeRequest struct {
 	Name             string   `json:"name" binding:"required,min=2,max=50"`
 	Phone            string   `json:"phone" binding:"required,len=11"`
-	IDCard           string   `json:"id_card" binding:"required,len=18"`
+	IDCard           string   `json:"id_card" binding:"required,idcard"` // 支持脱敏格式
 	Position         string   `json:"position" binding:"omitempty,max=100"` // 岗位名称（可选，position_id 关联时可不填）
 	PositionID       *int64   `json:"position_id"`                         // 岗位ID（可选）
 	DepartmentID     *int64   `json:"department_id"`                       // 部门ID（可选）
 	HireDate         string   `json:"hire_date" binding:"required"`
+	Gender           string   `json:"gender" binding:"omitempty,oneof=男 女"`
+	Email            string   `json:"email" binding:"omitempty,email,max=100"`
 	Salary           *float64 `json:"salary"`           // 正式薪资（月）
 	ProbationSalary  *float64 `json:"probation_salary"`  // 试用期薪资（月）
 	BankName         string   `json:"bank_name" binding:"omitempty,max=100"`
@@ -23,40 +25,49 @@ type CreateEmployeeRequest struct {
 
 // UpdateEmployeeRequest 更新员工请求（部分更新，仅非 nil 字段更新）
 type UpdateEmployeeRequest struct {
-	Name             *string `json:"name" binding:"omitempty,min=2,max=50"`
-	Phone            *string `json:"phone" binding:"omitempty,len=11"`
-	IDCard           *string `json:"id_card" binding:"omitempty,len=18"`
-	Position         *string `json:"position" binding:"omitempty,min=1,max=100"`
-	PositionID       *int64  `json:"position_id" binding:"omitempty"`
-	DepartmentID     *int64  `json:"department_id" binding:"omitempty"`
-	HireDate         *string `json:"hire_date" binding:"omitempty"`
-	BankName         *string `json:"bank_name" binding:"omitempty,max=100"`
-	BankAccount      *string `json:"bank_account" binding:"omitempty"`
-	EmergencyContact *string `json:"emergency_contact" binding:"omitempty,max=50"`
-	EmergencyPhone   *string `json:"emergency_phone" binding:"omitempty,len=11"`
-	Address          *string `json:"address" binding:"omitempty,max=500"`
-	Remark           *string `json:"remark" binding:"omitempty"`
+	Name             *string  `json:"name" binding:"omitempty,min=2,max=50"`
+	Phone            *string  `json:"phone" binding:"omitempty,len=11"`
+	IDCard           *string  `json:"id_card" binding:"omitempty,idcard"` // 支持脱敏格式
+	Position         *string  `json:"position" binding:"omitempty,min=1,max=100"`
+	PositionID       *int64   `json:"position_id" binding:"omitempty"`
+	DepartmentID     *int64   `json:"department_id" binding:"omitempty"`
+	HireDate         *string  `json:"hire_date" binding:"omitempty"`
+	Gender           *string  `json:"gender" binding:"omitempty,oneof=男 女"`
+	Email            *string  `json:"email" binding:"omitempty,email,max=100"`
+	Salary           *float64 `json:"salary" binding:"omitempty"`
+	ProbationSalary  *float64 `json:"probation_salary" binding:"omitempty"`
+	BankName         *string  `json:"bank_name" binding:"omitempty,max=100"`
+	BankAccount      *string  `json:"bank_account" binding:"omitempty"`
+	EmergencyContact *string  `json:"emergency_contact" binding:"omitempty,max=50"`
+	EmergencyPhone   *string  `json:"emergency_phone" binding:"omitempty,len=11"`
+	Address          *string  `json:"address" binding:"omitempty,max=500"`
+	Remark           *string  `json:"remark" binding:"omitempty"`
 }
 
 // EmployeeResponse 员工列表响应（脱敏）
 type EmployeeResponse struct {
-	ID               int64      `json:"id"`
-	Name             string     `json:"name"`
-	Phone            string     `json:"phone"`
-	IDCard           string     `json:"id_card"`
-	Gender           string     `json:"gender"`
-	BirthDate        *time.Time `json:"birth_date"`
-	Position         string     `json:"position"`
-	PositionID       *int64     `json:"position_id"`
-	DepartmentID     *int64     `json:"department_id"`
-	HireDate         time.Time  `json:"hire_date"`
-	Status           string     `json:"status"`
-	BankName         string     `json:"bank_name,omitempty"`
-	BankAccount      string     `json:"bank_account,omitempty"`
-	EmergencyContact string     `json:"emergency_contact,omitempty"`
-	Address          string     `json:"address,omitempty"`
-	Remark           string     `json:"remark,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
+	ID                int64      `json:"id"`
+	Name              string     `json:"name"`
+	Phone             string     `json:"phone"`
+	IDCard            string     `json:"id_card"`
+	Gender            string     `json:"gender"`
+	BirthDate         *time.Time `json:"birth_date"`
+	Position          string     `json:"position"`
+	PositionID        *int64     `json:"position_id"`
+	DepartmentID      *int64     `json:"department_id"`
+	DepartmentName    string     `json:"department_name,omitempty"`
+	HireDate          time.Time  `json:"hire_date"`
+	Status            string     `json:"status"`
+	Salary            *float64   `json:"salary,omitempty"`            // 正式薪资（月）
+	ProbationSalary   *float64   `json:"probation_salary,omitempty"` // 试用期薪资（月）
+	BankName          string     `json:"bank_name,omitempty"`
+	BankAccount       string     `json:"bank_account,omitempty"`
+	EmergencyContact  string     `json:"emergency_contact,omitempty"`
+	EmergencyPhone    string     `json:"emergency_phone,omitempty"` // 脱敏紧急联系电话
+	Address           string     `json:"address,omitempty"`
+	Remark            string     `json:"remark,omitempty"`
+	Email             string     `json:"email,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
 }
 
 // SensitiveInfoResponse 敏感信息响应（完整解密，仅 OWNER/ADMIN 可访问）
