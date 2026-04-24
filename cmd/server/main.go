@@ -251,7 +251,7 @@ func main() {
 	taxUploadHandler := salary.NewTaxUploadHandler(salarySvc)
 
 	// 工资条发送模块依赖注入（asynq）
-	salarySlipSendSvc := salary.NewSlipSendService(salarySvc, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+	salarySlipSendSvc := salary.NewSlipSendService(salarySvc, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port), cfg.Redis.Password, cfg.Redis.DB)
 	salarySlipSendHandler := salary.NewSlipSendHandler(salarySlipSendSvc)
 	salary.RegisterGlobalSlipSendService(salarySlipSendSvc)
 
@@ -269,8 +269,8 @@ func main() {
 	salaryListHandler := salary.NewSalaryListHandler(salarySvc)
 
 	// 解锁模块依赖注入
-	salaryUnlockSvc := salary.NewUnlockService(salaryRepo, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port), db)
-	salaryUnlockHandler := salary.NewUnlockHandler(salaryUnlockSvc, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+	salaryUnlockSvc := salary.NewUnlockService(salaryRepo, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port), cfg.Redis.Password, cfg.Redis.DB, db)
+	salaryUnlockHandler := salary.NewUnlockHandler(salaryUnlockSvc)
 
 	// 考勤模块依赖注入
 	attendanceRepo := attendance.NewAttendanceRepository(db)
@@ -390,7 +390,11 @@ func main() {
 
 	// asynq Worker 启动（工资条批量发送队列）
 	asynqServer := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)},
+		asynq.RedisClientOpt{
+			Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
+			Password: cfg.Redis.Password,
+			DB:       cfg.Redis.DB,
+		},
 		asynq.Config{Concurrency: 10},
 	)
 	asynqMux := asynq.NewServeMux()
@@ -404,7 +408,7 @@ func main() {
 	logger.Logger.Info("asynq worker started")
 
 	// 工资条未确认提醒定时任务（D-13-08）
-	salaryScheduler := salary.NewSalaryScheduler(db, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port))
+	salaryScheduler := salary.NewSalaryScheduler(db, fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port), cfg.Redis.Password, cfg.Redis.DB)
 	salarySched, salarySchedErr := salaryScheduler.Start()
 	if salarySchedErr != nil {
 		logger.Logger.Warn("salary scheduler start failed", zap.Error(salarySchedErr))

@@ -14,13 +14,20 @@ import (
 
 // SalaryScheduler 工资模块定时任务调度器（D-13-08 每日9点提醒未确认工资单）
 type SalaryScheduler struct {
-	db        *gorm.DB
-	redisAddr string
+	db           *gorm.DB
+	redisAddr    string
+	redisPass    string
+	redisDB      int
 }
 
 // NewSalaryScheduler 创建工资模块调度器
-func NewSalaryScheduler(db *gorm.DB, redisAddr string) *SalaryScheduler {
-	return &SalaryScheduler{db: db, redisAddr: redisAddr}
+func NewSalaryScheduler(db *gorm.DB, redisAddr, redisPassword string, redisDB int) *SalaryScheduler {
+	return &SalaryScheduler{
+		db:        db,
+		redisAddr: redisAddr,
+		redisPass: redisPassword,
+		redisDB:   redisDB,
+	}
 }
 
 // Start 启动定时任务（D-13-08 每日9点执行）
@@ -30,7 +37,11 @@ func (s *SalaryScheduler) Start() (gocron.Scheduler, error) {
 	}
 
 	// 尝试使用 Redis 分布式锁
-	rdb := redis.NewClient(&redis.Options{Addr: s.redisAddr})
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     s.redisAddr,
+		Password: s.redisPass,
+		DB:       s.redisDB,
+	})
 	locker := newSalaryRedisLocker(rdb)
 	opts = append(opts, gocron.WithDistributedLocker(locker))
 
@@ -77,7 +88,11 @@ func (s *SalaryScheduler) enqueueRemindUnconfirmedTasks() {
 		return
 	}
 
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.redisAddr})
+	client := asynq.NewClient(asynq.RedisClientOpt{
+		Addr:     s.redisAddr,
+		Password: s.redisPass,
+		DB:       s.redisDB,
+	})
 	defer client.Close()
 
 	queued := 0

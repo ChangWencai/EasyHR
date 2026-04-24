@@ -12,12 +12,11 @@ import (
 // UnlockHandler 解锁 HTTP 端点
 type UnlockHandler struct {
 	unlockSvc *UnlockService
-	redisAddr string
 }
 
 // NewUnlockHandler 创建解锁 Handler
-func NewUnlockHandler(unlockSvc *UnlockService, redisAddr string) *UnlockHandler {
-	return &UnlockHandler{unlockSvc: unlockSvc, redisAddr: redisAddr}
+func NewUnlockHandler(unlockSvc *UnlockService) *UnlockHandler {
+	return &UnlockHandler{unlockSvc: unlockSvc}
 }
 
 // RegisterRoutes 注册解锁路由

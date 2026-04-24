@@ -23,15 +23,19 @@ type SlipSendService struct {
 
 // AsynqConfig asynq 客户端配置
 type AsynqConfig struct {
-	RedisAddr string
+	RedisAddr  string
+	RedisPass  string
+	RedisDB    int
 }
 
 // NewSlipSendService 创建工资条发送服务
-func NewSlipSendService(svc *Service, redisAddr string) *SlipSendService {
+func NewSlipSendService(svc *Service, redisAddr, redisPassword string, redisDB int) *SlipSendService {
 	return &SlipSendService{
 		svc: svc,
 		asynqCfg: AsynqConfig{
-			RedisAddr: redisAddr,
+			RedisAddr:  redisAddr,
+			RedisPass:  redisPassword,
+			RedisDB:    redisDB,
 		},
 	}
 }
@@ -50,7 +54,11 @@ func (s *SlipSendService) SendAllSlips(orgID, userID int64, year, month int, emp
 		return fmt.Errorf("创建任务失败: %w", err)
 	}
 
-	client := asynq.NewClient(asynq.RedisClientOpt{Addr: s.asynqCfg.RedisAddr})
+	client := asynq.NewClient(asynq.RedisClientOpt{
+		Addr:     s.asynqCfg.RedisAddr,
+		Password: s.asynqCfg.RedisPass,
+		DB:       s.asynqCfg.RedisDB,
+	})
 	defer client.Close()
 
 	_, err = client.Enqueue(task, asynq.MaxRetry(3))

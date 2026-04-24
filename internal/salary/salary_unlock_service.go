@@ -42,17 +42,21 @@ type UnlockAuditLog struct {
 
 // UnlockService 解锁服务
 type UnlockService struct {
-	repo      *Repository
-	redisAddr string
-	db        *gorm.DB
+	repo       *Repository
+	redisAddr  string
+	redisPass  string
+	redisDB    int
+	db         *gorm.DB
 }
 
 // NewUnlockService 创建解锁服务
-func NewUnlockService(repo *Repository, redisAddr string, db *gorm.DB) *UnlockService {
+func NewUnlockService(repo *Repository, redisAddr, redisPassword string, redisDB int, db *gorm.DB) *UnlockService {
 	return &UnlockService{
-		repo:      repo,
-		redisAddr: redisAddr,
-		db:        db,
+		repo:       repo,
+		redisAddr:  redisAddr,
+		redisPass:  redisPassword,
+		redisDB:    redisDB,
+		db:         db,
 	}
 }
 
@@ -79,7 +83,11 @@ func (s *UnlockService) SendUnlockCode(ctx context.Context, phone string) error 
 	// 存储到 Redis，key = unlock:code:{phone}, TTL = 5 分钟
 	key := fmt.Sprintf("salary:unlock:code:%s", phone)
 
-	rdb := redis.NewClient(&redis.Options{Addr: s.redisAddr})
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     s.redisAddr,
+		Password: s.redisPass,
+		DB:       s.redisDB,
+	})
 	defer rdb.Close()
 
 	err = rdb.Set(ctx, key, code, 5*time.Minute).Err()
@@ -98,7 +106,11 @@ func (s *UnlockService) SendUnlockCode(ctx context.Context, phone string) error 
 func (s *UnlockService) VerifyUnlockCode(ctx context.Context, phone, code string) error {
 	key := fmt.Sprintf("salary:unlock:code:%s", phone)
 
-	rdb := redis.NewClient(&redis.Options{Addr: s.redisAddr})
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     s.redisAddr,
+		Password: s.redisPass,
+		DB:       s.redisDB,
+	})
 	defer rdb.Close()
 
 	stored, err := rdb.Get(ctx, key).Result()
