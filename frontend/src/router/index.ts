@@ -31,27 +31,20 @@ const routes: RouteRecordRaw[] = [
         name: 'attendance-monthly',
         component: () => import('@/views/attendance/AttendanceMonthly.vue'),
       },
-
-      // 合规报表
       {
-        path: '/compliance/overtime',
-        name: 'compliance-overtime',
-        component: () => import('@/views/compliance/ComplianceOvertime.vue'),
+        path: '/attendance/overtime',
+        name: 'attendance-overtime',
+        component: () => import('@/views/attendance/ComplianceOvertime.vue'),
       },
       {
-        path: '/compliance/leave',
-        name: 'compliance-leave',
-        component: () => import('@/views/compliance/ComplianceLeave.vue'),
+        path: '/attendance/leave',
+        name: 'attendance-leave',
+        component: () => import('@/views/attendance/ComplianceLeave.vue'),
       },
       {
-        path: '/compliance/anomaly',
-        name: 'compliance-anomaly',
-        component: () => import('@/views/compliance/ComplianceAnomaly.vue'),
-      },
-      {
-        path: '/compliance/monthly',
-        name: 'compliance-monthly',
-        component: () => import('@/views/compliance/ComplianceMonthly.vue'),
+        path: '/attendance/anomaly',
+        name: 'attendance-anomaly',
+        component: () => import('@/views/attendance/ComplianceAnomaly.vue'),
       },
 
       // 员工管理
@@ -275,7 +268,6 @@ router.beforeEach((to, _from) => {
     to.path.startsWith('/tool') ||
     to.path.startsWith('/finance') ||
     to.path.startsWith('/attendance') ||
-    to.path.startsWith('/compliance') ||
     to.path.startsWith('/mine') ||
     to.path.startsWith('/todo') ||
     to.path.startsWith('/carousel')

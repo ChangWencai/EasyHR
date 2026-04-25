@@ -61,17 +61,11 @@
             </template>
             <el-menu-item index="/attendance/rule">打卡规则</el-menu-item>
             <el-menu-item index="/attendance/clock-live">今日实况</el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="/compliance">
-            <template #title>
-              <el-icon><Document /></el-icon>
-              <span>合规报表</span>
-            </template>
-            <el-menu-item index="/compliance/overtime">加班统计</el-menu-item>
-            <el-menu-item index="/compliance/leave">请假合规</el-menu-item>
-            <el-menu-item index="/compliance/anomaly">出勤异常</el-menu-item>
-            <el-menu-item index="/compliance/monthly">月度汇总</el-menu-item>
+            <el-menu-item index="/attendance/approval">审批管理</el-menu-item>
+            <el-menu-item index="/attendance/overtime">加班统计</el-menu-item>
+            <el-menu-item index="/attendance/leave">请假合规</el-menu-item>
+            <el-menu-item index="/attendance/anomaly">出勤异常</el-menu-item>
+            <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/tool">
@@ -179,14 +173,11 @@
           <template #title><el-icon><Clock /></el-icon><span>考勤管理</span></template>
           <el-menu-item index="/attendance/rule">打卡规则</el-menu-item>
           <el-menu-item index="/attendance/clock-live">今日实况</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="/compliance">
-          <template #title><el-icon><Document /></el-icon><span>合规报表</span></template>
-          <el-menu-item index="/compliance/overtime">加班统计</el-menu-item>
-          <el-menu-item index="/compliance/leave">请假合规</el-menu-item>
-          <el-menu-item index="/compliance/anomaly">出勤异常</el-menu-item>
-          <el-menu-item index="/compliance/monthly">月度汇总</el-menu-item>
+          <el-menu-item index="/attendance/approval">审批管理</el-menu-item>
+          <el-menu-item index="/attendance/overtime">加班统计</el-menu-item>
+          <el-menu-item index="/attendance/leave">请假合规</el-menu-item>
+          <el-menu-item index="/attendance/anomaly">出勤异常</el-menu-item>
+          <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="/tool">
@@ -229,7 +220,6 @@ import {
   DArrowRight,
   Management,
   Clock,
-  Document,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -248,10 +238,11 @@ const pageTitleMap: Record<string, string> = {
   '/home': '首页',
   '/attendance/rule': '打卡规则',
   '/attendance/clock-live': '今日实况',
-  '/compliance/overtime': '加班统计',
-  '/compliance/leave': '请假合规',
-  '/compliance/anomaly': '出勤异常',
-  '/compliance/monthly': '月度汇总',
+  '/attendance/approval': '审批管理',
+  '/attendance/overtime': '加班统计',
+  '/attendance/leave': '请假合规',
+  '/attendance/anomaly': '出勤异常',
+  '/attendance/monthly': '出勤月报',
   '/employee': '员工列表',
   '/employee/create': '新增员工',
   '/employee/invitations': '入职邀请',
