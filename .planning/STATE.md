@@ -172,5 +172,6 @@ Items acknowledged and deferred at v1.4 milestone close on 2026-04-21:
 | # | Description | Date | Commit |
 |---|-------------|------|--------|
 | 260423-6ump0 | 在新增员工页面添加管理员手动输入所有员工信息的功能 | 2026-04-23 | - |
+| 260425-001 | 合并考勤管理和合规报表模块 | 2026-04-25 | dc5e6b7 |
 
-Last activity: 2026-04-23 - Completed quick task 260423-6ump0: 在新增员工页面添加管理员手动输入所有员工信息的功能
+Last activity: 2026-04-25 - Completed quick task 260425-001: 合并考勤管理和合规报表模块
