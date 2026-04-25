@@ -136,7 +136,7 @@ async function handleSubmit() {
   }
   saving.value = true
   try {
-    const res = await request.put('/org/onboarding', {
+    const res = await request.post('/org/onboarding', {
       name: form.name,
       credit_code: form.credit_code,
       city: cityList.value.find(c => c.code === form.city_id)?.name || '',
