@@ -72,7 +72,6 @@ func Auth(jwtSecret string, rdb *redis.Client) func(c *gin.Context) {
 			c.Abort()
 			return
 		}
-
 		c.Set("user_id", claims.UserID)
 		c.Set("org_id", claims.OrgID)
 		c.Set("role", claims.Role)

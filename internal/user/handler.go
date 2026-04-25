@@ -29,7 +29,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	// 认证但不需要 org 的路由
 	authOnlyGroup := rg.Group("")
 	authOnlyGroup.Use(authMiddleware)
-	authOnlyGroup.PUT("/auth/org/onboarding", h.CompleteOnboarding)
+	authOnlyGroup.PUT("/org/onboarding", h.CompleteOnboarding)
+	authOnlyGroup.POST("/org/onboarding", h.CompleteOnboarding)
 
 	// 认证 + 需要 org 的路由
 	authGroup := rg.Group("")
