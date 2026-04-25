@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <header class="page-header">
       <div class="header-left">
-        <h1 class="page-title">请假合规</h1>
+        <h1 class="page-title">加班统计</h1>
         <p class="page-subtitle">{{ selectedMonth || '请选择月份' }}</p>
       </div>
       <div class="header-actions">
@@ -40,28 +40,28 @@
     <!-- 统计概览 -->
     <div class="stats-grid" v-loading="loading">
       <ComplianceStatCard
-        :value="stats.annual_quota_employee_count"
-        label="年假员工人数"
-        icon="User"
-        icon-class="icon--quota"
-      />
-      <ComplianceStatCard
-        :value="stats.total_annual_used"
-        label="年假已用总计(天)"
+        :value="stats.total_holiday_hours"
+        label="法定节假日加班(h)"
         icon="Calendar"
-        icon-class="icon--annual"
+        icon-class="icon--holiday"
       />
       <ComplianceStatCard
-        :value="stats.total_sick_days"
-        label="病假总计(天)"
-        icon="FirstAidKit"
-        icon-class="icon--sick"
+        :value="stats.total_weekday_hours"
+        label="工作日延时加班(h)"
+        icon="Clock"
+        icon-class="icon--weekday"
       />
       <ComplianceStatCard
-        :value="stats.total_personal_days"
-        label="事假总计(天)"
-        icon="Memo"
-        icon-class="icon--personal"
+        :value="stats.total_weekend_hours"
+        label="周末加班(h)"
+        icon="Sunny"
+        icon-class="icon--weekend"
+      />
+      <ComplianceStatCard
+        :value="totalHours"
+        label="合计加班(h)"
+        icon="TrendCharts"
+        icon-class="icon--total"
       />
     </div>
 
@@ -70,10 +70,10 @@
       <!-- 空状态 -->
       <div v-if="!loading && list.length === 0" class="empty-state">
         <div class="empty-icon">
-          <el-icon><Calendar /></el-icon>
+          <el-icon><Clock /></el-icon>
         </div>
-        <h3>暂无请假数据</h3>
-        <p>当前月份暂无员工请假记录</p>
+        <h3>暂无加班数据</h3>
+        <p>当前月份暂无员工加班记录</p>
       </div>
 
       <!-- 表格 -->
@@ -99,29 +99,24 @@
             <span class="dept-text">{{ row.department_name || '未分配' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="年假额度(天)" min-width="130" align="right">
+        <el-table-column label="法定节假日(h)" min-width="140" align="right">
           <template #default="{ row }">
-            <span class="num-val num-val--muted">{{ row.annual_quota }}</span>
+            <span class="num-val num-val--danger">{{ row.holiday_hours }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="已用年假(天)" min-width="130" align="right">
+        <el-table-column label="工作日延时(h)" min-width="140" align="right">
           <template #default="{ row }">
-            <span class="num-val num-val--warning">{{ row.annual_used }}</span>
+            <span class="num-val">{{ row.weekday_hours }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="剩余年假(天)" min-width="130" align="right">
+        <el-table-column label="周末加班(h)" min-width="120" align="right">
           <template #default="{ row }">
-            <span class="num-val num-val--success">{{ row.annual_left }}</span>
+            <span class="num-val num-val--info">{{ row.weekend_hours }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="病假(天)" min-width="100" align="right">
+        <el-table-column label="合计(h)" min-width="120" align="right">
           <template #default="{ row }">
-            <span class="num-val" :class="row.sick_days > 0 ? 'num-val--danger' : ''">{{ row.sick_days }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="事假(天)" min-width="100" align="right">
-          <template #default="{ row }">
-            <span class="num-val" :class="row.personal_days > 0 ? 'num-val--warning' : 'num-val--muted'">{{ row.personal_days }}</span>
+            <span class="num-val num-val--warning">{{ row.total_hours }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -141,34 +136,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Calendar } from '@element-plus/icons-vue'
 import { departmentApi } from '@/api/department'
-import { attendanceApi, type ComplianceLeaveStats, type LeaveItem } from '@/api/attendance'
-import ComplianceStatCard from '@/components/compliance/ComplianceStatCard.vue'
+import { attendanceApi, type ComplianceOvertimeStats } from '@/api/attendance'
+import ComplianceStatCard from '@/components/attendance/ComplianceStatCard.vue'
 
 const loading = ref(false)
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
 const selectedDepts = ref<number[]>([])
 const deptOptions = ref<{ id: number; name: string }[]>([])
-const list = ref<LeaveItem[]>([])
+const list = ref<ComplianceOvertimeRow[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = 20
-const stats = ref<ComplianceLeaveStats>({
-  annual_quota_employee_count: 0,
-  total_annual_used: 0,
-  total_sick_days: 0,
-  total_personal_days: 0,
+const stats = ref<ComplianceOvertimeStats>({
+  total_holiday_hours: 0,
+  total_weekday_hours: 0,
+  total_weekend_hours: 0,
 })
+
+interface ComplianceOvertimeRow {
+  employee_id: number
+  employee_name: string
+  department_name: string
+  holiday_hours: number
+  weekday_hours: number
+  weekend_hours: number
+  total_hours: number
+}
+
+const totalHours = computed(() =>
+  (stats.value.total_holiday_hours ?? 0) +
+  (stats.value.total_weekday_hours ?? 0) +
+  (stats.value.total_weekend_hours ?? 0)
+)
 
 async function load(p = 1) {
   page.value = p
   loading.value = true
   try {
     const deptIds = selectedDepts.value.length ? selectedDepts.value.join(',') : undefined
-    const { data } = await attendanceApi.getComplianceLeave({
+    const { data } = await attendanceApi.getComplianceOvertime({
       year_month: selectedMonth.value,
       dept_ids: deptIds,
       page: p,
@@ -180,7 +189,7 @@ async function load(p = 1) {
       stats.value = data.stats
     }
   } catch {
-    ElMessage.error('加载请假合规数据失败')
+    ElMessage.error('加载加班统计数据失败')
   } finally {
     loading.value = false
   }
@@ -219,24 +228,24 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 
-.icon--quota {
-  background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
-  color: #7C3AED;
-}
-
-.icon--annual {
-  background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
-  color: #10B981;
-}
-
-.icon--sick {
+.icon--holiday {
   background: linear-gradient(135deg, #FEE2E2, #FECACA);
   color: #EF4444;
 }
 
-.icon--personal {
+.icon--weekday {
   background: linear-gradient(135deg, #FEF3C7, #FDE68A);
   color: #F59E0B;
+}
+
+.icon--weekend {
+  background: linear-gradient(135deg, #DBEAFE, #BFDBFE);
+  color: #3B82F6;
+}
+
+.icon--total {
+  background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
+  color: #7C3AED;
 }
 
 .table-card {
@@ -293,20 +302,16 @@ onMounted(async () => {
   font-family: 'SF Mono', Monaco, monospace;
   font-size: 14px;
 
-  &--muted {
-    color: var(--text-tertiary);
+  &--danger {
+    color: var(--danger);
   }
 
   &--warning {
     color: var(--warning);
   }
 
-  &--danger {
-    color: var(--danger);
-  }
-
-  &--success {
-    color: var(--success);
+  &--info {
+    color: #3B82F6;
   }
 }
 
@@ -325,13 +330,13 @@ onMounted(async () => {
     width: 72px;
     height: 72px;
     margin: 0 auto 16px;
-    background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+    background: linear-gradient(135deg, #EDE9FE, #DDD6FE);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 32px;
-    color: var(--success);
+    color: var(--primary);
 
     .el-icon {
       font-size: 32px;

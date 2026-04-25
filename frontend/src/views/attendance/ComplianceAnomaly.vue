@@ -149,7 +149,7 @@ import { ElMessage } from 'element-plus'
 import { CircleCheckFilled } from '@element-plus/icons-vue'
 import { departmentApi } from '@/api/department'
 import { attendanceApi, type ComplianceAnomalyStats, type AnomalyItem } from '@/api/attendance'
-import ComplianceStatCard from '@/components/compliance/ComplianceStatCard.vue'
+import ComplianceStatCard from '@/components/attendance/ComplianceStatCard.vue'
 
 const loading = ref(false)
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
