@@ -17,6 +17,18 @@
           class="month-picker"
           @change="load(1)"
         />
+        <el-select
+          v-model="selectedDepts"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="选择部门"
+          clearable
+          class="dept-select"
+          @change="load(1)"
+        >
+          <el-option v-for="d in deptOptions" :key="d.id" :label="d.name" :value="d.id" />
+        </el-select>
         <el-button type="primary" size="large" @click="handleExport">
           <el-icon><Download /></el-icon>
           导出月报
@@ -94,6 +106,7 @@
           :data="list"
           stripe
           class="modern-table"
+          :row-class-name="getRowClassName"
           :header-cell-style="{ background: '#F9FAFB', color: '#374151', fontWeight: 600 }"
         >
           <el-table-column prop="employee_name" label="姓名" min-width="100">
@@ -129,6 +142,37 @@
               <span class="metric-value" :class="row.absent_days > 0 ? 'metric-value--danger' : 'metric-value--muted'">
                 {{ row.absent_days }}<span class="metric-unit">天</span>
               </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="迟到(次)" min-width="90">
+            <template #default="{ row }">
+              <span class="metric-value" :class="row.late_count > 0 ? 'metric-value--warning' : ''">{{ row.late_count }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="早退(次)" min-width="90">
+            <template #default="{ row }">
+              <span class="metric-value">{{ row.early_leave_count }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="年假(天)" min-width="90">
+            <template #default="{ row }">
+              <span class="metric-value">{{ row.annual_leave_days }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="病假(天)" min-width="90">
+            <template #default="{ row }">
+              <span class="metric-value" :class="row.sick_leave_days > 0 ? 'metric-value--danger' : ''">{{ row.sick_leave_days }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="事假(天)" min-width="90">
+            <template #default="{ row }">
+              <span class="metric-value" :class="row.personal_leave_days > 0 ? 'metric-value--warning' : ''">{{ row.personal_leave_days }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="异常" width="90" align="center">
+            <template #default="{ row }">
+              <el-tag v-if="row.is_anomaly" type="danger" size="small">异常</el-tag>
+              <el-tag v-else type="success" size="small">正常</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="出勤率" min-width="100">
@@ -251,7 +295,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { attendanceApi, type MonthlyReportItem, type DailyRecord } from '@/api/attendance'
+import { attendanceApi, type MonthlyComplianceItem, type ComplianceMonthlyStats, type DailyRecord } from '@/api/attendance'
+import { departmentApi } from '@/api/department'
 import {
   Download, DataAnalysis, Grid, Calendar, Collection,
   Clock, WarningFilled, View, Tickets, Upload,
@@ -260,11 +305,19 @@ import {
 const loading = ref(false)
 const viewMode = ref<'stat' | 'grid'>('stat')
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
-const list = ref<MonthlyReportItem[]>([])
+const selectedDepts = ref<number[]>([])
+const deptOptions = ref<{ id: number; name: string }[]>([])
+const list = ref<MonthlyComplianceItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = 20
-const stats = ref({ total_actual_days: 0, total_required_days: 0, total_overtime_hours: 0, total_absent_days: 0 })
+const stats = ref<ComplianceMonthlyStats>({
+  total_actual_days: 0,
+  total_required_days: 0,
+  total_overtime_hours: 0,
+  total_absent_days: 0,
+  total_anomaly_count: 0,
+})
 const drawerVisible = ref(false)
 const drawerName = ref('')
 const dailyRecords = ref<DailyRecord[]>([])
@@ -306,11 +359,21 @@ function getSymbolClass(symbol: string) {
 function getGridCellClass(_row: any, _day: number) { return '' }
 function getGridCellSymbol(_row: any, _day: number) { return '' }
 
+function getRowClassName({ row }: { row: MonthlyComplianceItem }) {
+  return row.is_anomaly ? 'anomaly-row' : ''
+}
+
 async function load(p = 1) {
   page.value = p
   loading.value = true
   try {
-    const { data } = await attendanceApi.getMonthlyReport({ year_month: selectedMonth.value, page: p, page_size: pageSize })
+    const deptIds = selectedDepts.value.length ? selectedDepts.value.join(',') : undefined
+    const { data } = await attendanceApi.getComplianceMonthly({
+      year_month: selectedMonth.value,
+      dept_ids: deptIds,
+      page: p,
+      page_size: pageSize,
+    })
     list.value = data?.list ?? []
     total.value = data?.total ?? 0
     if (data?.stats) stats.value = data.stats
@@ -318,7 +381,7 @@ async function load(p = 1) {
   finally { loading.value = false }
 }
 
-async function viewDaily(row: MonthlyReportItem) {
+async function viewDaily(row: MonthlyComplianceItem) {
   drawerName.value = row.employee_name || '员工'
   try {
     const { data } = await attendanceApi.getDailyRecords({ employee_id: row.employee_id, year_month: selectedMonth.value })
@@ -329,24 +392,36 @@ async function viewDaily(row: MonthlyReportItem) {
 
 async function handleExport() {
   try {
-    const res = await attendanceApi.exportMonthlyExcel({ year_month: selectedMonth.value })
-    const blob = res as unknown as Blob
+    const deptIds = selectedDepts.value.length ? selectedDepts.value.join(',') : undefined
+    const blob = await attendanceApi.exportComplianceMonthly({
+      year_month: selectedMonth.value,
+      dept_ids: deptIds,
+    }) as unknown as Blob
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `出勤月报_${selectedMonth.value}.xlsx`
+    a.download = `月度考勤汇总_${selectedMonth.value}.xlsx`
     a.click()
     URL.revokeObjectURL(url)
     ElMessage.success('月报导出成功')
   } catch { ElMessage.error('导出失败') }
 }
 
-onMounted(() => load())
+onMounted(async () => {
+  try {
+    const depts = await departmentApi.list()
+    deptOptions.value = depts ?? []
+  } catch {
+    // dept options optional, continue without them
+  }
+  await load()
+})
 </script>
 
 <style scoped lang="scss">
 .header-actions { display: flex; align-items: center; gap: 12px; }
 .month-picker { width: 150px; }
+.dept-select { width: 200px; }
 
 .view-toggle-bar {
   padding: 14px 20px;
@@ -500,5 +575,12 @@ onMounted(() => load())
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .header-actions { flex-wrap: wrap; }
+}
+</style>
+
+<style lang="scss">
+// Non-scoped to apply to el-table shadow DOM rows
+.anomaly-row td {
+  background-color: rgba(239, 68, 68, 0.04) !important;
 }
 </style>
