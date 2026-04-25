@@ -1,44 +1,57 @@
 <template>
-  <div class="email-template-list">
-    <el-card>
-      <template #header>
-        <div class="header">
-          <span>邮箱模板管理</span>
-          <el-button type="primary" @click="openDialog()">新增模板</el-button>
+  <div class="email-tool">
+    <!-- Page Header -->
+    <div class="page-head">
+      <div class="page-head-left">
+        <div class="page-head-indicator"></div>
+        <div>
+          <h2 class="page-head-title">邮箱模板</h2>
+          <p class="page-head-desc">管理员工邮件通知模板</p>
         </div>
-      </template>
+      </div>
+      <el-button type="primary" @click="openDialog()">新增模板</el-button>
+    </div>
 
-      <el-table :data="list" stripe v-loading="loading">
-        <el-table-column prop="name" label="模板名称" min-width="120" />
-        <el-table-column prop="subject" label="邮件主题" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="content" label="正文预览" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.content.substring(0, 50) }}{{ row.content.length > 50 ? '…' : '' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="is_default" label="默认模板" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.is_default" type="success" size="small">默认</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
-          <template #default="{ row }">
-            <el-button size="small" @click="openDialog(row)">编辑</el-button>
-            <el-popconfirm
-              :title="`确认删除模板「${row.name}」？`"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="handleDelete(row.id)"
-            >
+    <!-- Template Grid -->
+    <div class="template-shell">
+      <div v-if="list.length === 0 && !loading" class="empty-state">
+        <div class="empty-icon">
+          <el-icon :size="40"><Message /></el-icon>
+        </div>
+        <p class="empty-title">暂无模板</p>
+        <p class="empty-desc">点击右上角「新增模板」创建你的第一个邮件模板</p>
+      </div>
+
+      <div v-else class="template-grid">
+        <div
+          v-for="tpl in list"
+          :key="tpl.id"
+          class="template-card"
+        >
+          <div class="template-card-head">
+            <div class="template-card-icon">
+              <el-icon :size="18"><Message /></el-icon>
+            </div>
+            <div class="template-card-meta">
+              <span class="template-card-name">{{ tpl.name }}</span>
+              <el-tag v-if="tpl.is_default" type="success" size="small" effect="plain">默认</el-tag>
+            </div>
+          </div>
+          <div class="template-card-subject">{{ tpl.subject }}</div>
+          <div class="template-card-preview">{{ tpl.content.substring(0, 80) }}{{ tpl.content.length > 80 ? '...' : '' }}</div>
+          <div class="template-card-actions">
+            <el-button size="small" @click="openDialog(tpl)">编辑</el-button>
+            <el-popconfirm :title="`确认删除模板「${tpl.name}」？`" confirm-button-text="确认" cancel-button-text="取消" @confirm="handleDelete(tpl.id)">
               <template #reference>
-                <el-button size="small" type="danger">删除</el-button>
+                <el-button size="small" type="danger" plain>删除</el-button>
               </template>
             </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+          </div>
+        </div>
+      </div>
 
       <el-pagination
+        v-if="total > pageSize"
         class="mt-4"
         layout="total,prev,pager,next"
         :total="total"
@@ -46,15 +59,9 @@
         :page-size="pageSize"
         @current-change="load"
       />
-    </el-card>
+    </div>
 
-    <!-- 新增/编辑对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="editingId ? '编辑模板' : '新增模板'"
-      width="560px"
-      destroy-on-close
-    >
+    <el-dialog v-model="dialogVisible" :title="editingId ? '编辑模板' : '新增模板'" width="560px" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="模板名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入模板名称，如：入职邀请邮件" maxlength="100" />
@@ -89,6 +96,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { Message } from '@element-plus/icons-vue'
 import { emailTemplateApi } from '@/api/email_template'
 import type { EmailTemplate } from '@/api/email_template'
 
@@ -197,14 +205,189 @@ onMounted(() => load())
 </script>
 
 <style scoped lang="scss">
-.email-template-list {
+$primary: #7C3AED;
+$primary-light: #A78BFA;
+$text-primary: #1A1D2E;
+$text-secondary: #5E6278;
+$text-muted: #A0A3BD;
+$border: #E8EBF0;
+$surface: #FFFFFF;
+$surface-alt: #F8F9FC;
+
+.email-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-.header {
+
+/* ─── Page Header ─── */
+.page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
+.page-head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-head-indicator {
+  width: 4px;
+  height: 36px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #DC2626 0%, #F87171 100%);
+}
+
+.page-head-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.page-head-desc {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 4px 0 0;
+}
+
+/* ─── Template Shell ─── */
+.template-shell {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.template-card {
+  background: $surface-alt;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: rgba($primary, 0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
+  }
+}
+
+.template-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.template-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+  color: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.template-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.template-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card-subject {
+  font-size: 13px;
+  color: $text-secondary;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-card-preview {
+  font-size: 12px;
+  color: $text-muted;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.template-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid $border;
+}
+
+/* ─── Empty State ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: $surface-alt;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0 0 4px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 0;
+}
+
 .mt-4 {
-  margin-top: 16px;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .template-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

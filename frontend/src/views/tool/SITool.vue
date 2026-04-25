@@ -1,219 +1,154 @@
 <template>
   <div class="si-tool">
-    <el-tabs v-model="activeTab">
-      <!-- Tab 1: 政策库 -->
-      <el-tab-pane label="政策库" name="policy">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>社保政策库</span>
-              <el-form inline>
-                <el-form-item label="城市">
-                  <el-input v-model="cityFilter" placeholder="城市名称" clearable style="width: 120px" />
-                </el-form-item>
-                <el-form-item label="年份">
-                  <el-input-number v-model="yearFilter" :min="2020" :max="2030" style="width: 100px" />
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" size="small" @click="loadPolicies">查询</el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-          </template>
+    <!-- Page Header -->
+    <div class="page-head">
+      <div class="page-head-left">
+        <div class="page-head-indicator"></div>
+        <div>
+          <h2 class="page-head-title">社保管理</h2>
+          <p class="page-head-desc">政策库、参保操作与记录查询</p>
+        </div>
+      </div>
+    </div>
 
+    <!-- Tab Navigation -->
+    <div class="tab-shell">
+      <div class="tab-rail">
+        <div
+          v-for="tab in tabs"
+          :key="tab.name"
+          class="tab-btn"
+          :class="{ 'tab-btn--active': activeTab === tab.name }"
+          @click="activeTab = tab.name"
+        >
+          <el-icon :size="16"><component :is="tab.icon" /></el-icon>
+          <span>{{ tab.label }}</span>
+        </div>
+      </div>
+
+      <div class="tab-body">
+        <!-- 政策库 -->
+        <div v-show="activeTab === 'policy'" class="tab-panel">
+          <div class="panel-bar">
+            <span class="panel-title">社保政策库</span>
+            <el-form inline>
+              <el-form-item label="城市">
+                <el-input v-model="cityFilter" placeholder="城市名称" clearable style="width: 120px" />
+              </el-form-item>
+              <el-form-item label="年份">
+                <el-input-number v-model="yearFilter" :min="2020" :max="2030" style="width: 100px" />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="loadPolicies">查询</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
           <el-table :data="policies" stripe v-loading="loadingPolicy">
             <el-table-column prop="city" label="城市" min-width="100" />
             <el-table-column prop="year" label="年度" width="70" />
             <el-table-column prop="effective_date" label="生效日期" width="110" />
             <el-table-column label="公积金基数范围" min-width="150">
-              <template #default="{ row }">
-                {{ row.housing_fund_base_min }} ~ {{ row.housing_fund_base_max }}
-              </template>
+              <template #default="{ row }">{{ row.housing_fund_base_min }} ~ {{ row.housing_fund_base_max }}</template>
             </el-table-column>
             <el-table-column label="公积金比例" min-width="100">
-              <template #default="{ row }">
-                个人{{ (row.housing_fund_person_rate * 100).toFixed(1) }}% /
-                单位{{ (row.housing_fund_company_rate * 100).toFixed(1) }}%
-              </template>
+              <template #default="{ row }">个人{{ (row.housing_fund_person_rate * 100).toFixed(1) }}% / 单位{{ (row.housing_fund_company_rate * 100).toFixed(1) }}%</template>
             </el-table-column>
             <el-table-column label="操作" width="80">
               <template #default="{ row }">
-                <el-button size="small" @click="selectPolicy(row)">使用</el-button>
+                <el-button size="small" type="primary" plain @click="selectPolicy(row)">使用</el-button>
               </template>
             </el-table-column>
           </el-table>
-        </el-card>
-      </el-tab-pane>
-
-      <!-- Tab 2: 参保操作 -->
-      <el-tab-pane label="参保操作" name="enroll">
-        <!-- 红色欠缴横幅 -->
-        <div v-if="overdueItems.length > 0" class="overdue-banner">
-          <el-icon class="banner-icon"><WarningFilled /></el-icon>
-          <div class="banner-content">
-            <div class="banner-headline">存在欠缴记录，请及时处理</div>
-            <div class="banner-detail">
-              最大欠缴：{{ overdueItems[0].employeeName }} {{ overdueItems[0].city }} {{ overdueItems[0].yearMonth }} 欠缴 ¥{{ overdueItems[0].amount }}
-            </div>
-            <div v-if="visibleOverdueItems.length > 1" class="banner-scroll-list">
-              <div
-                v-for="item in visibleOverdueItems.slice(1)"
-                :key="item.id"
-                class="overdue-item"
-              >
-                {{ item.employeeName }} {{ item.city }} {{ item.yearMonth }} ¥{{ item.amount }}
-              </div>
-            </div>
-            <div v-if="overdueItems.length > 5" class="banner-more">
-              还有 {{ overdueItems.length - 5 }} 项
-            </div>
-          </div>
-          <el-icon class="close-btn" @click="dismissBanner"><Close /></el-icon>
         </div>
 
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>参保操作</span>
+        <!-- 参保操作 -->
+        <div v-show="activeTab === 'enroll'" class="tab-panel">
+          <div v-if="overdueItems.length > 0" class="overdue-banner">
+            <div class="overdue-banner-glow"></div>
+            <el-icon class="banner-icon"><WarningFilled /></el-icon>
+            <div class="banner-content">
+              <div class="banner-headline">存在欠缴记录，请及时处理</div>
+              <div class="banner-detail">{{ overdueItems[0].employeeName }} {{ overdueItems[0].city }} {{ overdueItems[0].yearMonth }} 欠缴 ¥{{ overdueItems[0].amount }}</div>
+              <div v-if="visibleOverdueItems.length > 1" class="banner-scroll-list">
+                <div v-for="item in visibleOverdueItems.slice(1)" :key="item.id" class="overdue-item">{{ item.employeeName }} {{ item.city }} {{ item.yearMonth }} ¥{{ item.amount }}</div>
+              </div>
+              <div v-if="overdueItems.length > 5" class="banner-more">还有 {{ overdueItems.length - 5 }} 项</div>
             </div>
-          </template>
+            <el-icon class="close-btn" @click="dismissBanner"><Close /></el-icon>
+          </div>
 
+          <div class="panel-bar">
+            <span class="panel-title">参保操作</span>
+          </div>
           <el-form :model="enrollForm" label-width="100px">
             <el-form-item label="选择政策">
               <el-select v-model="enrollForm.policy_id" placeholder="请先在政策库选择" style="width: 300px">
-                <el-option
-                  v-for="p in policies"
-                  :key="p.id"
-                  :label="`${p.city} ${p.year}年`"
-                  :value="p.id"
-                />
+                <el-option v-for="p in policies" :key="p.id" :label="`${p.city} ${p.year}年`" :value="p.id" />
               </el-select>
             </el-form-item>
             <el-form-item label="选择员工">
-              <el-select
-                v-model="enrollForm.employee_ids"
-                multiple
-                placeholder="选择参保员工"
-                style="width: 300px"
-              >
-                <el-option
-                  v-for="e in employeeOptions"
-                  :key="e.id"
-                  :label="e.name"
-                  :value="e.id"
-                />
+              <el-select v-model="enrollForm.employee_ids" multiple placeholder="选择参保员工" style="width: 300px">
+                <el-option v-for="e in employeeOptions" :key="e.id" :label="e.name" :value="e.id" />
               </el-select>
             </el-form-item>
             <el-form-item label="社保基数">
               <el-input-number v-model="enrollForm.salary_base" :min="0" :precision="2" style="width: 200px" />
             </el-form-item>
             <el-form-item label="参保月份">
-              <el-date-picker
-                v-model="enrollForm.start_month"
-                type="month"
-                placeholder="参保起始月份"
-                value-format="YYYY-MM"
-                style="width: 200px"
-              />
+              <el-date-picker v-model="enrollForm.start_month" type="month" placeholder="参保起始月份" value-format="YYYY-MM" style="width: 200px" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="previewing" @click="previewEnroll">参保预览</el-button>
               <el-button type="success" :loading="enrolling" @click="handleEnroll">确认参保</el-button>
               <el-button type="primary" @click="showEnrollDialog = true">增员</el-button>
-              <el-button type="danger" :loading="stopping" @click="showStopDialog = true">批量停缴</el-button>
+              <el-button type="danger" plain :loading="stopping" @click="showStopDialog = true">批量停缴</el-button>
             </el-form-item>
           </el-form>
 
-          <!-- 预览结果 -->
           <div v-if="previewResults.length > 0" class="preview-section">
             <div class="preview-title">参保预览</div>
             <el-table :data="previewResults" stripe size="small">
               <el-table-column prop="employee_name" label="员工" />
               <el-table-column prop="salary_base" label="社保基数" />
-              <el-table-column label="个人合计">
-                <template #default="{ row }">¥{{ row.calculation.total_personal }}</template>
-              </el-table-column>
-              <el-table-column label="单位合计">
-                <template #default="{ row }">¥{{ row.calculation.total_company }}</template>
-              </el-table-column>
+              <el-table-column label="个人合计"><template #default="{ row }">¥{{ row.calculation.total_personal }}</template></el-table-column>
+              <el-table-column label="单位合计"><template #default="{ row }">¥{{ row.calculation.total_company }}</template></el-table-column>
             </el-table>
           </div>
-        </el-card>
-      </el-tab-pane>
+        </div>
 
-      <!-- Tab 3: 参保记录 -->
-      <el-tab-pane label="参保记录" name="records">
-        <el-card>
-          <template #header>
-            <div class="card-header">
-              <span>参保记录</span>
-            </div>
-          </template>
-
+        <!-- 参保记录 -->
+        <div v-show="activeTab === 'records'" class="tab-panel">
+          <div class="panel-bar">
+            <span class="panel-title">参保记录</span>
+          </div>
           <el-table :data="siRecords" stripe v-loading="loadingRecords">
             <el-table-column prop="employee_name" label="员工" min-width="80" />
             <el-table-column prop="city" label="城市" min-width="80" />
-            <el-table-column prop="salary_base" label="社保基数" min-width="100">
-              <template #default="{ row }">¥{{ row.salary_base }}</template>
-            </el-table-column>
+            <el-table-column prop="salary_base" label="社保基数" min-width="100"><template #default="{ row }">¥{{ row.salary_base }}</template></el-table-column>
             <el-table-column prop="start_month" label="参保月" min-width="90" />
-            <el-table-column prop="stop_month" label="停缴月" min-width="90">
-              <template #default="{ row }">{{ row.stop_month || '—' }}</template>
-            </el-table-column>
+            <el-table-column prop="stop_month" label="停缴月" min-width="90"><template #default="{ row }">{{ row.stop_month || '—' }}</template></el-table-column>
             <el-table-column prop="status" label="状态" min-width="70">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">
-                  {{ row.status === 'active' ? '参保中' : '已停缴' }}
-                </el-tag>
-              </template>
+              <template #default="{ row }"><el-tag :type="row.status === 'active' ? 'success' : 'info'" size="small">{{ row.status === 'active' ? '参保中' : '已停缴' }}</el-tag></template>
             </el-table-column>
-            <el-table-column label="个人月缴" min-width="100">
-              <template #default="{ row }">¥{{ row.monthly_personal }}</template>
-            </el-table-column>
-            <el-table-column label="单位月缴" min-width="100">
-              <template #default="{ row }">¥{{ row.monthly_company }}</template>
-            </el-table-column>
+            <el-table-column label="个人月缴" min-width="100"><template #default="{ row }">¥{{ row.monthly_personal }}</template></el-table-column>
+            <el-table-column label="单位月缴" min-width="100"><template #default="{ row }">¥{{ row.monthly_company }}</template></el-table-column>
           </el-table>
+          <el-pagination class="mt-4" layout="total,prev,pager,next" :total="recordTotal" :page="recordPage" :page-size="recordPageSize" @current-change="loadRecords" />
+        </div>
+      </div>
+    </div>
 
-          <el-pagination
-            class="mt-4"
-            layout="total,prev,pager,next"
-            :total="recordTotal"
-            :page="recordPage"
-            :page-size="recordPageSize"
-            @current-change="loadRecords"
-          />
-        </el-card>
-      </el-tab-pane>
-    </el-tabs>
+    <EnrollDialog v-model="showEnrollDialog" @success="onEnrollSuccess" />
 
-    <!-- 增员弹窗 -->
-    <EnrollDialog
-      v-model="showEnrollDialog"
-      @success="onEnrollSuccess"
-    />
-
-    <!-- 批量停缴对话框 -->
     <el-dialog v-model="showStopDialog" title="批量停缴" width="400px">
       <el-form :model="stopForm" label-width="100px">
         <el-form-item label="选择记录">
           <el-select v-model="stopForm.record_ids" multiple placeholder="选择要停缴的记录" style="width: 100%">
-            <el-option
-              v-for="r in siRecords.filter(r => r.status === 'active')"
-              :key="r.id"
-              :label="`${r.employee_name} - ${r.city}`"
-              :value="r.id"
-            />
+            <el-option v-for="r in siRecords.filter(r => r.status === 'active')" :key="r.id" :label="`${r.employee_name} - ${r.city}`" :value="r.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="停缴月份">
-          <el-date-picker
-            v-model="stopForm.stop_month"
-            type="month"
-            placeholder="停缴月份"
-            value-format="YYYY-MM"
-            style="width: 100%"
-          />
+          <el-date-picker v-model="stopForm.stop_month" type="month" placeholder="停缴月份" value-format="YYYY-MM" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -229,7 +164,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { siApi } from '@/api/socialinsurance'
 import { employeeApi } from '@/api/employee'
 import { ElMessage } from 'element-plus'
-import { WarningFilled, Close } from '@element-plus/icons-vue'
+import { WarningFilled, Close, Collection, Plus, List } from '@element-plus/icons-vue'
 import EnrollDialog from '@/components/socialinsurance/EnrollDialog.vue'
 import axios from '@/api/request'
 
@@ -242,6 +177,12 @@ interface OverdueItem {
 }
 
 const activeTab = ref('policy')
+
+const tabs = [
+  { name: 'policy', label: '政策库', icon: Collection },
+  { name: 'enroll', label: '参保操作', icon: Plus },
+  { name: 'records', label: '参保记录', icon: List },
+]
 
 // Overdue items
 const overdueItems = ref<OverdueItem[]>([])
@@ -417,49 +358,161 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+$primary: #7C3AED;
+$primary-light: #A78BFA;
+$text-primary: #1A1D2E;
+$text-secondary: #5E6278;
+$text-muted: #A0A3BD;
+$border: #E8EBF0;
+$surface: #FFFFFF;
+$surface-alt: #F8F9FC;
+
 .si-tool {
-  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.card-header {
+/* ─── Page Header ─── */
+.page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.page-head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-head-indicator {
+  width: 4px;
+  height: 36px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2563EB 0%, #60A5FA 100%);
+}
+
+.page-head-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.page-head-desc {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 4px 0 0;
+}
+
+/* ─── Tab Shell ─── */
+.tab-shell {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.tab-rail {
+  display: flex;
+  gap: 2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid $border;
+  overflow-x: auto;
+  background: $surface-alt;
+
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  user-select: none;
+
+  &:hover {
+    background: rgba($primary, 0.06);
+    color: $primary;
+  }
+
+  &--active {
+    background: $surface;
+    color: $primary;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+}
+
+.tab-body {
+  padding: 0;
+}
+
+.tab-panel {
+  padding: 24px;
+  animation: panelFade 0.3s ease;
+}
+
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
-.preview-section {
-  margin-top: 16px;
-}
-
-.preview-title {
-  font-size: 14px;
+.panel-title {
+  font-size: 15px;
   font-weight: 600;
-  margin-bottom: 8px;
-  color: #333;
+  color: $text-primary;
 }
 
-.mt-4 {
-  margin-top: 16px;
-}
-
-// 红色欠缴横幅
+/* ─── Overdue Banner ─── */
 .overdue-banner {
-  background: #ff563015;
-  border-left: 3px solid #ff5630;
-  border-radius: 8px;
-  padding: 12px 16px;
-  color: #ff5630;
+  position: relative;
+  background: linear-gradient(135deg, rgba(255,86,48,0.06) 0%, rgba(255,86,48,0.02) 100%);
+  border: 1px solid rgba(255,86,48,0.15);
+  border-left: 3px solid #FF5630;
+  border-radius: 14px;
+  padding: 16px 20px;
+  color: #FF5630;
   font-size: 14px;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.overdue-banner-glow {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(255,86,48,0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .banner-icon {
-  font-size: 18px;
+  font-size: 20px;
   margin-top: 2px;
   flex-shrink: 0;
 }
@@ -470,8 +523,9 @@ onMounted(() => {
 }
 
 .banner-headline {
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 4px;
+  font-size: 14px;
 }
 
 .banner-detail {
@@ -482,18 +536,19 @@ onMounted(() => {
 .banner-scroll-list {
   max-height: 80px;
   overflow-y: auto;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .overdue-item {
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.8;
+  opacity: 0.85;
 }
 
 .banner-more {
   font-size: 12px;
-  margin-top: 4px;
-  font-weight: 500;
+  margin-top: 6px;
+  font-weight: 600;
 }
 
 .close-btn {
@@ -501,9 +556,24 @@ onMounted(() => {
   cursor: pointer;
   flex-shrink: 0;
   margin-top: 2px;
+  transition: opacity 0.2s;
 
-  &:hover {
-    opacity: 0.7;
-  }
+  &:hover { opacity: 0.6; }
+}
+
+/* ─── Preview ─── */
+.preview-section {
+  margin-top: 20px;
+}
+
+.preview-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: $text-primary;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 </style>
