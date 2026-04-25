@@ -91,7 +91,7 @@
               <el-icon><Money /></el-icon>
               <span>财务记账</span>
             </template>
-            <el-menu-item index="/finance">财务概览</el-menu-item>
+            <el-menu-item index="/finance/overview">财务概览</el-menu-item>
             <el-menu-item index="/finance/vouchers">凭证管理</el-menu-item>
             <el-menu-item index="/finance/accounts">科目管理</el-menu-item>
             <el-menu-item index="/finance/invoices">发票管理</el-menu-item>
@@ -199,7 +199,7 @@
 
         <el-sub-menu index="/finance">
           <template #title><el-icon><Money /></el-icon><span>财务记账</span></template>
-          <el-menu-item index="/finance">财务概览</el-menu-item>
+          <el-menu-item index="/finance/overview">财务概览</el-menu-item>
           <el-menu-item index="/finance/vouchers">凭证管理</el-menu-item>
           <el-menu-item index="/finance/accounts">科目管理</el-menu-item>
           <el-menu-item index="/finance/invoices">发票管理</el-menu-item>

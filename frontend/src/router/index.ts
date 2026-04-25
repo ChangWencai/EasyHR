@@ -155,9 +155,9 @@ const routes: RouteRecordRaw[] = [
         redirect: '/finance/vouchers',
       },
       {
-        path: '/finance/accounts',
-        name: 'finance-accounts',
-        component: () => import('@/views/finance/AccountTree.vue'),
+        path: '/finance/overview',
+        name: 'finance-overview',
+        component: () => import('@/views/finance/FinanceOverview.vue'),
       },
       {
         path: '/finance/vouchers',
@@ -168,6 +168,11 @@ const routes: RouteRecordRaw[] = [
         path: '/finance/vouchers/create',
         name: 'finance-voucher-create',
         component: () => import('@/views/finance/VoucherCreate.vue'),
+      },
+      {
+        path: '/finance/accounts',
+        name: 'finance-accounts',
+        component: () => import('@/views/finance/AccountTree.vue'),
       },
       {
         path: '/finance/invoices',
@@ -252,7 +257,14 @@ router.beforeEach((to, _from) => {
   const authStore = useAuthStore()
 
   // /login, /onboarding/org-setup, /register, /salary/slip/, /todo/*/invite, /sign/ 不做守卫检查
-  if (to.path === '/login' || to.path === '/onboarding/org-setup' || to.path.startsWith('/register') || to.path.startsWith('/salary/slip/') || to.path.includes('/invite') || to.path.startsWith('/sign/')) {
+  if (
+    to.path === '/login' ||
+    to.path === '/onboarding/org-setup' ||
+    to.path.startsWith('/register') ||
+    to.path.startsWith('/salary/slip/') ||
+    to.path.includes('/invite') ||
+    to.path.startsWith('/sign/')
+  ) {
     return
   }
 
