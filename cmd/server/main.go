@@ -27,6 +27,7 @@ import (
 	"github.com/wencai/easyhr/internal/employee"
 	"github.com/wencai/easyhr/internal/email_template"
 	"github.com/wencai/easyhr/internal/finance"
+	"github.com/wencai/easyhr/internal/sms_template"
 	"github.com/wencai/easyhr/internal/position"
 	"github.com/wencai/easyhr/internal/salary"
 	"github.com/wencai/easyhr/internal/socialinsurance"
@@ -110,7 +111,10 @@ func initApp() {
 		&todo.CarouselItem{},
 
 		// 邮箱模板模型
-		&email_template.EmailTemplate{},
+			&email_template.EmailTemplate{},
+
+			// 短信模板模型
+			&sms_template.SmsTemplate{},
 		&todo.TodoInvite{},
 	); err != nil {
 		logger.Logger.Fatal("auto migrate failed", zap.Error(err))
@@ -209,6 +213,11 @@ func main() {
 	emailTplRepo := email_template.NewRepository(db)
 	emailTplSvc := email_template.NewService(emailTplRepo)
 	emailTplHandler := email_template.NewHandler(emailTplSvc)
+
+	// 短信模板模块依赖注入
+	smsTplRepo := sms_template.NewRepository(db)
+	smsTplSvc := sms_template.NewService(smsTplRepo)
+	smsTplHandler := sms_template.NewHandler(smsTplSvc)
 
 	// 社保模块依赖注入（前置，供离职模块使用）
 	siRepo := socialinsurance.NewRepository(db)
@@ -318,6 +327,7 @@ func main() {
 		contractHandler.RegisterSignRoutes(v1)
 		siHandler.RegisterRoutes(v1, authMiddleware)
 		emailTplHandler.RegisterRoutes(v1, authMiddleware)
+			smsTplHandler.RegisterRoutes(v1, authMiddleware)
 		taxHandler.RegisterRoutes(v1, authMiddleware)
 		salaryHandler.RegisterRoutes(v1, authMiddleware)
 		salarySlipSendHandler.RegisterRoutes(v1, authMiddleware)

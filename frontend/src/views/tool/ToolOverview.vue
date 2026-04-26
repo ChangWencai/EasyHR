@@ -91,7 +91,7 @@
         更多工具
       </div>
       <div class="more-grid">
-        <div class="more-card glass-card" @click="navigateTo('/tool/email-templates')">
+        <div class="more-card glass-card" @click="navigateTo('/hr-tools/email-templates')">
           <div class="more-icon" style="background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); color: #DC2626;">
             <el-icon :size="20"><Message /></el-icon>
           </div>

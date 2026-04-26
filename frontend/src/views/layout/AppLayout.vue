@@ -86,6 +86,17 @@
             <el-menu-item index="/social-insurance">社保概览</el-menu-item>
           </el-sub-menu>
 
+          <el-sub-menu index="/hr-tools">
+            <template #title>
+              <el-icon><Tools /></el-icon>
+              <span>人事工具</span>
+            </template>
+            <el-menu-item index="/hr-tools/email-templates">邮箱模板</el-menu-item>
+            <el-menu-item index="/hr-tools/sms-templates">短信模板</el-menu-item>
+            <el-menu-item index="/hr-tools/todo">待办中心</el-menu-item>
+            <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
+          </el-sub-menu>
+
           <el-sub-menu index="/finance">
             <template #title>
               <el-icon><Money /></el-icon>
@@ -198,6 +209,14 @@
           <el-menu-item index="/social-insurance">社保概览</el-menu-item>
         </el-sub-menu>
 
+        <el-sub-menu index="/hr-tools">
+          <template #title><el-icon><Tools /></el-icon><span>人事工具</span></template>
+          <el-menu-item index="/hr-tools/email-templates">邮箱模板</el-menu-item>
+          <el-menu-item index="/hr-tools/sms-templates">短信模板</el-menu-item>
+          <el-menu-item index="/hr-tools/todo">待办中心</el-menu-item>
+          <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
+        </el-sub-menu>
+
         <el-sub-menu index="/finance">
           <template #title><el-icon><Money /></el-icon><span>财务记账</span></template>
           <el-menu-item index="/finance/overview">财务概览</el-menu-item>
@@ -205,6 +224,7 @@
           <el-menu-item index="/finance/accounts">科目管理</el-menu-item>
           <el-menu-item index="/finance/invoices">发票管理</el-menu-item>
           <el-menu-item index="/finance/expenses">报销审批</el-menu-item>
+          <el-menu-item index="/finance/reports">账簿报表</el-menu-item>
         </el-sub-menu>
 
         <el-menu-item index="/mine">
@@ -222,6 +242,7 @@ import { useRoute } from 'vue-router'
 import {
   HomeFilled,
   UserFilled,
+  Tools,
   Money,
   Avatar,
   Menu,
@@ -264,6 +285,10 @@ const pageTitleMap: Record<string, string> = {
   '/salary/tax': '个税申报',
   '/salary/tax-upload': '个税上传',
   '/social-insurance': '社保概览',
+  '/hr-tools/email-templates': '邮箱模板',
+  '/hr-tools/sms-templates': '短信模板',
+  '/hr-tools/todo': '待办中心',
+  '/hr-tools/performance': '绩效系数',
   '/finance': '财务记账',
   '/finance/accounts': '科目管理',
   '/finance/vouchers': '凭证管理',

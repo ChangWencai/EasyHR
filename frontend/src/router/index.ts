@@ -160,12 +160,44 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: '/tool/email-templates',
-        name: 'tool-email-templates',
-        component: () => import('@/views/tool/EmailTemplateList.vue'),
+        redirect: '/hr-tools/email-templates',
       },
       {
         path: '/tool/tax',
         redirect: '/salary/tax',
+      },
+
+      // 人事工具
+      {
+        path: '/hr-tools/email-templates',
+        name: 'hr-tools-email-templates',
+        component: () => import('@/views/tool/EmailTemplateList.vue'),
+      },
+      {
+        path: '/hr-tools/sms-templates',
+        name: 'hr-tools-sms-templates',
+        component: () => import('@/views/tool/SmsTemplateList.vue'),
+      },
+      {
+        path: '/hr-tools/todo',
+        name: 'hr-tools-todo',
+        component: () => import('@/views/todo/TodoListView.vue'),
+      },
+      {
+        path: '/hr-tools/performance',
+        name: 'hr-tools-performance',
+        component: () => import('@/views/tool/PerformanceCoefficient.vue'),
+      },
+
+      // 旧路由兼容
+      {
+        path: '/todo',
+        redirect: '/hr-tools/todo',
+      },
+      {
+        path: '/carousel/manage',
+        name: 'carousel-manage',
+        component: () => import('@/views/todo/CarouselManagePage.vue'),
       },
 
       // 财务
@@ -217,17 +249,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/mine/MineView.vue'),
       },
 
-      // 待办中心
-      {
-        path: '/todo',
-        name: 'todo-list',
-        component: () => import('@/views/todo/TodoListView.vue'),
-      },
-      {
-        path: '/carousel/manage',
-        name: 'carousel-manage',
-        component: () => import('@/views/todo/CarouselManagePage.vue'),
-      },
     ],
   },
 
@@ -288,12 +309,13 @@ router.beforeEach((to, _from) => {
     return
   }
 
-  // 受保护路由：/home, /employee, /salary, /social-insurance, /finance, /attendance, /mine
+  // 受保护路由：/home, /employee, /salary, /social-insurance, /hr-tools, /finance, /attendance, /mine
   const isProtectedRoute =
     to.path.startsWith('/home') ||
     to.path.startsWith('/employee') ||
     to.path.startsWith('/salary') ||
     to.path.startsWith('/social-insurance') ||
+    to.path.startsWith('/hr-tools') ||
     to.path.startsWith('/tool') ||
     to.path.startsWith('/finance') ||
     to.path.startsWith('/attendance') ||
