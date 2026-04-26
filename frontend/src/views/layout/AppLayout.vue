@@ -68,16 +68,22 @@
             <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
           </el-sub-menu>
 
-          <el-sub-menu index="/tool">
+          <el-sub-menu index="/salary">
             <template #title>
-              <el-icon><Tools /></el-icon>
-              <span>人事工具</span>
+              <el-icon><Wallet /></el-icon>
+              <span>薪资管理</span>
             </template>
-            <el-menu-item index="/tool">工具概览</el-menu-item>
-            <el-menu-item index="/tool/salary">薪资管理</el-menu-item>
-            <el-menu-item index="/tool/email-templates">邮箱模板</el-menu-item>
-            <el-menu-item index="/tool/socialinsurance">社保管理</el-menu-item>
-            <el-menu-item index="/tool/tax">个税申报</el-menu-item>
+            <el-menu-item index="/salary">薪资概览</el-menu-item>
+            <el-menu-item index="/salary/slip-send">工资条发放</el-menu-item>
+            <el-menu-item index="/salary/tax">个税申报</el-menu-item>
+          </el-sub-menu>
+
+          <el-sub-menu index="/social-insurance">
+            <template #title>
+              <el-icon><Umbrella /></el-icon>
+              <span>社保管理</span>
+            </template>
+            <el-menu-item index="/social-insurance">社保概览</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/finance">
@@ -180,12 +186,16 @@
           <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="/tool">
-          <template #title><el-icon><Tools /></el-icon><span>人事工具</span></template>
-          <el-menu-item index="/tool">工具概览</el-menu-item>
-          <el-menu-item index="/tool/salary">薪资管理</el-menu-item>
-          <el-menu-item index="/tool/socialinsurance">社保管理</el-menu-item>
-          <el-menu-item index="/tool/tax">个税申报</el-menu-item>
+        <el-sub-menu index="/salary">
+          <template #title><el-icon><Wallet /></el-icon><span>薪资管理</span></template>
+          <el-menu-item index="/salary">薪资概览</el-menu-item>
+          <el-menu-item index="/salary/slip-send">工资条发放</el-menu-item>
+          <el-menu-item index="/salary/tax">个税申报</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="/social-insurance">
+          <template #title><el-icon><Umbrella /></el-icon><span>社保管理</span></template>
+          <el-menu-item index="/social-insurance">社保概览</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="/finance">
@@ -212,7 +222,6 @@ import { useRoute } from 'vue-router'
 import {
   HomeFilled,
   UserFilled,
-  Tools,
   Money,
   Avatar,
   Menu,
@@ -220,6 +229,8 @@ import {
   DArrowRight,
   Management,
   Clock,
+  Wallet,
+  Umbrella,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -247,11 +258,12 @@ const pageTitleMap: Record<string, string> = {
   '/employee/create': '新增员工',
   '/employee/invitations': '入职邀请',
   '/employee/offboardings': '离职管理',
-  '/tool': '人事工具',
-  '/tool/salary': '薪资管理',
-  '/tool/socialinsurance': '社保管理',
-  '/tool/email-templates': '邮箱模板',
-  '/tool/tax': '个税申报',
+  '/salary': '薪资概览',
+  '/salary/dashboard': '薪资看板',
+  '/salary/slip-send': '工资条发放',
+  '/salary/tax': '个税申报',
+  '/salary/tax-upload': '个税上传',
+  '/social-insurance': '社保概览',
   '/finance': '财务记账',
   '/finance/accounts': '科目管理',
   '/finance/vouchers': '凭证管理',

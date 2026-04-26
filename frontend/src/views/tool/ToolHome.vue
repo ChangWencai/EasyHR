@@ -22,19 +22,19 @@
           </template>
           <span>概览</span>
         </el-menu-item>
-        <el-menu-item index="/tool/salary">
+        <el-menu-item index="/salary">
           <template #prefix>
             <el-icon><Coin /></el-icon>
           </template>
           <span>薪资管理</span>
         </el-menu-item>
-        <el-menu-item index="/tool/socialinsurance">
+        <el-menu-item index="/social-insurance">
           <template #prefix>
             <el-icon><Umbrella /></el-icon>
           </template>
           <span>社保管理</span>
         </el-menu-item>
-        <el-menu-item index="/tool/tax">
+        <el-menu-item index="/salary/tax">
           <template #prefix>
             <el-icon><Document /></el-icon>
           </template>

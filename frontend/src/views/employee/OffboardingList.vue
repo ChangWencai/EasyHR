@@ -202,7 +202,7 @@ async function handleReject() {
 // 去减员：跳转社保减员页面
 function goToSIRegister(employeeId: number, employeeName: string) {
   router.push({
-    path: '/tool/socialinsurance',
+    path: '/social-insurance',
     query: {
       action: 'reduce',
       employee_id: String(employeeId),

@@ -252,21 +252,21 @@ function getTodoIcon(type: string) {
 const gridItems = [
   { path: '/employee', label: '员工管理', icon: User, color: '#7C3AED', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)' },
   { path: '/employee/org-chart', label: '组织架构', icon: OfficeBuilding, color: '#8B5CF6', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)' },
-  { path: '/tool/salary', label: '薪资管理', icon: Money, color: '#10B981', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
-  { path: '/tool/socialinsurance', label: '社保管理', icon: Umbrella, color: '#F59E0B', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' },
-  { path: '/tool/tax', label: '个税申报', icon: Document, color: '#3B82F6', bg: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)' },
+  { path: '/salary', label: '薪资管理', icon: Money, color: '#10B981', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
+  { path: '/social-insurance', label: '社保管理', icon: Umbrella, color: '#F59E0B', bg: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)' },
+  { path: '/salary/tax', label: '个税申报', icon: Document, color: '#3B82F6', bg: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)' },
   { path: '/finance/vouchers', label: '凭证管理', icon: Wallet, color: '#06B6D4', bg: 'linear-gradient(135deg, #CFFAFE 0%, #A5F3FC 100%)' },
   { path: '/finance/invoices', label: '发票管理', icon: Tickets, color: '#EC4899', bg: 'linear-gradient(135deg, #FCE7F3 0%, #FBCFE8 100%)' },
   { path: '/employee/create', label: '新入职', icon: Plus, color: '#8B5CF6', bg: 'linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%)', dataTour: 'new-employee' },
-  { path: '/tool/salary', label: '调薪', icon: TrendCharts, color: '#059669', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
+  { path: '/salary', label: '调薪', icon: TrendCharts, color: '#059669', bg: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)' },
   { path: '/attendance/clock-live', label: '考勤打卡', icon: Calendar, color: '#6366F1', bg: 'linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)' },
 ]
 
 function handleTodoClick(todo: TodoItem) {
   store.removeTodo(todo.type)
   const routeMap: Record<string, string> = {
-    social_insurance: '/tool/socialinsurance',
-    tax: '/tool/tax',
+    social_insurance: '/social-insurance',
+    tax: '/salary/tax',
     employee: '/employee',
     contract: '/employee',
     expense: '/finance/expenses',

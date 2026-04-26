@@ -116,7 +116,7 @@ const coreTools = [
   {
     title: '薪资管理',
     desc: '工资核算、模板配置与工资条发放，一键完成薪资全流程',
-    path: '/tool/salary',
+    path: '/salary',
     icon: Coin,
     gradient: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)',
     accent: '#7C3AED',
@@ -127,7 +127,7 @@ const coreTools = [
   {
     title: '社保管理',
     desc: '社保缴纳、参保操作与记录查询，实时掌握社保动态',
-    path: '/tool/socialinsurance',
+    path: '/social-insurance',
     icon: Umbrella,
     gradient: 'linear-gradient(135deg, #2563EB 0%, #60A5FA 100%)',
     accent: '#2563EB',
@@ -138,7 +138,7 @@ const coreTools = [
   {
     title: '个税申报',
     desc: '专项附加扣除、个税计算与申报记录，合规无忧',
-    path: '/tool/tax',
+    path: '/salary/tax',
     icon: Document,
     gradient: 'linear-gradient(135deg, #D97706 0%, #FBBF24 100%)',
     accent: '#D97706',

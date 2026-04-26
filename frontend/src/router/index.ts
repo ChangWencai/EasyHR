@@ -99,36 +99,64 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/employee/EmployeeCreate.vue'),
       },
 
-      // 工具
+      // 薪资管理
       {
-        path: '/tool',
-        name: 'tool-overview',
-        component: () => import('@/views/tool/ToolOverview.vue'),
-      },
-      {
-        path: '/tool/salary',
-        name: 'tool-salary',
+        path: '/salary',
+        name: 'salary',
         component: () => import('@/views/tool/SalaryTool.vue'),
       },
       {
-        path: '/tool/salary/dashboard',
-        name: 'tool-salary-dashboard',
+        path: '/salary/dashboard',
+        name: 'salary-dashboard',
         component: () => import('@/views/tool/SalaryDashboard.vue'),
       },
       {
-        path: '/tool/salary/slip-send',
-        name: 'tool-salary-slip-send',
+        path: '/salary/slip-send',
+        name: 'salary-slip-send',
         component: () => import('@/views/tool/SalarySlipSend.vue'),
       },
       {
-        path: '/tool/salary/tax-upload',
-        name: 'tool-salary-tax-upload',
+        path: '/salary/tax-upload',
+        name: 'salary-tax-upload',
         component: () => import('@/views/tool/TaxUpload.vue'),
       },
       {
-        path: '/tool/socialinsurance',
-        name: 'tool-socialinsurance',
+        path: '/salary/tax',
+        name: 'salary-tax',
+        component: () => import('@/views/tool/TaxTool.vue'),
+      },
+
+      // 社保管理
+      {
+        path: '/social-insurance',
+        name: 'social-insurance',
         component: () => import('@/views/tool/SITool.vue'),
+      },
+
+      // 工具（保留旧路由兼容）
+      {
+        path: '/tool',
+        redirect: '/salary',
+      },
+      {
+        path: '/tool/salary',
+        redirect: '/salary',
+      },
+      {
+        path: '/tool/salary/dashboard',
+        redirect: '/salary/dashboard',
+      },
+      {
+        path: '/tool/salary/slip-send',
+        redirect: '/salary/slip-send',
+      },
+      {
+        path: '/tool/salary/tax-upload',
+        redirect: '/salary/tax-upload',
+      },
+      {
+        path: '/tool/socialinsurance',
+        redirect: '/social-insurance',
       },
       {
         path: '/tool/email-templates',
@@ -137,8 +165,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: '/tool/tax',
-        name: 'tool-tax',
-        component: () => import('@/views/tool/TaxTool.vue'),
+        redirect: '/salary/tax',
       },
 
       // 财务
@@ -261,10 +288,12 @@ router.beforeEach((to, _from) => {
     return
   }
 
-  // 受保护路由：/home, /employee, /tool, /finance, /attendance, /mine
+  // 受保护路由：/home, /employee, /salary, /social-insurance, /finance, /attendance, /mine
   const isProtectedRoute =
     to.path.startsWith('/home') ||
     to.path.startsWith('/employee') ||
+    to.path.startsWith('/salary') ||
+    to.path.startsWith('/social-insurance') ||
     to.path.startsWith('/tool') ||
     to.path.startsWith('/finance') ||
     to.path.startsWith('/attendance') ||
