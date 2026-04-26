@@ -63,27 +63,19 @@
             <el-menu-item index="/attendance/clock-live">今日实况</el-menu-item>
             <el-menu-item index="/attendance/approval">审批管理</el-menu-item>
             <el-menu-item index="/attendance/overtime">加班统计</el-menu-item>
-            <el-menu-item index="/attendance/leave">请假合规</el-menu-item>
-            <el-menu-item index="/attendance/anomaly">出勤异常</el-menu-item>
             <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
           </el-sub-menu>
 
-          <el-sub-menu index="/salary">
+          <el-sub-menu index="/compensation">
             <template #title>
               <el-icon><Wallet /></el-icon>
-              <span>薪资管理</span>
+              <span>薪酬福利</span>
             </template>
             <el-menu-item index="/salary">薪资概览</el-menu-item>
             <el-menu-item index="/salary/slip-send">工资条发放</el-menu-item>
+            <el-menu-item index="/social-insurance">社保管理</el-menu-item>
             <el-menu-item index="/salary/tax">个税申报</el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="/social-insurance">
-            <template #title>
-              <el-icon><Umbrella /></el-icon>
-              <span>社保管理</span>
-            </template>
-            <el-menu-item index="/social-insurance">社保概览</el-menu-item>
+            <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/hr-tools">
@@ -93,8 +85,6 @@
             </template>
             <el-menu-item index="/hr-tools/email-templates">邮箱模板</el-menu-item>
             <el-menu-item index="/hr-tools/sms-templates">短信模板</el-menu-item>
-            <el-menu-item index="/hr-tools/todo">待办中心</el-menu-item>
-            <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/finance">
@@ -109,6 +99,11 @@
             <el-menu-item index="/finance/expenses">报销审批</el-menu-item>
             <el-menu-item index="/finance/reports">账簿报表</el-menu-item>
           </el-sub-menu>
+
+          <el-menu-item index="/hr-tools/todo">
+            <el-icon><Bell /></el-icon>
+            <template #title>待办中心</template>
+          </el-menu-item>
 
           <el-menu-item index="/mine">
             <el-icon><Avatar /></el-icon>
@@ -192,29 +187,22 @@
           <el-menu-item index="/attendance/clock-live">今日实况</el-menu-item>
           <el-menu-item index="/attendance/approval">审批管理</el-menu-item>
           <el-menu-item index="/attendance/overtime">加班统计</el-menu-item>
-          <el-menu-item index="/attendance/leave">请假合规</el-menu-item>
-          <el-menu-item index="/attendance/anomaly">出勤异常</el-menu-item>
           <el-menu-item index="/attendance/monthly">出勤月报</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="/salary">
-          <template #title><el-icon><Wallet /></el-icon><span>薪资管理</span></template>
+        <el-sub-menu index="/compensation">
+          <template #title><el-icon><Wallet /></el-icon><span>薪酬福利</span></template>
           <el-menu-item index="/salary">薪资概览</el-menu-item>
           <el-menu-item index="/salary/slip-send">工资条发放</el-menu-item>
+          <el-menu-item index="/social-insurance">社保管理</el-menu-item>
           <el-menu-item index="/salary/tax">个税申报</el-menu-item>
-        </el-sub-menu>
-
-        <el-sub-menu index="/social-insurance">
-          <template #title><el-icon><Umbrella /></el-icon><span>社保管理</span></template>
-          <el-menu-item index="/social-insurance">社保概览</el-menu-item>
+          <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="/hr-tools">
           <template #title><el-icon><Tools /></el-icon><span>人事工具</span></template>
           <el-menu-item index="/hr-tools/email-templates">邮箱模板</el-menu-item>
           <el-menu-item index="/hr-tools/sms-templates">短信模板</el-menu-item>
-          <el-menu-item index="/hr-tools/todo">待办中心</el-menu-item>
-          <el-menu-item index="/hr-tools/performance">绩效系数</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="/finance">
@@ -226,6 +214,11 @@
           <el-menu-item index="/finance/expenses">报销审批</el-menu-item>
           <el-menu-item index="/finance/reports">账簿报表</el-menu-item>
         </el-sub-menu>
+
+        <el-menu-item index="/hr-tools/todo">
+          <el-icon><Bell /></el-icon>
+          <template #title>待办中心</template>
+        </el-menu-item>
 
         <el-menu-item index="/mine">
           <el-icon><Avatar /></el-icon>
@@ -251,7 +244,7 @@ import {
   Management,
   Clock,
   Wallet,
-  Umbrella,
+  Bell,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
