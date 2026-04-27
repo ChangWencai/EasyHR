@@ -21,6 +21,14 @@ export interface Employee {
   emergency_contact?: string
   emergency_phone?: string
   remark?: string
+  /** 参保城市编码（来自关联社保记录） */
+  si_city_code?: number
+  /** 社保缴费基数（来自关联社保记录） */
+  si_base_amount?: number
+  /** 参保状态 */
+  si_status?: string
+  /** 绩效系数 */
+  performance_coefficient?: number
 }
 
 export interface Invitation {
@@ -199,11 +207,11 @@ export const employeeApi = {
   }) =>
     request.get('/employees/roster', { params }).then((r: any) => {
       // 后端返回 response.PageSuccess(c, items, total, page, page_size)
-      // 格式为 { list: [...], total: N, page: N, page_size: N }
-      const data = r.data || {}
+      // 实际格式为 { code: 0, data: [...items], meta: { total, page, page_size } }
+      const meta = r.meta || {}
       return {
-        list: data.list || [],
-        total: data.total || 0,
+        list: r.data || [],
+        total: meta.total || 0,
       }
     }),
 

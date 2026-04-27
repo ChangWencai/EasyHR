@@ -190,8 +190,33 @@ func main() {
 	posSvc := position.NewService(posRepo)
 	posHandler := position.NewPositionHandler(posSvc)
 
-	// 员工模块依赖注入
-	empSvc := employee.NewService(empRepo, cfg.Crypto, todoSvcForDI, posSvc)
+	// 社保模块依赖注入（前置，供员工模块使用）
+	siRepo := socialinsurance.NewRepository(db)
+	siReminderRepo := socialinsurance.NewReminderRepository(db)
+	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
+	cityRepo := city.NewRepository(db)
+	siSvc := socialinsurance.NewService(siRepo, empAdapter, siReminderRepo, cityRepo)
+	siCreatorAdapter := socialinsurance.NewSICreatorAdapter(siRepo, cityRepo)
+	siPaymentRepo := socialinsurance.NewMonthlyPaymentRepository(db)
+	siDashboardSvc := socialinsurance.NewSIDashboardService(db, siPaymentRepo, siRepo)
+	siHandler := socialinsurance.NewHandler(siSvc, siDashboardSvc, siPaymentRepo)
+
+	// 绩效模块依赖注入（perfSvc/handler 在后面 salary 块中统一创建）
+	var perfCreatorAdapter *salary.PerfCreatorAdapter
+
+	// 工资模块（变量声明，供后面赋值）
+	var salaryRepo *salary.Repository
+	var salaryTemplateRepo *salary.SalaryTemplateRepository
+	var salaryTaxAdapter *salary.TaxAdapter
+	var salarySIAdapter *salary.SIAdapter
+	var salaryEmpAdapter *salary.EmployeeAdapter
+	var salaryAttendanceProvider attendance.AttendanceProvider
+	var salarySickLeavePolicySvc *salary.SickLeavePolicyService
+	var salarySvc *salary.Service
+	var salaryDashboardSvc *salary.SalaryDashboardService
+
+	// 员工模块依赖注入（注入社保创建器和绩效创建器）
+	empSvc := employee.NewService(empRepo, cfg.Crypto, todoSvcForDI, posSvc, siCreatorAdapter, perfCreatorAdapter)
 	empHandler := employee.NewHandler(empSvc)
 
 	// 邀请模块依赖注入
@@ -219,16 +244,6 @@ func main() {
 	smsTplSvc := sms_template.NewService(smsTplRepo)
 	smsTplHandler := sms_template.NewHandler(smsTplSvc)
 
-	// 社保模块依赖注入（前置，供离职模块使用）
-	siRepo := socialinsurance.NewRepository(db)
-	siReminderRepo := socialinsurance.NewReminderRepository(db)
-	empAdapter := socialinsurance.NewEmployeeAdapter(empRepo)
-	cityRepo := city.NewRepository(db)
-	siSvc := socialinsurance.NewService(siRepo, empAdapter, siReminderRepo, cityRepo)
-	siPaymentRepo := socialinsurance.NewMonthlyPaymentRepository(db)
-	siDashboardSvc := socialinsurance.NewSIDashboardService(db, siPaymentRepo, siRepo)
-	siHandler := socialinsurance.NewHandler(siSvc, siDashboardSvc, siPaymentRepo)
-
 	// 合同管理模块依赖注入（前置，供个税模块使用）
 	contractRepo := employee.NewContractRepository(db)
 	contractSvc := employee.NewContractService(contractRepo, empRepo, db, cfg.Crypto, todoSvcForDI, smsClient, ossClient)
@@ -246,16 +261,16 @@ func main() {
 	obSvc := employee.NewOffboardingService(obRepo, empRepo, siSvc)
 	obHandler := employee.NewOffboardingHandler(obSvc)
 
-	// 工资模块依赖注入
-	salaryRepo := salary.NewRepository(db)
-	salaryTemplateRepo := salary.NewSalaryTemplateRepository(db)
-	salaryTaxAdapter := salary.NewTaxAdapter(taxSvc)
-	salarySIAdapter := salary.NewSIAdapter(siSvc)
-	salaryEmpAdapter := salary.NewEmployeeAdapter(empRepo, contractRepo)
-	salaryAttendanceProvider := attendance.NewAttendanceProvider(db)
-	salarySickLeavePolicySvc := salary.NewSickLeavePolicyService(db)
-	salarySvc := salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto, todoSvcForDI)
-	salaryDashboardSvc := salary.NewDashboardService(db)
+	// 工资模块依赖注入（siAdapter/empAdapter 已在前面声明）
+	salaryRepo = salary.NewRepository(db)
+	salaryTemplateRepo = salary.NewSalaryTemplateRepository(db)
+	salaryTaxAdapter = salary.NewTaxAdapter(taxSvc)
+	salarySIAdapter = salary.NewSIAdapter(siSvc)
+	salaryEmpAdapter = salary.NewEmployeeAdapter(empRepo, contractRepo)
+	salaryAttendanceProvider = attendance.NewAttendanceProvider(db)
+	salarySickLeavePolicySvc = salary.NewSickLeavePolicyService(db)
+	salarySvc = salary.NewService(salaryRepo, salaryTemplateRepo, salaryTaxAdapter, salarySIAdapter, salaryEmpAdapter, salarySIAdapter, salaryAttendanceProvider, salarySickLeavePolicySvc, nil, cfg.Crypto, todoSvcForDI)
+	salaryDashboardSvc = salary.NewDashboardService(db)
 	salaryHandler := salary.NewHandler(salarySvc, salaryDashboardSvc)
 	taxUploadHandler := salary.NewTaxUploadHandler(salarySvc)
 
@@ -272,6 +287,7 @@ func main() {
 	// 绩效系数模块依赖注入
 	salaryPerformanceRepo := salary.NewPerformanceRepository(db)
 	salaryPerformanceSvc := salary.NewPerformanceService(salaryPerformanceRepo)
+	perfCreatorAdapter = salary.NewPerfCreatorAdapter(salaryPerformanceSvc)
 	salaryPerformanceHandler := salary.NewPerformanceHandler(salaryPerformanceSvc)
 
 	// 薪资列表模块依赖注入

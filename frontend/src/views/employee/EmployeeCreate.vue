@@ -28,7 +28,7 @@
           @complete="handleCreate"
         >
           <template #default="{ step }">
-            <!-- Step 0: 完整信息录入 -->
+            <!-- Step 0: 基本信息 -->
             <div v-show="step === 0">
               <StepCard title="基本信息" description="填写员工基本资料">
                 <div class="form-grid">
@@ -58,10 +58,6 @@
                       <template #prefix><el-icon><Postcard /></el-icon></template>
                     </el-input>
                   </el-form-item>
-                </div>
-              </StepCard>
-              <StepCard title="入职信息" description="填写入职相关信息">
-                <div class="form-grid">
                   <el-form-item label="入职日期" prop="entry_date" class="form-item">
                     <el-date-picker
                       v-model="form.entry_date"
@@ -182,6 +178,94 @@
                   </el-form-item>
                 </div>
               </StepCard>
+            </div>
+            <!-- Step 1: 社保与绩效 -->
+            <div v-show="step === 1">
+              <StepCard title="社保参保" description="登记社保缴纳城市与基数（可选）">
+                <div class="form-grid">
+                  <el-form-item label="参保城市" class="form-item form-item--full">
+                    <el-select
+                      v-model="form.si_city_code"
+                      placeholder="选择参保城市"
+                      clearable
+                      filterable
+                      size="large"
+                      style="width: 100%"
+                    >
+                      <el-option
+                        v-for="city in cityOptions"
+                        :key="city.code"
+                        :label="city.name"
+                        :value="city.code"
+                      />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="参保起始月" class="form-item">
+                    <el-date-picker
+                      v-model="form.si_start_month"
+                      type="month"
+                      placeholder="参保起始月"
+                      value-format="YYYY-MM"
+                      size="large"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                  <el-form-item label="社保基数" class="form-item">
+                    <el-input-number
+                      v-model="form.si_base_amount"
+                      :min="0"
+                      :precision="2"
+                      :controls="false"
+                      placeholder="为空则用薪资"
+                      size="large"
+                      style="width: 100%"
+                    >
+                      <template #prefix><span class="currency-prefix">¥</span></template>
+                    </el-input-number>
+                    <div class="form-tip">
+                      <el-icon><InfoFilled /></el-icon>
+                      为空时默认使用员工薪资作为基数
+                    </div>
+                  </el-form-item>
+                  <el-form-item label="公积金基数" class="form-item">
+                    <el-input-number
+                      v-model="form.housing_fund_base"
+                      :min="0"
+                      :precision="2"
+                      :controls="false"
+                      placeholder="公积金基数（可选）"
+                      size="large"
+                      style="width: 100%"
+                    >
+                      <template #prefix><span class="currency-prefix">¥</span></template>
+                    </el-input-number>
+                  </el-form-item>
+                </div>
+              </StepCard>
+              <StepCard title="绩效系数" description="设置员工绩效系数（可选，默认 1.0）">
+                <div class="form-grid">
+                  <el-form-item label="绩效系数" class="form-item form-item--full">
+                    <el-input-number
+                      v-model="form.performance_coefficient"
+                      :min="0"
+                      :max="2"
+                      :precision="4"
+                      :step="0.1"
+                      :controls="true"
+                      placeholder="默认为 1.0"
+                      size="large"
+                      style="width: 200px"
+                    />
+                    <div class="form-tip">
+                      <el-icon><InfoFilled /></el-icon>
+                      范围 0~2，默认 1.0；影响绩效工资计算
+                    </div>
+                  </el-form-item>
+                </div>
+              </StepCard>
+            </div>
+            <!-- Step 2: 紧急联系人 -->
+            <div v-show="step === 2">
               <StepCard title="紧急联系人" description="填写紧急联系方式">
                 <div class="form-grid">
                   <el-form-item label="联系人姓名" prop="emergency_contact" class="form-item">
@@ -507,6 +591,7 @@ import { employeeApi } from '@/api/employee'
 import { positionApi } from '@/api/position'
 import { departmentApi } from '@/api/department'
 import { salaryApi } from '@/api/salary'
+import { siApi } from '@/api/socialinsurance'
 import type { Department } from '@/api/department'
 import StepWizard from '@/components/common/StepWizard.vue'
 import StepCard from '@/components/common/StepCard.vue'
@@ -522,6 +607,7 @@ import {
   OfficeBuilding,
   Location,
   Message,
+  InfoFilled,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -534,12 +620,15 @@ const currentStep = ref(0)
 const isEdit = computed(() => !!route.params.id)
 
 const steps = [
-  { title: '填写信息' },
+  { title: '基本信息' },
+  { title: '社保与绩效' },
+  { title: '紧急联系人' },
 ]
 
 const deptPositions = ref<Array<{ id: number; name: string }>>([])
 const commonPositions = ref<Array<{ id: number; name: string }>>([])
 const flatDepartments = ref<Department[]>([])
+const cityOptions = ref<Array<{ code: number; name: string }>>([])
 
 const form = reactive({
   name: '',
@@ -557,6 +646,14 @@ const form = reactive({
   bank_name: '',
   address: '',
   remark: '',
+  // 社保
+  si_city_code: null as number | null,
+  si_base_amount: undefined as number | undefined,
+  si_start_month: '',
+  housing_fund_base: undefined as number | undefined,
+  // 绩效
+  performance_coefficient: 1.0 as number,
+  // 紧急联系人
   emergency_contact: '',
   emergency_phone: '',
 })
@@ -581,7 +678,7 @@ async function handleCreate() {
   saving.value = true
   try {
     // 转换字段名以匹配后端 DTO
-    const createData = {
+    const createData: Record<string, unknown> = {
       name: form.name,
       phone: form.phone,
       id_card: form.id_number,
@@ -599,6 +696,15 @@ async function handleCreate() {
       remark: form.remark,
       emergency_contact: form.emergency_contact,
       emergency_phone: form.emergency_phone,
+    }
+    // 社保字段（可选）
+    if (form.si_city_code != null) createData.si_city_code = form.si_city_code
+    if (form.si_start_month) createData.si_start_month = form.si_start_month
+    if (form.si_base_amount != null) createData.si_base_amount = form.si_base_amount
+    if (form.housing_fund_base != null) createData.housing_fund_base = form.housing_fund_base
+    // 绩效字段（可选）
+    if (form.performance_coefficient != null && form.performance_coefficient !== 1.0) {
+      createData.performance_coefficient = form.performance_coefficient
     }
     await employeeApi.create(createData)
     $msg.success('员工创建成功')
@@ -720,10 +826,29 @@ async function loadDepartments() {
   }
 }
 
+async function loadCityOptions() {
+  try {
+    const year = new Date().getFullYear()
+    const policies = await siApi.policies({ year })
+    const seen = new Map<number, string>()
+    for (const p of policies) {
+      const code = Number(p.city_code) || 0
+      const name = (p as any).city_name || p.city || ''
+      if (code && name && !seen.has(code)) {
+        seen.set(code, name)
+      }
+    }
+    cityOptions.value = Array.from(seen.entries()).map(([code, name]) => ({ code, name }))
+  } catch {
+    cityOptions.value = []
+  }
+}
+
 onMounted(() => {
   loadEmployee()
   loadDepartments()
   loadPositionOptions(undefined)
+  loadCityOptions()
 })
 </script>
 

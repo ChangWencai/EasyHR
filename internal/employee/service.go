@@ -20,6 +20,8 @@ type Service struct {
 	cryptoCfg   config.CryptoConfig
 	todoSvc     TodoCreator          // interface to avoid circular import
 	positionSvc *position.Service    // 用于按名称查找/创建岗位并关联 PositionID
+	siCreator   SICreator          // 社保创建接口（可选，nil 时跳过）
+	perfCreator PerfCreator        // 绩效创建接口（可选，nil 时跳过）
 }
 
 // TodoCreator interface for creating todo items (avoids circular import from todo package)
@@ -29,12 +31,15 @@ type TodoCreator interface {
 }
 
 // NewService 创建员工 Service
-func NewService(repo *Repository, cryptoCfg config.CryptoConfig, todoSvc TodoCreator, positionSvc *position.Service) *Service {
+// siCreator / perfCreator 可选传入，nil 时表示该模块未启用
+func NewService(repo *Repository, cryptoCfg config.CryptoConfig, todoSvc TodoCreator, positionSvc *position.Service, siCreator SICreator, perfCreator PerfCreator) *Service {
 	return &Service{
 		repo:        repo,
 		cryptoCfg:   cryptoCfg,
 		todoSvc:     todoSvc,
 		positionSvc: positionSvc,
+		siCreator:   siCreator,
+		perfCreator: perfCreator,
 	}
 }
 
@@ -185,6 +190,32 @@ func (s *Service) CreateEmployee(orgID, userID int64, req *CreateEmployeeRequest
 			"employee",
 			&empID,
 		)
+	}
+
+	// 社保参保登记（可选）
+	if s.siCreator != nil && req.SICityCode != nil && req.SIStartMonth != "" {
+		// 确定社保基数：优先使用 SIBaseAmount，否则用 Salary
+		baseAmount := 0.0
+		if req.SIBaseAmount != nil && *req.SIBaseAmount > 0 {
+			baseAmount = *req.SIBaseAmount
+		} else if req.Salary != nil && *req.Salary > 0 {
+			baseAmount = *req.Salary
+		}
+		hfBase := 0.0
+		if req.HousingFundBase != nil {
+			hfBase = *req.HousingFundBase
+		}
+		_ = s.siCreator.CreateEmployeeSI(orgID, userID, emp.ID, emp.Name, *req.SICityCode, baseAmount, req.SIStartMonth, hfBase)
+	}
+
+	// 绩效系数初始化（可选）
+	if s.perfCreator != nil && req.PerformanceCoefficient != nil {
+		hireYear, hireMonth, _ := emp.HireDate.Date()
+		coef := *req.PerformanceCoefficient
+		if coef == 0 {
+			coef = 1.0 // 默认系数 1.0
+		}
+		_ = s.perfCreator.InitEmployeePerf(orgID, userID, emp.ID, hireYear, int(hireMonth), coef)
 	}
 
 	return s.toResponse(emp)
