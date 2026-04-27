@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -28,18 +27,37 @@ func NewService(repo DashboardRepository) *DashboardService {
 	return &DashboardService{repo: repo}
 }
 
+// sourceTypeToTodoItem maps a source_type from todo_items table to a dashboard TodoItem.
+// Returns nil for unknown source types.
+func sourceTypeToTodoItem(sourceType string, count int) *TodoItem {
+	if count <= 0 {
+		return nil
+	}
+	switch sourceType {
+	case "contract_new", "contract_renew":
+		return &TodoItem{Type: TodoContract, Title: "合同到期提醒", Count: count, Priority: 4}
+	case "tax_declaration":
+		return &TodoItem{Type: TodoTax, Title: "个税申报提醒", Count: count, Priority: 2}
+	case "si_payment", "si_change", "si_annual_base", "fund_annual_base":
+		return &TodoItem{Type: TodoSocialInsurance, Title: "社保缴费提醒", Count: count, Priority: 1}
+	case "employee":
+		return &TodoItem{Type: TodoEmployee, Title: "员工入离职待审核", Count: count, Priority: 3}
+	case "expense":
+		return &TodoItem{Type: TodoExpense, Title: "费用报销待审批", Count: count, Priority: 5}
+	case "voucher":
+		return &TodoItem{Type: TodoVoucher, Title: "凭证待审核", Count: count, Priority: 6}
+	default:
+		return nil
+	}
+}
+
 // GetDashboard returns the dashboard for the given org.
 func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*DashboardResult, error) {
 	var (
-		empStats        struct{ active, joined, left int }
-		payrollTotal    string
-		siTotal         string
-		pendingVouchers int
-		pendingExpenses int
-		taxReminders    int
-		contractExp     int
-		pendingOffboard int
-		pendingInvites  int
+		empStats     struct{ active, joined, left int }
+		payrollTotal string
+		siTotal      string
+		todoStats    []DashboardTodoStat
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -74,56 +92,11 @@ func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*Dash
 	})
 
 	g.Go(func() error {
-		count, err := s.repo.GetPendingVouchers(ctx, orgID)
+		stats, err := s.repo.GetDashboardTodos(ctx, orgID)
 		if err != nil {
 			return err
 		}
-		pendingVouchers = count
-		return nil
-	})
-
-	g.Go(func() error {
-		count, err := s.repo.GetPendingExpenses(ctx, orgID)
-		if err != nil {
-			return err
-		}
-		pendingExpenses = count
-		return nil
-	})
-
-	g.Go(func() error {
-		count, err := s.repo.GetTaxReminders(ctx, orgID)
-		if err != nil {
-			return err
-		}
-		taxReminders = count
-		return nil
-	})
-
-	g.Go(func() error {
-		count, err := s.repo.GetContractExpirations(ctx, orgID)
-		if err != nil {
-			return err
-		}
-		contractExp = count
-		return nil
-	})
-
-	g.Go(func() error {
-		count, err := s.repo.GetPendingOffboardings(ctx, orgID)
-		if err != nil {
-			return err
-		}
-		pendingOffboard = count
-		return nil
-	})
-
-	g.Go(func() error {
-		count, err := s.repo.GetPendingInvitations(ctx, orgID)
-		if err != nil {
-			return err
-		}
-		pendingInvites = count
+		todoStats = stats
 		return nil
 	})
 
@@ -131,64 +104,13 @@ func (s *DashboardService) GetDashboard(ctx context.Context, orgID int64) (*Dash
 		return nil, err
 	}
 
-	// Build todos only for types with count > 0
+	// Map source_type → dashboard TodoItem
 	todos := []TodoItem{}
-
-	if siTotal != "" {
-		if f, err := strconv.ParseFloat(siTotal, 64); err == nil && f > 0 {
-			todos = append(todos, TodoItem{
-				Type:     TodoSocialInsurance,
-				Title:    "社保缴费提醒",
-				Count:    1,
-				Priority: 1,
-			})
+	for _, stat := range todoStats {
+		item := sourceTypeToTodoItem(stat.SourceType, stat.Count)
+		if item != nil {
+			todos = append(todos, *item)
 		}
-	}
-
-	if taxReminders > 0 {
-		todos = append(todos, TodoItem{
-			Type:     TodoTax,
-			Title:    "个税申报提醒",
-			Count:    taxReminders,
-			Priority: 2,
-		})
-	}
-
-	employeeCount := pendingOffboard + pendingInvites
-	if employeeCount > 0 {
-		todos = append(todos, TodoItem{
-			Type:     TodoEmployee,
-			Title:    "员工入离职待审核",
-			Count:    employeeCount,
-			Priority: 3,
-		})
-	}
-
-	if contractExp > 0 {
-		todos = append(todos, TodoItem{
-			Type:     TodoContract,
-			Title:    "合同到期提醒",
-			Count:    contractExp,
-			Priority: 4,
-		})
-	}
-
-	if pendingExpenses > 0 {
-		todos = append(todos, TodoItem{
-			Type:     TodoExpense,
-			Title:    "费用报销待审批",
-			Count:    pendingExpenses,
-			Priority: 5,
-		})
-	}
-
-	if pendingVouchers > 0 {
-		todos = append(todos, TodoItem{
-			Type:     TodoVoucher,
-			Title:    "凭证待审核",
-			Count:    pendingVouchers,
-			Priority: 6,
-		})
 	}
 
 	// Sort by priority ascending

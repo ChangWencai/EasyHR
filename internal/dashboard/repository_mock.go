@@ -18,6 +18,7 @@ type MockDashboardRepository struct {
 	ContractExpirations int
 	PendingOffboardings int
 	PendingInvitations  int
+	DashboardTodos      []DashboardTodoStat
 	Err                 error
 }
 
@@ -67,6 +68,10 @@ func (m *MockDashboardRepository) GetTimeLimitedRingStats(ctx context.Context, o
 	return 0, 0, m.Err
 }
 
+func (m *MockDashboardRepository) GetDashboardTodos(ctx context.Context, orgID int64) ([]DashboardTodoStat, error) {
+	return m.DashboardTodos, m.Err
+}
+
 // ErrorMockRepository returns an error on every call — useful for error propagation tests.
 type ErrorMockRepository struct{}
 
@@ -114,4 +119,8 @@ func (e *ErrorMockRepository) GetTodoRingStats(ctx context.Context, orgID int64)
 
 func (e *ErrorMockRepository) GetTimeLimitedRingStats(ctx context.Context, orgID int64) (int, int, error) {
 	return 0, 0, errors.New("time-limited ring stats error")
+}
+
+func (e *ErrorMockRepository) GetDashboardTodos(ctx context.Context, orgID int64) ([]DashboardTodoStat, error) {
+	return nil, errors.New("dashboard todos error")
 }

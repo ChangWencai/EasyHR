@@ -22,6 +22,15 @@ type DashboardRepository interface {
 	GetPendingInvitations(ctx context.Context, orgID int64) (int, error)
 	GetTodoRingStats(ctx context.Context, orgID int64) (completed, pending int, err error)
 	GetTimeLimitedRingStats(ctx context.Context, orgID int64) (completed, pending int, err error)
+	// GetDashboardTodos returns pending todos grouped by source_type from the unified todo_items table.
+	GetDashboardTodos(ctx context.Context, orgID int64) ([]DashboardTodoStat, error)
+}
+
+// DashboardTodoStat holds aggregated stats for a single source_type on the dashboard.
+type DashboardTodoStat struct {
+	SourceType       string
+	Count            int
+	EarliestDeadline *time.Time
 }
 
 // DashboardRepositoryImpl is the concrete GORM implementation.
@@ -253,6 +262,25 @@ func (r *DashboardRepositoryImpl) GetTimeLimitedRingStats(ctx context.Context, o
 	}
 
 	return int(completedCount), int(pendingCount), nil
+}
+
+// GetDashboardTodos returns pending todos grouped by source_type from the unified todo_items table.
+func (r *DashboardRepositoryImpl) GetDashboardTodos(ctx context.Context, orgID int64) ([]DashboardTodoStat, error) {
+	if !r.db.Migrator().HasTable(&TodoItemRecord{}) {
+		return nil, nil
+	}
+
+	var results []DashboardTodoStat
+	err := r.db.Model(&TodoItemRecord{}).
+		Scopes(middleware.TenantScope(orgID)).
+		Where("status = ?", "pending").
+		Select("source_type, COUNT(*) as count, MIN(deadline) as earliest_deadline").
+		Group("source_type").
+		Scan(&results).Error
+	if err != nil {
+		return nil, fmt.Errorf("get dashboard todos: %w", err)
+	}
+	return results, nil
 }
 
 // GetPendingInvitations returns the count of invitations with status 'pending'.

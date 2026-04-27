@@ -7,17 +7,12 @@ import (
 
 func TestGetDashboard_AllZero(t *testing.T) {
 	mock := &MockDashboardRepository{
-		EmployeeCount:       0,
-		JoinedThisMonth:     0,
-		LeftThisMonth:       0,
-		PayrollTotal:       "0",
+		EmployeeCount:     0,
+		JoinedThisMonth:   0,
+		LeftThisMonth:     0,
+		PayrollTotal:      "0",
 		SocialInsuranceAmt: "0",
-		PendingVouchers:    0,
-		PendingExpenses:    0,
-		TaxReminders:       0,
-		ContractExpirations: 0,
-		PendingOffboardings: 0,
-		PendingInvitations:  0,
+		DashboardTodos:    nil,
 	}
 	svc := NewService(mock)
 	result, err := svc.GetDashboard(context.Background(), 1)
@@ -33,19 +28,13 @@ func TestGetDashboard_AllZero(t *testing.T) {
 }
 
 func TestGetDashboard_EmployeeData(t *testing.T) {
-	// When there are pending offboardings or invitations, expect employee todo
 	mock := &MockDashboardRepository{
-		EmployeeCount:        5,
-		JoinedThisMonth:      1,
-		LeftThisMonth:        0,
-		PayrollTotal:         "0",
-		SocialInsuranceAmt:   "0",
-		PendingVouchers:      0,
-		PendingExpenses:      0,
-		TaxReminders:         0,
-		ContractExpirations:  0,
-		PendingOffboardings:  0,
-		PendingInvitations:   0,
+		EmployeeCount:     5,
+		JoinedThisMonth:   1,
+		LeftThisMonth:     0,
+		PayrollTotal:      "0",
+		SocialInsuranceAmt: "0",
+		DashboardTodos:    nil,
 	}
 	svc := NewService(mock)
 	result, err := svc.GetDashboard(context.Background(), 1)
@@ -61,19 +50,13 @@ func TestGetDashboard_EmployeeData(t *testing.T) {
 }
 
 func TestGetDashboard_PayrollData(t *testing.T) {
-	// When payroll is non-zero, still no todos unless other pending items exist
 	mock := &MockDashboardRepository{
-		EmployeeCount:        3,
-		JoinedThisMonth:      0,
-		LeftThisMonth:        0,
-		PayrollTotal:         "15000.00",
-		SocialInsuranceAmt:   "0",
-		PendingVouchers:      0,
-		PendingExpenses:      0,
-		TaxReminders:         0,
-		ContractExpirations:  0,
-		PendingOffboardings:  0,
-		PendingInvitations:   0,
+		EmployeeCount:     3,
+		JoinedThisMonth:   0,
+		LeftThisMonth:     0,
+		PayrollTotal:      "15000.00",
+		SocialInsuranceAmt: "0",
+		DashboardTodos:    nil,
 	}
 	svc := NewService(mock)
 	result, err := svc.GetDashboard(context.Background(), 1)
@@ -89,19 +72,20 @@ func TestGetDashboard_PayrollData(t *testing.T) {
 }
 
 func TestGetDashboard_AllModulesWithData(t *testing.T) {
-	// All modules have pending items → all 6 todos expected
 	mock := &MockDashboardRepository{
-		EmployeeCount:        10,
-		JoinedThisMonth:      2,
-		LeftThisMonth:        1,
-		PayrollTotal:         "50000.00",
-		SocialInsuranceAmt:   "8000.00",
-		PendingVouchers:      3,
-		PendingExpenses:      2,
-		TaxReminders:         1,
-		ContractExpirations:  5,
-		PendingOffboardings:  2,
-		PendingInvitations:   0,
+		EmployeeCount:     10,
+		JoinedThisMonth:   2,
+		LeftThisMonth:     1,
+		PayrollTotal:      "50000.00",
+		SocialInsuranceAmt: "8000.00",
+		DashboardTodos: []DashboardTodoStat{
+			{SourceType: "si_payment", Count: 3},
+			{SourceType: "tax_declaration", Count: 1},
+			{SourceType: "employee", Count: 2},
+			{SourceType: "contract_renew", Count: 5},
+			{SourceType: "expense", Count: 2},
+			{SourceType: "voucher", Count: 3},
+		},
 	}
 	svc := NewService(mock)
 	result, err := svc.GetDashboard(context.Background(), 1)
@@ -113,7 +97,6 @@ func TestGetDashboard_AllModulesWithData(t *testing.T) {
 		t.Errorf("expected 6 todos, got %d", len(result.Todos))
 	}
 
-	// Verify sorted by priority ascending
 	for i := 0; i < len(result.Todos)-1; i++ {
 		if result.Todos[i].Priority > result.Todos[i+1].Priority {
 			t.Errorf("todos not sorted by priority: [%d]=%d vs [%d]=%d",
@@ -132,19 +115,20 @@ func TestGetDashboard_RepositoryError(t *testing.T) {
 }
 
 func TestGetDashboard_TodoPriorities(t *testing.T) {
-	// Verify each todo type has correct priority
 	mock := &MockDashboardRepository{
-		EmployeeCount:        5,
-		JoinedThisMonth:      0,
-		LeftThisMonth:        0,
-		PayrollTotal:         "0",
-		SocialInsuranceAmt:   "1000.00",
-		PendingVouchers:      1,
-		PendingExpenses:      1,
-		TaxReminders:         1,
-		ContractExpirations:  1,
-		PendingOffboardings:  1,
-		PendingInvitations:   1,
+		EmployeeCount:     5,
+		JoinedThisMonth:   0,
+		LeftThisMonth:     0,
+		PayrollTotal:      "0",
+		SocialInsuranceAmt: "1000.00",
+		DashboardTodos: []DashboardTodoStat{
+			{SourceType: "si_payment", Count: 1},
+			{SourceType: "tax_declaration", Count: 1},
+			{SourceType: "employee", Count: 2},
+			{SourceType: "contract_renew", Count: 1},
+			{SourceType: "expense", Count: 1},
+			{SourceType: "voucher", Count: 1},
+		},
 	}
 	svc := NewService(mock)
 	result, err := svc.GetDashboard(context.Background(), 1)
@@ -159,11 +143,11 @@ func TestGetDashboard_TodoPriorities(t *testing.T) {
 
 	expected := map[TodoType]int{
 		TodoSocialInsurance: 1,
-		TodoTax:             2,
-		TodoEmployee:        3,
-		TodoContract:        4,
-		TodoExpense:         5,
-		TodoVoucher:         6,
+		TodoTax:            2,
+		TodoEmployee:       3,
+		TodoContract:       4,
+		TodoExpense:        5,
+		TodoVoucher:        6,
 	}
 
 	for typ, expectedPriority := range expected {
@@ -172,5 +156,52 @@ func TestGetDashboard_TodoPriorities(t *testing.T) {
 		} else if got != expectedPriority {
 			t.Errorf("todo %q: expected priority %d, got %d", typ, expectedPriority, got)
 		}
+	}
+}
+
+func TestGetDashboard_UnknownSourceType(t *testing.T) {
+	mock := &MockDashboardRepository{
+		EmployeeCount:     5,
+		JoinedThisMonth:   0,
+		LeftThisMonth:     0,
+		PayrollTotal:      "0",
+		SocialInsuranceAmt: "0",
+		DashboardTodos: []DashboardTodoStat{
+			{SourceType: "unknown_type", Count: 10},
+			{SourceType: "tax_declaration", Count: 2},
+		},
+	}
+	svc := NewService(mock)
+	result, err := svc.GetDashboard(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Todos) != 1 {
+		t.Errorf("expected 1 todo (tax only), got %d", len(result.Todos))
+	}
+	if result.Todos[0].Type != TodoTax {
+		t.Errorf("expected todo type tax, got %q", result.Todos[0].Type)
+	}
+}
+
+func TestGetDashboard_ZeroCount(t *testing.T) {
+	mock := &MockDashboardRepository{
+		EmployeeCount:     5,
+		JoinedThisMonth:   0,
+		LeftThisMonth:     0,
+		PayrollTotal:      "0",
+		SocialInsuranceAmt: "0",
+		DashboardTodos: []DashboardTodoStat{
+			{SourceType: "tax_declaration", Count: 0},
+			{SourceType: "employee", Count: 2},
+		},
+	}
+	svc := NewService(mock)
+	result, err := svc.GetDashboard(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Todos) != 1 {
+		t.Errorf("expected 1 todo, got %d", len(result.Todos))
 	}
 }

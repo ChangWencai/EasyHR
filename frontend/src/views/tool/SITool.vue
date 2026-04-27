@@ -41,14 +41,20 @@
             </el-form>
           </div>
           <el-table :data="policies" stripe v-loading="loadingPolicy">
-            <el-table-column prop="city" label="城市" min-width="100" />
-            <el-table-column prop="year" label="年度" width="70" />
-            <el-table-column prop="effective_date" label="生效日期" width="110" />
+            <el-table-column label="城市" min-width="100">
+              <template #default="{ row }">{{ row.city_name || row.city || '未知城市' }}</template>
+            </el-table-column>
+            <el-table-column label="年度" width="70">
+              <template #default="{ row }">{{ row.effective_year }}</template>
+            </el-table-column>
+            <el-table-column label="生效日期" width="110">
+              <template #default="{ row }">{{ row.created_at?.substring(0, 10) || '-' }}</template>
+            </el-table-column>
             <el-table-column label="公积金基数范围" min-width="150">
-              <template #default="{ row }">{{ row.housing_fund_base_min }} ~ {{ row.housing_fund_base_max }}</template>
+              <template #default="{ row }">{{ row.config?.housing_fund?.base_lower || 0 }} ~ {{ row.config?.housing_fund?.base_upper || 0 }}</template>
             </el-table-column>
             <el-table-column label="公积金比例" min-width="100">
-              <template #default="{ row }">个人{{ (row.housing_fund_person_rate * 100).toFixed(1) }}% / 单位{{ (row.housing_fund_company_rate * 100).toFixed(1) }}%</template>
+              <template #default="{ row }">个人{{ ((row.config?.housing_fund?.personal_rate || 0) * 100).toFixed(1) }}% / 单位{{ ((row.config?.housing_fund?.company_rate || 0) * 100).toFixed(1) }}%</template>
             </el-table-column>
             <el-table-column label="操作" width="80">
               <template #default="{ row }">
@@ -221,7 +227,7 @@ async function loadPolicies() {
 
 function selectPolicy(policy: any) {
   enrollForm.policy_id = policy.id
-  enrollForm.salary_base = policy.pension_base_min
+  enrollForm.salary_base = policy.config?.pension?.base_lower || 0
   activeTab.value = 'enroll'
 }
 

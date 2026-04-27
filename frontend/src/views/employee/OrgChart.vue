@@ -499,7 +499,7 @@ async function loadDeptEmployeeCounts() {
 
 async function loadPositions() {
   try {
-    positions.value = await positionApi.list()
+    positions.value = (await positionApi.list()) ?? []
     await loadPosEmployeeCounts()
   } catch {
     // 静默失败
@@ -514,7 +514,7 @@ async function loadPosEmployeeCounts() {
     for (const item of data) {
       posEmployeeCounts.value[item.position_id] = item.count
     }
-    for (const pos of positions.value) {
+    for (const pos of positions.value ?? []) {
       pos.employee_count = posEmployeeCounts.value[pos.id] ?? 0
     }
   } catch {

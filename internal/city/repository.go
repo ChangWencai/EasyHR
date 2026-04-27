@@ -49,10 +49,32 @@ func (r *Repository) GetByCode(code int64) (*AreaCode, error) {
 }
 
 // GetNameByCode 根据行政区划编码获取城市名称
+// 支持6位编码（如110000）和12位编码（如110000000000）的查询
 func (r *Repository) GetNameByCode(code int64) string {
+	// 先尝试精确匹配
 	area, err := r.GetByCode(code)
-	if err != nil {
+	if err == nil {
+		return area.Name
+	}
+
+	// 6位编码需要补0变成12位进行查询（如110000 -> 110000000000）
+	// 12位编码取前2位补0得到省级编码
+	var provinceCode int64
+
+	if code >= 100000000000 {
+		// 12位编码：取前2位（省）+10个0
+		provinceCode = (code / 100000000) * 100000000
+	} else if code >= 100000 {
+		// 6位编码：补6个0变成12位
+		provinceCode = code * 1000000
+	} else {
 		return "未知城市"
 	}
-	return area.Name
+
+	// 查询省级名称
+	var province AreaCode
+	if err := r.db.Where("code = ?", provinceCode).First(&province).Error; err != nil {
+		return "未知城市"
+	}
+	return province.Name
 }

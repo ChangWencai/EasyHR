@@ -45,7 +45,6 @@ func (s *Service) ListPolicies(cityID int64, page, pageSize int) ([]PolicyRespon
 	if err != nil {
 		return nil, 0, err
 	}
-
 	responses := make([]PolicyResponse, 0, len(policies))
 	for i := range policies {
 		responses = append(responses, *s.toPolicyResponse(&policies[i]))
@@ -471,10 +470,11 @@ func (s *Service) GetSocialInsuranceDeduction(orgID, employeeID int64, month str
 
 // toPolicyResponse 转换为响应 DTO
 func (s *Service) toPolicyResponse(policy *SocialInsurancePolicy) *PolicyResponse {
+	cityName := s.getCityName(policy.CityCode)
 	return &PolicyResponse{
 		ID:            policy.ID,
 		CityID:        policy.CityCode,
-		CityName:      s.getCityName(policy.CityCode),
+		CityName:      cityName,
 		EffectiveYear: policy.EffectiveYear,
 		Config:        policy.Config.Data(),
 		CreatedAt:     policy.CreatedAt.Format("2006-01-02 15:04:05"),
