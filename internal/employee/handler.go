@@ -30,6 +30,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin.Handler
 	authGroup.POST("/employees", middleware.RequireRole("owner", "admin"), h.CreateEmployee)
 	authGroup.GET("/employees", h.ListEmployees)
 	authGroup.GET("/employees/roster", h.ListRoster)
+	authGroup.GET("/employees/search", h.SearchEmployees)
 	authGroup.GET("/employees/export", middleware.RequireRole("owner", "admin"), h.ExportExcel)
 	authGroup.GET("/employees/position-counts", h.ListPositionCounts)
 	authGroup.GET("/employees/dept-counts", h.ListDeptCounts)
@@ -82,6 +83,27 @@ func (h *Handler) ListEmployees(c *gin.Context) {
 	}
 
 	response.PageSuccess(c, employees, total, query.Page, query.PageSize)
+}
+
+// SearchEmployees 员工搜索（用于下拉列表等场景，返回轻量数据）
+func (h *Handler) SearchEmployees(c *gin.Context) {
+	name := c.Query("name")
+	if name == "" {
+		response.BadRequest(c, "name 参数不能为空")
+		return
+	}
+
+	orgID := c.GetInt64("org_id")
+	logger.SugarLogger.Debugw("SearchEmployees: 搜索", "org_id", orgID, "name", name)
+
+	employees, err := h.svc.SearchEmployees(orgID, name)
+	if err != nil {
+		logger.SugarLogger.Debugw("SearchEmployees: 失败", "error", err.Error(), "org_id", orgID)
+		response.Error(c, http.StatusInternalServerError, 20101, "搜索员工失败")
+		return
+	}
+
+	response.Success(c, employees)
 }
 
 // GetEmployee 获取员工详情

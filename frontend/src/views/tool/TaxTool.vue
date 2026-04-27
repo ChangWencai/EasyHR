@@ -55,6 +55,11 @@
             <span class="panel-title">个税计算</span>
           </div>
           <el-form :model="calcForm" label-width="100px" @submit.prevent="handleCalculate">
+            <el-form-item label="员工">
+              <el-select v-model="calcForm.employee_id" placeholder="选择员工" style="width: 200px" clearable>
+                <el-option v-for="e in employeeOptions" :key="e.id" :label="e.name" :value="e.id" />
+              </el-select>
+            </el-form-item>
             <el-form-item label="税前工资">
               <el-input-number v-model="calcForm.gross_income" :min="0" :precision="2" style="width: 200px" />
             </el-form-item>
@@ -117,6 +122,72 @@
           </el-table>
           <el-pagination class="mt-4" layout="total,prev,pager,next" :total="recordTotal" :page="recordPage" :page-size="recordPageSize" @current-change="loadRecords" />
         </div>
+
+        <!-- 申报管理 -->
+        <div v-show="activeTab === 'declarations'" class="tab-panel">
+          <div class="panel-bar">
+            <span class="panel-title">税务申报管理</span>
+            <el-form inline>
+              <el-form-item label="年份">
+                <el-input-number v-model="declYear" :min="2020" :max="2030" style="width: 100px" @change="loadDeclarations" />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" @click="loadDeclarations">查询</el-button>
+                <el-button :disabled="!currentDecl" @click="handleExportDecl">
+                  <el-icon><Download /></el-icon> 导出Excel
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 当月申报概览 -->
+          <div v-if="currentDecl" class="decl-overview">
+            <el-alert
+              :title="declStatusLabel"
+              :type="declStatusAlertType"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px"
+            >
+              <template #default>
+                {{ declYear }}年{{ currentDecl.month }}月 &nbsp;|&nbsp;
+                员工 {{ currentDecl.total_employees }} 人 &nbsp;|&nbsp;
+                收入合计 ¥{{ currentDecl.total_income?.toLocaleString() }} &nbsp;|&nbsp;
+                个税合计 ¥{{ currentDecl.total_tax?.toLocaleString() }}
+              </template>
+            </el-alert>
+            <el-button
+              v-if="currentDecl.status === 'pending'"
+              type="danger"
+              :loading="markingDeclared"
+              @click="handleMarkDeclared"
+            >
+              标记为已申报
+            </el-button>
+            <el-tag v-else type="success">已申报 · {{ currentDecl.declared_at }}</el-tag>
+          </div>
+
+          <el-table :data="declarations" stripe v-loading="loadingDeclarations" class="mt-4">
+            <el-table-column prop="year" label="年份" width="70" />
+            <el-table-column prop="month" label="月份" width="70" />
+            <el-table-column prop="total_employees" label="员工数" width="80" />
+            <el-table-column prop="total_income" label="收入合计" min-width="120">
+              <template #default="{ row }">¥{{ row.total_income?.toLocaleString() }}</template>
+            </el-table-column>
+            <el-table-column prop="total_tax" label="个税合计" min-width="120">
+              <template #default="{ row }">¥{{ row.total_tax?.toLocaleString() }}</template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag :type="declStatusTagType[row.status]" size="small">{{ declStatusMap[row.status] }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="declared_at" label="申报时间" min-width="160">
+              <template #default="{ row }">{{ row.declared_at || '—' }}</template>
+            </el-table-column>
+          </el-table>
+          <el-pagination class="mt-4" layout="total,prev,pager,next" :total="declTotal" :page="declPage" :page-size="declPageSize" @current-change="loadDeclarations" />
+        </div>
       </div>
     </div>
 
@@ -149,10 +220,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { taxApi } from '@/api/tax'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { taxApi, type TaxDeclaration } from '@/api/tax'
+import { employeeApi } from '@/api/employee'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { Discount, DataAnalysis, List } from '@element-plus/icons-vue'
+import { Discount, DataAnalysis, List, Download } from '@element-plus/icons-vue'
 
 const activeTab = ref('deduction')
 
@@ -160,6 +232,7 @@ const tabs = [
   { name: 'deduction', label: '专项附加扣除', icon: Discount },
   { name: 'calculate', label: '个税计算', icon: DataAnalysis },
   { name: 'records', label: '申报记录', icon: List },
+  { name: 'declarations', label: '申报管理', icon: Download },
 ]
 
 const deductionTypeMap: Record<string, string> = {
@@ -252,18 +325,32 @@ async function handleDeleteDeduction(id: number) {
 // Calculate
 const calculating = ref(false)
 const calcResult = ref<any>(null)
+const employeeOptions = ref<any[]>([])
 const calcForm = reactive({
+  employee_id: undefined as number | undefined,
   gross_income: 0,
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1,
   deduction_ids: [] as number[],
 })
 
+async function loadEmployees() {
+  try {
+    const res = await employeeApi.list({ page: 1, page_size: 100 }) as { list: any[] }
+    employeeOptions.value = res.list || []
+  } catch { /* ignore */ }
+}
+
 async function handleCalculate() {
+  if (!calcForm.employee_id) {
+    ElMessage.warning('请选择员工')
+    return
+  }
   calculating.value = true
   calcResult.value = null
   try {
     calcResult.value = await taxApi.calculate({
+      employee_id: calcForm.employee_id,
       gross_income: calcForm.gross_income,
       year: calcForm.year,
       month: calcForm.month,
@@ -298,8 +385,88 @@ async function loadRecords(p = 1) {
   }
 }
 
+// Declarations
+const declYear = ref(new Date().getFullYear())
+const loadingDeclarations = ref(false)
+const declarations = ref<TaxDeclaration[]>([])
+const currentDecl = ref<TaxDeclaration | null>(null)
+const declTotal = ref(0)
+const declPage = ref(1)
+const declPageSize = ref(20)
+const markingDeclared = ref(false)
+
+const declStatusMap: Record<string, string> = {
+  pending: '待申报',
+  declared: '已申报',
+  paid: '已缴纳',
+}
+const declStatusTagType: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
+  pending: 'warning',
+  declared: 'success',
+  paid: 'info',
+}
+
+const declStatusLabel = computed(() => {
+  if (!currentDecl.value) return ''
+  return declStatusMap[currentDecl.value.status] || currentDecl.value.status
+})
+const declStatusAlertType = computed((): 'warning' | 'success' | 'info' => {
+  if (!currentDecl.value) return 'info'
+  return currentDecl.value.status === 'pending' ? 'warning' : 'success'
+})
+
+async function loadDeclarations(p = 1) {
+  declPage.value = p
+  loadingDeclarations.value = true
+  try {
+    const [res, cur] = await Promise.all([
+      taxApi.declarations({ year: declYear.value, page: p, page_size: declPageSize.value }),
+      taxApi.getCurrentDeclaration().catch(() => null),
+    ])
+    declarations.value = res.list || []
+    declTotal.value = res.total || 0
+    currentDecl.value = cur
+  } catch {
+    ElMessage.error('加载申报列表失败')
+  } finally {
+    loadingDeclarations.value = false
+  }
+}
+
+async function handleMarkDeclared() {
+  if (!currentDecl.value) return
+  markingDeclared.value = true
+  try {
+    await taxApi.markDeclared(currentDecl.value.id)
+    ElMessage.success('已标记为申报')
+    await loadDeclarations()
+  } catch {
+    ElMessage.error('操作失败')
+  } finally {
+    markingDeclared.value = false
+  }
+}
+
+async function handleExportDecl() {
+  if (!currentDecl.value) return
+  const y = currentDecl.value.year
+  const m = currentDecl.value.month
+  try {
+    const blob = await taxApi.exportDeclarationExcel(y, m)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `个税申报表_${y}年${m}月.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    ElMessage.error('导出失败')
+  }
+}
+
 onMounted(() => {
   loadDeductions()
+  loadEmployees()
 })
 </script>
 

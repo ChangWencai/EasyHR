@@ -127,6 +127,72 @@
           <TaxUpload />
         </div>
 
+        <!-- 考勤导入 -->
+        <div v-show="activeTab === 'attendance'" class="tab-panel">
+          <div class="panel-bar">
+            <span class="panel-title">考勤数据导入</span>
+            <el-form inline @submit.prevent>
+              <el-form-item label="月份">
+                <el-date-picker
+                  v-model="attYM"
+                  type="month"
+                  placeholder="选择月份"
+                  value-format="YYYY-MM"
+                  style="width: 140px"
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-upload
+                  ref="attUploadRef"
+                  :auto-upload="false"
+                  :accept="'.xlsx,.xls'"
+                  :limit="1"
+                  :on-change="handleAttFileChange"
+                >
+                  <el-button>选择Excel文件</el-button>
+                </el-upload>
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" :loading="attUploading" :disabled="!attFile || !attYM" @click="handleAttUpload">
+                  上传导入
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 导入结果 -->
+          <div v-if="attResult" class="att-result">
+            <el-alert
+              v-if="attResult.matched_count > 0"
+              type="success"
+              :title="`成功导入 ${attResult.matched_count} 条考勤数据`"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px"
+            />
+            <el-alert
+              v-if="attResult.error_rows && attResult.error_rows.length > 0"
+              type="warning"
+              :title="`${attResult.error_rows.length} 行导入失败（见下方）`"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 12px"
+            />
+            <el-table v-if="attResult.error_rows && attResult.error_rows.length > 0" :data="attResult.error_rows" stripe size="small" max-height="200">
+              <el-table-column prop="row_number" label="行号" width="60" />
+              <el-table-column prop="name" label="姓名" min-width="100" />
+              <el-table-column prop="error" label="错误原因" min-width="160">
+                <template #default="{ row }">
+                  <el-tag size="small" type="danger">{{ row.error }}</el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div style="margin-top: 12px">
+              <el-button @click="attResult = null; attFile = null">重新导入</el-button>
+            </div>
+          </div>
+        </div>
+
         <!-- 工资条发送 -->
         <div v-show="activeTab === 'slip-send'" class="tab-panel">
           <SalarySlipSend />
@@ -140,7 +206,7 @@
 import { ref, onMounted } from 'vue'
 import { salaryApi } from '@/api/salary'
 import { ElMessage } from 'element-plus'
-import { Odometer, Coin, List, Edit, Download, Upload, Message } from '@element-plus/icons-vue'
+import { Odometer, Coin, List, Edit, Download, Upload, Message, Clock } from '@element-plus/icons-vue'
 import SalaryDashboard from './SalaryDashboard.vue'
 import SalaryAdjustment from './SalaryAdjustment.vue'
 import TaxUpload from './TaxUpload.vue'
@@ -155,6 +221,7 @@ const tabs = [
   { name: 'adjustment', label: '调薪管理', icon: Edit },
   { name: 'export', label: '导出', icon: Download },
   { name: 'tax-upload', label: '个税上传', icon: Upload },
+  { name: 'attendance', label: '考勤导入', icon: Clock },
   { name: 'slip-send', label: '工资条发送', icon: Message },
 ]
 
@@ -324,6 +391,34 @@ async function handleExport() {
     ElMessage.error('导出失败')
   } finally {
     exporting.value = false
+  }
+}
+
+// Attendance import
+const attYM = ref('')
+const attFile = ref<File | null>(null)
+const attUploadRef = ref()
+const attUploading = ref(false)
+const attResult = ref<{ matched_count: number; error_rows?: Array<{ row_number: number; name: string; error: string }> } | null>(null)
+
+function handleAttFileChange(file: any) {
+  attFile.value = file.raw as File
+}
+
+async function handleAttUpload() {
+  if (!attFile.value || !attYM.value) return
+  const [year, month] = attYM.value.split('-').map(Number)
+  attUploading.value = true
+  attResult.value = null
+  try {
+    attResult.value = await salaryApi.importAttendance(year, month, attFile.value)
+    if (attResult.value.matched_count > 0) {
+      ElMessage.success(`成功导入 ${attResult.value.matched_count} 条考勤数据`)
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.message || '导入失败')
+  } finally {
+    attUploading.value = false
   }
 }
 

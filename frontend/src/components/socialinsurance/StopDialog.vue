@@ -108,13 +108,13 @@ import { ref, reactive, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { WarningFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import axios from '@/api/request'
+import { employeeApi } from '@/api/employee'
+import { siApi } from '@/api/socialinsurance'
 import dayjs from 'dayjs'
 
 interface EmployeeOption {
   id: number
   name: string
-  id_number?: string
 }
 
 interface StopFormData {
@@ -197,11 +197,12 @@ async function searchEmployee(query: string): Promise<void> {
 
   searching.value = true
   try {
-    const res = await axios.get('/api/v1/employees/search', {
-      params: { name: query },
-    })
-    const responseData = (res as { data?: EmployeeOption[] })?.data ?? res
-    employeeOptions.value = responseData as EmployeeOption[]
+    // Use getRoster with name filter for search
+    const result = await employeeApi.getRoster({ page: 1, page_size: 20, search: query })
+    employeeOptions.value = (result.data || []).map((emp: any) => ({
+      id: emp.id,
+      name: emp.name,
+    }))
   } catch {
     employeeOptions.value = []
   } finally {
@@ -212,7 +213,8 @@ async function searchEmployee(query: string): Promise<void> {
 function onEmployeeSelected(employeeID: number): void {
   const employee = employeeOptions.value.find((e) => e.id === employeeID)
   if (employee) {
-    form.idNumber = employee.id_number ?? ''
+    // id_number not available from roster endpoint, leave blank
+    form.idNumber = ''
   }
 }
 
@@ -244,12 +246,10 @@ async function handleSubmit(): Promise<void> {
 
   submitting.value = true
   try {
-    await axios.post('/api/v1/social-insurance/stop/single', {
-      employeeID: form.employeeID,
-      stopYearMonth: form.stopYearMonth,
+    await siApi.stopSingle({
+      employee_id: form.employeeID!,
+      stop_year_month: form.stopYearMonth,
       reason: form.reason,
-      transferDate: form.transferDate,
-      hfFreezeDate: form.hfFreezeDate,
     })
     ElMessage.success('减员成功')
     emit('success')

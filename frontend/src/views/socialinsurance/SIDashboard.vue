@@ -143,7 +143,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import axios from '@/api/request'
+import { siApi } from '@/api/socialinsurance'
+import type { SIDashboardData } from '@/api/socialinsurance'
 import { Refresh, Coin, OfficeBuilding, User, WarningFilled, Top, Bottom, PieChart, TrendCharts } from '@element-plus/icons-vue'
 
 interface DashboardData {
@@ -159,7 +160,7 @@ interface DashboardData {
 
 const loading = ref(false)
 const error = ref(false)
-const data = ref<DashboardData | null>(null)
+const data = ref<SIDashboardData | null>(null)
 
 function getTrendDirection(val: string | number | null | undefined): 'up' | 'down' | null {
   if (val === null || val === undefined) return null
@@ -182,8 +183,7 @@ async function loadDashboard() {
   loading.value = true
   error.value = false
   try {
-    const res = await axios.get('/api/v1/social-insurance/dashboard')
-    data.value = res.data as DashboardData
+    data.value = await siApi.dashboard()
   } catch {
     error.value = true
     ElMessage.error('加载社保数据失败')

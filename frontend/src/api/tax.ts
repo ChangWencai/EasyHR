@@ -34,7 +34,7 @@ export interface TaxCalculateResult {
 export interface TaxRecord {
   id: number
   employee_id: number
-  employee_name: number
+  employee_name: string
   year: number
   month: number
   gross_income: number
@@ -45,8 +45,21 @@ export interface TaxRecord {
   created_at: string
 }
 
+export interface TaxDeclaration {
+  id: number
+  year: number
+  month: number
+  status: string
+  total_employees: number
+  total_income: number
+  total_tax: number
+  declared_at?: string
+  declared_by?: number
+  created_at: string
+}
+
 export const taxApi = {
-  brackets: (params?: { year?: number }) =>
+  brackets: (params?: { effective_year?: number }) =>
     request.get<TaxBracket[]>('/tax/brackets', { params }),
 
   deductions: (params?: { year?: number; employee_id?: number }) =>
@@ -68,6 +81,7 @@ export const taxApi = {
     request.delete(`/tax/deductions/${id}`),
 
   calculate: (data: {
+    employee_id: number
     gross_income: number
     year: number
     month: number
@@ -77,4 +91,20 @@ export const taxApi = {
 
   records: (params?: { page?: number; year?: number }) =>
     request.get<{ list: TaxRecord[]; total: number }>('/tax/records', { params }).then(r => r.data),
+
+  // 申报管理
+  declarations: (params?: { year?: number; page?: number; page_size?: number }) =>
+    request.get<{ list: TaxDeclaration[]; total: number }>('/tax/declarations', { params }).then(r => r.data),
+
+  getCurrentDeclaration: () =>
+    request.get<TaxDeclaration>('/tax/declarations/current').then(r => r.data),
+
+  markDeclared: (id: number) =>
+    request.put<{ message: string }>(`/tax/declarations/${id}/declare`),
+
+  exportDeclarationExcel: (year: number, month: number): Promise<Blob> =>
+    request.get('/tax/declarations/export-excel', {
+      params: { year, month },
+      responseType: 'blob',
+    }).then(r => r.data as Blob),
 }

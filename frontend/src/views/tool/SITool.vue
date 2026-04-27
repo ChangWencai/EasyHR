@@ -32,9 +32,6 @@
           <div class="panel-bar">
             <span class="panel-title">社保政策库</span>
             <el-form inline>
-              <el-form-item label="城市">
-                <el-input v-model="cityFilter" placeholder="城市名称" clearable style="width: 120px" />
-              </el-form-item>
               <el-form-item label="年份">
                 <el-input-number v-model="yearFilter" :min="2020" :max="2030" style="width: 100px" />
               </el-form-item>
@@ -68,9 +65,9 @@
             <el-icon class="banner-icon"><WarningFilled /></el-icon>
             <div class="banner-content">
               <div class="banner-headline">存在欠缴记录，请及时处理</div>
-              <div class="banner-detail">{{ overdueItems[0].employeeName }} {{ overdueItems[0].city }} {{ overdueItems[0].yearMonth }} 欠缴 ¥{{ overdueItems[0].amount }}</div>
+              <div class="banner-detail">{{ overdueItems[0].employee_name }} {{ overdueItems[0].city }} {{ overdueItems[0].year_month }} 欠缴 ¥{{ overdueItems[0].amount }}</div>
               <div v-if="visibleOverdueItems.length > 1" class="banner-scroll-list">
-                <div v-for="item in visibleOverdueItems.slice(1)" :key="item.id" class="overdue-item">{{ item.employeeName }} {{ item.city }} {{ item.yearMonth }} ¥{{ item.amount }}</div>
+                <div v-for="item in visibleOverdueItems.slice(1)" :key="item.id" class="overdue-item">{{ item.employee_name }} {{ item.city }} {{ item.year_month }} ¥{{ item.amount }}</div>
               </div>
               <div v-if="overdueItems.length > 5" class="banner-more">还有 {{ overdueItems.length - 5 }} 项</div>
             </div>
@@ -166,13 +163,12 @@ import { employeeApi } from '@/api/employee'
 import { ElMessage } from 'element-plus'
 import { WarningFilled, Close, Collection, Plus, List } from '@element-plus/icons-vue'
 import EnrollDialog from '@/components/socialinsurance/EnrollDialog.vue'
-import axios from '@/api/request'
 
 interface OverdueItem {
   id: number
-  employeeName: string
+  employee_name: string
   city: string
-  yearMonth: string
+  year_month: string
   amount: string
 }
 
@@ -197,8 +193,7 @@ function dismissBanner(): void {
 
 async function loadOverdueItems(): Promise<void> {
   try {
-    const res = await axios.get('/social-insurance/dashboard')
-    const dashboard = (res as { data?: { overdue_items?: OverdueItem[] } })?.data
+    const dashboard = await siApi.dashboard()
     if (Array.isArray(dashboard?.overdue_items)) {
       overdueItems.value = dashboard.overdue_items
     }
@@ -210,13 +205,13 @@ async function loadOverdueItems(): Promise<void> {
 // Policy
 const loadingPolicy = ref(false)
 const policies = ref<any[]>([])
-const cityFilter = ref('')
+const cityFilter = ref<number | undefined>()
 const yearFilter = ref(new Date().getFullYear())
 
 async function loadPolicies() {
   loadingPolicy.value = true
   try {
-    policies.value = (await siApi.policies({ city: cityFilter.value || undefined, year: yearFilter.value })) ?? []
+    policies.value = (await siApi.policies({ city_code: cityFilter.value || undefined, year: yearFilter.value })) ?? []
   } catch {
     ElMessage.error('加载政策库失败')
   } finally {

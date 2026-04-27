@@ -158,6 +158,20 @@ func (r *Repository) FindByIDs(orgID int64, ids []int64) ([]Employee, error) {
 	return employees, nil
 }
 
+// SearchByName 根据姓名模糊搜索员工（用于下拉列表）
+func (r *Repository) SearchByName(orgID int64, name string) ([]Employee, error) {
+	var employees []Employee
+	err := r.db.Scopes(middleware.TenantScope(orgID)).
+		Where("name LIKE ? AND status != ?", "%"+name+"%", "offboarded").
+		Order("name ASC").
+		Limit(20).
+		Find(&employees).Error
+	if err != nil {
+		return nil, fmt.Errorf("search employees by name: %w", err)
+	}
+	return employees, nil
+}
+
 // FindByUserID 根据 user_id 查找员工（带租户隔离）
 func (r *Repository) FindByUserID(orgID int64, userID int64) (*Employee, error) {
 	var emp Employee

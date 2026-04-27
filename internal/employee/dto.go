@@ -78,6 +78,12 @@ type SensitiveInfoResponse struct {
 	EmergencyPhone string `json:"emergency_phone,omitempty"`
 }
 
+// EmployeeSearchResult 员工搜索结果（用于下拉列表）
+type EmployeeSearchResult struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 // ListQueryParams 员工列表查询参数
 type ListQueryParams struct {
 	Name         string `form:"name"`

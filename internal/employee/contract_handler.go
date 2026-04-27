@@ -39,6 +39,7 @@ func (h *ContractHandler) RegisterRoutes(rg *gin.RouterGroup, authMiddleware gin
 	authGroup.PUT("/contracts/:id/terminate", middleware.RequireRole("owner", "admin"), h.TerminateContract)
 	authGroup.GET("/contracts", h.ListContracts) // 所有角色可查看企业合同列表
 	authGroup.POST("/contracts/:id/send-sign-link", middleware.RequireRole("owner", "admin"), h.SendSignLink) // 老板发起签署
+	authGroup.GET("/contracts/:id/signed-pdf", h.GetSignedPdf) // 获取已签PDF（需要认证）
 }
 
 // RegisterSignRoutes 注册签署相关端点（员工端，无需认证）

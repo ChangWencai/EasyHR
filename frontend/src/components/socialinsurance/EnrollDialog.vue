@@ -51,7 +51,13 @@
       </el-form-item>
 
       <el-form-item label="缴费城市" prop="cityCode">
-        <el-input v-model="form.cityCode" placeholder="输入缴费城市" />
+        <el-input-number
+          v-model="form.cityCode"
+          :min="0"
+          :controls="false"
+          placeholder="输入城市行政区划码"
+          style="width: 100%"
+        />
       </el-form-item>
 
       <el-form-item label="社保基数" prop="siBase">
@@ -104,20 +110,20 @@
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import axios from '@/api/request'
+import { employeeApi } from '@/api/employee'
+import { siApi } from '@/api/socialinsurance'
 import dayjs from 'dayjs'
 
 interface EmployeeOption {
   id: number
   name: string
-  id_number?: string
 }
 
 interface EnrollForm {
   employeeID: number | undefined
   idNumber: string
   startYearMonth: string
-  cityCode: string
+  cityCode: number | undefined
   siBase: number | undefined
   hfBase: number | undefined
   hfRatio: number | undefined
@@ -142,7 +148,7 @@ const form = reactive<EnrollForm>({
   employeeID: undefined,
   idNumber: '',
   startYearMonth: dayjs().format('YYYYMM'),
-  cityCode: '',
+  cityCode: undefined,
   siBase: undefined,
   hfBase: undefined,
   hfRatio: 12,
@@ -180,11 +186,11 @@ async function searchEmployee(query: string): Promise<void> {
 
   searching.value = true
   try {
-    const res = await axios.get('/api/v1/employees/search', {
-      params: { name: query },
-    })
-    const responseData = (res as { data?: EmployeeOption[] })?.data ?? res
-    employeeOptions.value = responseData as EmployeeOption[]
+    const result = await employeeApi.getRoster({ page: 1, page_size: 20, search: query })
+    employeeOptions.value = (result.data || []).map((emp: any) => ({
+      id: emp.id,
+      name: emp.name,
+    }))
   } catch {
     employeeOptions.value = []
   } finally {
@@ -195,7 +201,7 @@ async function searchEmployee(query: string): Promise<void> {
 function onEmployeeSelected(employeeID: number): void {
   const employee = employeeOptions.value.find((e) => e.id === employeeID)
   if (employee) {
-    form.idNumber = employee.id_number ?? ''
+    form.idNumber = ''
   }
 }
 
@@ -212,13 +218,11 @@ async function handleSubmit(): Promise<void> {
 
   submitting.value = true
   try {
-    await axios.post('/api/v1/social-insurance/enroll/single', {
-      employeeID: form.employeeID,
-      startYearMonth: form.startYearMonth,
-      cityCode: form.cityCode,
-      siBase: form.siBase,
-      hfBase: form.hfBase,
-      hfRatio: form.hfRatio,
+    await siApi.enrollSingle({
+      employee_id: form.employeeID!,
+      city_code: form.cityCode!,
+      si_base: form.siBase!,
+      start_year_month: form.startYearMonth,
     })
     ElMessage.success('增员成功')
     emit('success')
@@ -235,7 +239,7 @@ function handleClose(): void {
   form.employeeID = undefined
   form.idNumber = ''
   form.startYearMonth = dayjs().format('YYYYMM')
-  form.cityCode = ''
+  form.cityCode = undefined
   form.siBase = undefined
   form.hfBase = undefined
   form.hfRatio = 12

@@ -135,8 +135,8 @@
          ============================================================ -->
     <div class="main-wrapper" :class="{ 'sidebar-collapsed': isCollapsed }">
       <router-view v-slot="{ Component }">
-        <transition name="page-fade" mode="out-in">
-          <component :is="Component" />
+        <transition name="page-fade">
+          <component :is="Component" :key="route.path" />
         </transition>
       </router-view>
     </div>

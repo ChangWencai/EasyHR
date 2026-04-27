@@ -197,10 +197,15 @@ export const employeeApi = {
     status?: string
     department_id?: number
   }) =>
-    request.get('/employees/roster', { params }).then((r: any) => ({
-      list: r.data || [],
-      total: r.meta?.total || 0,
-    })),
+    request.get('/employees/roster', { params }).then((r: any) => {
+      // 后端返回 response.PageSuccess(c, items, total, page, page_size)
+      // 格式为 { list: [...], total: N, page: N, page_size: N }
+      const data = r.data || {}
+      return {
+        list: data.list || [],
+        total: data.total || 0,
+      }
+    }),
 
   getSensitiveInfo: (id: number) =>
     request.post<Employee>(`/employees/${id}/sensitive`).then((r) => r.data),

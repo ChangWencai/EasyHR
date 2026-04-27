@@ -31,17 +31,17 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="city" label="城市" width="110">
+        <el-table-column prop="city_name" label="城市" width="110">
           <template #default="{ row }">
             <div class="city-cell">
               <el-icon><OfficeBuilding /></el-icon>
-              {{ row.city }}
+              {{ row.city_name }}
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="salary_base" label="社保基数" align="right" width="140">
+        <el-table-column prop="base_amount" label="社保基数" align="right" width="140">
           <template #default="{ row }">
-            <span class="amount-text">{{ formatCurrency(row.salary_base) }}</span>
+            <span class="amount-text">{{ formatCurrency(row.base_amount) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="start_month" label="参保月" width="110">
@@ -49,17 +49,10 @@
             <span class="month-chip">{{ row.start_month }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="stop_month" label="停缴月" width="110">
+        <el-table-column prop="end_month" label="停缴月" width="110">
           <template #default="{ row }">
-            <span class="month-chip month-chip--stopped" v-if="row.stop_month">{{ row.stop_month }}</span>
+            <span class="month-chip month-chip--stopped" v-if="row.end_month">{{ row.end_month }}</span>
             <span class="no-stop" v-else>—</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="缴费渠道" width="130">
-          <template #default="{ row }">
-            <span class="channel-badge" :class="`channel--${row.payment_channel}`">
-              {{ paymentChannelLabelMap[row.payment_channel] || '--' }}
-            </span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="110">
@@ -168,7 +161,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import axios from '@/api/request'
+import { siApi } from '@/api/socialinsurance'
 import dayjs from 'dayjs'
 import StopDialog from '@/components/socialinsurance/StopDialog.vue'
 import SIDetailDialog from '@/components/socialinsurance/SIDetailDialog.vue'
@@ -178,9 +171,16 @@ import {
 } from '@element-plus/icons-vue'
 
 interface SIRecordRow {
-  id: number; employee_id: number; employee_name: string; city: string
-  salary_base: number; start_month: string; stop_month: string
-  payment_channel: string; status: string; monthly_personal: number; monthly_company: number
+  id: number
+  employee_id: number
+  employee_name: string
+  city_name: string      // 后端字段: city_name
+  base_amount: number    // 后端字段: base_amount
+  start_month: string
+  end_month?: string     // 后端字段: end_month (停缴月)
+  status: string
+  monthly_personal: number
+  monthly_company: number
 }
 
 const loading = ref(false)
@@ -218,13 +218,9 @@ async function fetchRecords(p = 1): Promise<void> {
   page.value = p
   loading.value = true
   try {
-    const res = await axios.get('/api/v1/social-insurance/monthly-records', {
-      params: { page: p, page_size: pageSize.value },
-    })
-    const responseData = (res as { data?: { list: SIRecordRow[]; total: number } })?.data ?? res
-    const data = responseData as { list: SIRecordRow[]; total: number }
-    records.value = data.list || []
-    total.value = data.total || 0
+    const result = await siApi.records({ page: p, page_size: pageSize.value })
+    records.value = result.list || []
+    total.value = result.total || 0
   } catch { ElMessage.error('加载记录失败') }
   finally { loading.value = false }
 }
@@ -247,11 +243,7 @@ async function doExport(): Promise<void> {
     const params = exportType.value === 'full'
       ? { export: 'full', page_size: 9999 }
       : { page: page.value, page_size: pageSize.value }
-    const res = await axios.get('/api/v1/social-insurance/records/export', {
-      params,
-      responseType: 'blob',
-    })
-    const blob = res as unknown as Blob
+    const blob = await siApi.exportRecords(params)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

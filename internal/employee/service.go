@@ -234,6 +234,22 @@ func (s *Service) GetEmployee(orgID, id int64) (*EmployeeResponse, error) {
 	return s.toResponse(emp)
 }
 
+// SearchEmployees 员工搜索（用于下拉列表，返回轻量数据）
+func (s *Service) SearchEmployees(orgID int64, name string) ([]EmployeeSearchResult, error) {
+	employees, err := s.repo.SearchByName(orgID, name)
+	if err != nil {
+		return nil, fmt.Errorf("搜索员工失败: %w", err)
+	}
+	results := make([]EmployeeSearchResult, 0, len(employees))
+	for _, emp := range employees {
+		results = append(results, EmployeeSearchResult{
+			ID:   emp.ID,
+			Name: emp.Name,
+		})
+	}
+	return results, nil
+}
+
 // UpdateEmployee 更新员工信息（部分更新）
 func (s *Service) UpdateEmployee(orgID, userID, id int64, req *UpdateEmployeeRequest) (*EmployeeResponse, error) {
 	aesKey := s.aesKey()

@@ -258,6 +258,20 @@ export const salaryApi = {
       params: { year, month },
       responseType: 'blob',
     }).then(r => r.data as Blob),
+
+  // 考勤导入
+  importAttendance: (year: number, month: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request.post<AttendanceImportResult>('/salary/attendance/import', form, {
+      params: { year, month },
+    }).then(r => r.data)
+  },
+}
+
+export interface AttendanceImportResult {
+  matched_count: number
+  error_rows?: Array<{ row_number: number; name: string; error: string }>
 }
 
 export interface SalaryRecord {
